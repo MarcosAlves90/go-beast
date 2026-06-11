@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>beast-control</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+        <path d="M15.5 8.5A5 5 0 1 0 15.5 15.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">beast-control</span>
+    </div>
+    <div id="status-indicator" class="status-indicator status--disconnected" aria-live="polite">
+      <span class="status-dot"></span>
+      <span id="status-label">Desconectado</span>
+    </div>
+  </header>
+
+  <!-- Porta -->
+  <section class="card">
+    <div class="card-header">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path d="M2 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4ZM3 9h14v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Zm5 2a1 1 0 0 0 0 2h4a1 1 0 0 0 0-2H8Z"/>
+      </svg>
+      <span>Porta WebSocket</span>
+    </div>
+    <div class="port-row">
+      <input id="port-input" type="number" min="1024" max="65535" value="7331" aria-label="Porta WebSocket" />
+      <button id="port-save" class="btn-primary">Salvar</button>
+    </div>
+  </section>
+
+  <!-- Toggles de segurança -->
+  <section class="card" id="bypass-section">
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd"/>
+        </svg>
+        <div>
+          <strong>Bypass de privacidade</strong>
+          <p class="hint">Expõe campos sensíveis ao Claude</p>
+        </div>
+      </div>
+      <label class="toggle" aria-label="Ativar bypass de privacidade">
+        <input type="checkbox" id="bypass-toggle" />
+        <span class="slider slider--danger"></span>
+      </label>
+    </div>
+    <div id="bypass-warning" class="alert alert--danger" hidden role="alert">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+      Campos sensíveis visíveis ao Claude
+    </div>
+  </section>
+
+  <section class="card" id="eval-section">
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75Zm0 10.5a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1-.75-.75ZM2 10a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Z" clip-rule="evenodd"/>
+        </svg>
+        <div>
+          <strong>Execução de JavaScript</strong>
+          <p class="hint">Habilita <code>browser_eval</code></p>
+        </div>
+      </div>
+      <label class="toggle" aria-label="Permitir execução de JavaScript">
+        <input type="checkbox" id="eval-toggle" />
+        <span class="slider slider--warning"></span>
+      </label>
+    </div>
+    <div id="eval-warning" class="alert alert--warning" hidden role="alert">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+      Execução de JS ativa
+    </div>
+  </section>
+
+  <!-- Log de comandos -->
+  <section class="card">
+    <div class="card-header">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 10a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 2 10Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/>
+      </svg>
+      <span>Comandos recentes</span>
+    </div>
+    <ul id="command-log" class="command-log" aria-label="Últimos comandos executados">
+      <li class="empty">Nenhum comando ainda</li>
+    </ul>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>

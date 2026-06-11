@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "beast-control",
+  "version": "0.1.0",
+  "description": "Ponte entre Claude Code e o Zen Browser para automação de tarefas.",
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icons/icon-48.png",
+      "96": "icons/icon-96.png"
+    }
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "permissions": [
+    "activeTab",
+    "alarms",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; connect-src ws://127.0.0.1:7331 wss://127.0.0.1:7331 http://127.0.0.1:7332"
+  },
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "beast-control@local",
+      "strict_min_version": "127.0"
+    }
+  }
+}

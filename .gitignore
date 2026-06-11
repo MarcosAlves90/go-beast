@@ -1,0 +1,4 @@
+extensions/*/mcp-server/node_modules/
+extensions/*/mcp-server/dist/
+extensions/*/mcp-server/package-lock.json
+*.DS_Store
