@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.5.2** — 2026-06-11
+**1.5.3** — 2026-06-11
 
 ---
 
@@ -53,6 +53,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 | code-verify-run | `hooks/code-verify-run.sh` | `Stop` | Runs tsc/mypy/go vet/cargo check + tests when source files were modified |
 | docs-update-flag | `hooks/docs-update-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project when source code files are modified (ignores .md/.rst/docs/) |
 | docs-update-remind | `hooks/docs-update-remind.sh` | `Stop` | Reminds to update README, docstrings, and CHANGELOG after code modifications |
+| git-strip-coauthored | `hooks/git-strip-coauthored.sh` | `PreToolUse (Bash)` | Blocks commits whose message contains a `Co-Authored-By` tag |
 
 ---
 

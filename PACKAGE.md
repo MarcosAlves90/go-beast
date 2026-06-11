@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.5.2
+version: 1.5.3
 date:    2026-06-11
 author:  @cherry-c
 type:    skill-pack
@@ -69,7 +69,8 @@ go-beast/
     ├── code-verify-flag.sh      ← PostToolUse(Edit/Write): flags project for post-session verification
     ├── code-verify-run.sh       ← Stop: runs tsc/mypy/go vet/cargo check + tests on flagged projects
     ├── docs-update-flag.sh      ← PostToolUse(Edit/Write): flags project when source files are modified
-    └── docs-update-remind.sh    ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
+    ├── docs-update-remind.sh    ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
+    └── git-strip-coauthored.sh  ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
 ```
 
 ---

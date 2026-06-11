@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.3] - 2026-06-11
+
+### Added
+
+- **hooks/git-strip-coauthored.sh** — `PreToolUse (Bash)`: bloqueia commits cuja mensagem contenha a tag `Co-Authored-By` (case-insensitive). Exige que o Claude reenvie o commit sem a tag antes de prosseguir.
+
+---
+
 ## [1.5.2] - 2026-06-11
 
 ### Fixed

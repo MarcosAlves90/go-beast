@@ -137,6 +137,7 @@ These hooks are active in `~/.claude/settings.json` for all projects:
 | code-verify-run | `Stop` | Runs tsc/mypy/go vet/cargo check + tests when source files were modified |
 | docs-update-flag | `PostToolUse (Edit/Write)` | Flags the project when source code files are modified (ignores .md/.rst/docs/) |
 | docs-update-remind | `Stop` | Reminds to update README, docstrings, and CHANGELOG after code modifications |
+| git-strip-coauthored | `PreToolUse (Bash)` | Blocks commits whose message contains a `Co-Authored-By` tag |
 
 ---
 

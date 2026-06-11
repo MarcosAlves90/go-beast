@@ -90,5 +90,6 @@ go-beast/
     ├── code-verify-flag.sh      ← PostToolUse(Edit/Write): flags project for verification
     ├── code-verify-run.sh       ← Stop: runs tsc/mypy/go vet/cargo check + tests
     ├── docs-update-flag.sh      ← PostToolUse(Edit/Write): flags project when source files are modified
-    └── docs-update-remind.sh    ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
+    ├── docs-update-remind.sh    ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
+    └── git-strip-coauthored.sh  ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
 ```
