@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.2] - 2026-06-11
+
+### Fixed
+
+- **go-smith/SKILL.md** e **go-swift/SKILL.md** adicionados ao repositório. Os dois diretórios estavam documentados em README.md, PACKAGE.md, CHANGELOG.md e go-star-eval.js desde v1.3.0, mas os arquivos físicos existiam apenas em `~/.claude/skills/` e nunca foram commitados no repo. Copiados da instalação local.
+
+---
+
 ## [1.5.1] - 2026-06-11
 
 ### Added
