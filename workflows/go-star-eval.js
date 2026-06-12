@@ -70,6 +70,14 @@ const SKILLS = {
     description: 'Audits an existing system architecture across five dimensions — structure/modularity, observability, reliability, scalability, and security posture — and produces a prioritized findings report with capability gaps and concrete improvement proposals, each referencing the next beast to invoke.',
     checklist: ['structure', 'observability', 'reliability', 'scalability', 'security', 'capability gaps', 'recommendation'],
   },
+  'go-crane': {
+    description: 'Implements observability for a running system — structured logging with correlation IDs, metrics collection (Prometheus/OpenTelemetry), distributed tracing, health endpoints, alerting rules, and runbook-linked dashboards. Produces OBSERVABILITY.md documenting signal inventory, retention policy, and alert thresholds.',
+    checklist: ['OBSERVABILITY.md', 'signal inventory', 'structured logging', 'metrics', 'tracing', 'health endpoints', 'alerting', 'runbooks'],
+  },
+  'go-ant': {
+    description: 'Profiles a running system to find real performance bottlenecks, establishes baseline measurements, applies targeted optimizations (query tuning, cache strategy, bundle reduction, async patterns), and validates improvement with before/after benchmarks. Produces PERF.md with evidence-backed findings and applied changes.',
+    checklist: ['PERF.md', 'baseline', 'profiler output', 'root cause', 'benchmark results', 'before/after'],
+  },
 }
 
 const INPUT_A = {

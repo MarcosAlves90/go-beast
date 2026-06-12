@@ -11,6 +11,22 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.7.0] - 2026-06-12
+
+### Added
+
+- **go-ant** — nova skill de profiling e otimização de performance. Cobre: baseline obrigatório antes de qualquer mudança, profiling com ferramentas nativas por stack (pprof, clinic.js, EXPLAIN ANALYZE, Lighthouse), diagnóstico de root cause (N+1, índice ausente, bundle excessivo, etc.), aplicação de fix cirúrgico, e benchmark antes/depois. Produz `PERF.md` com evidências. Nunca é invocada especulativamente — requer problema comprovado com dado numérico. Posição: após go-crane (métricas revelam o problema) ou após go-eagle (load tests revelam gargalo).
+
+---
+
+## [1.6.0] - 2026-06-12
+
+### Added
+
+- **go-crane** — nova skill de observabilidade e monitoramento. Cobre: logging estruturado com correlation IDs, métricas (Prometheus/OpenTelemetry), tracing distribuído, health endpoints (`/health`, `/ready`, `/live`), alertas com runbooks, e dashboards. Produz `OBSERVABILITY.md`. Posição no pipeline: após go-raven ou após go-wolf antes da revisão go-bear.
+
+---
+
 ## [1.5.3] - 2026-06-11
 
 ### Added

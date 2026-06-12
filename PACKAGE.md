@@ -2,8 +2,8 @@
 
 ```
 name:    go-beast
-version: 1.5.3
-date:    2026-06-11
+version: 1.7.0
+date:    2026-06-12
 author:  @cherry-c
 type:    skill-pack
 scope:   full-stack software development lifecycle
@@ -52,6 +52,10 @@ go-beast/
 │   └── SKILL.md           ← Claude Code Hook Authoring
 ├── go-kite/
 │   └── SKILL.md           ← Architecture Health Audit (meta-skill)
+├── go-crane/
+│   └── SKILL.md           ← Observability & Monitoring
+├── go-ant/
+│   └── SKILL.md           ← Performance Profiling & Optimization
 ├── extensions/
 │   └── beast-control/          ← Firefox/Zen Browser MCP bridge (optional — install separately)
 │       ├── README.md
@@ -97,6 +101,8 @@ go-hawk
 ```
 go-mole    ← session briefing; invoke before any other beast on an unfamiliar project
 go-kite    ← architecture health audit; invoke before go-fox revisions on existing systems
+go-crane   ← observability; invoke after go-raven or after go-wolf before go-bear pre-release review
+go-ant     ← performance; invoke only when a numeric baseline proves a bottleneck exists
 go-jay     ← AI context files; invoke when instructions cannot express the needed behavior
   └─► go-swift   ← hook automation; invoke after go-jay when shell-level automation is needed
         └─► go-raven  ← includes hooks in CI/CD and onboarding scripts

@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.5.3** — 2026-06-11
+**1.7.0** — 2026-06-12
 
 ---
 
@@ -31,6 +31,8 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 | [go-smith](go-smith/SKILL.md) | Smith | Skill Authoring | Gap analysis, SKILL.md creation, pack integration (meta-skill) |
 | [go-swift](go-swift/SKILL.md) | Swift | Hook Authoring | Claude Code hook scripts, settings.json wiring, lifecycle automation |
 | [go-kite](go-kite/SKILL.md) | Kite | Architecture Audit | Health audit of existing systems: 5 dimensions, capability gaps, HTML report |
+| [go-crane](go-crane/SKILL.md) | Crane | Observability | Structured logging, metrics, distributed tracing, health endpoints, alerting |
+| [go-ant](go-ant/SKILL.md) | Ant | Performance | Profiling, bottleneck diagnosis, targeted optimization, before/after benchmarks |
 
 ---
 
@@ -72,10 +74,12 @@ Optional tools that augment the pack's capabilities. Not phases — not required
 ## Standard pipeline
 
 ```
-go-hawk → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle → go-bear → go-raven → go-owl
+go-hawk → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle → go-bear → go-raven → [go-crane] → go-owl
 ```
 
 go-bear can be invoked earlier — and should be — whenever a feature involves auth, payments, PII, or file uploads.
+go-crane can be invoked after go-wolf when observability must be added before go-bear's pre-release review.
+go-ant is invoked only when a performance problem is proven with a numeric baseline — never speculatively.
 go-owl can be invoked at any phase.
 
 **Meta-skills** (invoked on demand, not bound to a phase):
