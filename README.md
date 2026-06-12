@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.9.0** — 2026-06-12
+**1.10.0** — 2026-06-12
 
 ---
 
@@ -49,7 +49,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 | Hook | File | Trigger | Purpose |
 |---|---|---|---|
-| sync-go-beast-skills | `hooks/sync-go-beast-skills.sh` | `SessionStart` | Symlinks skills/workflows/hooks + copies `CLAUDE.global.md` → `~/.claude/CLAUDE.md` |
+| sync-go-beast-skills | `hooks/sync-go-beast-skills.sh` | `SessionStart` | Symlinks skills/workflows/hooks + copies `AGENTS.global.md` → `~/.claude/CLAUDE.md` |
 | git-commit-guard | `hooks/git-commit-guard.sh` | `PreToolUse (Bash)` | Blocks commits/staging of sensitive files and build artifacts |
 | code-dedup-check | `hooks/code-dedup-check.sh` | `PreToolUse (Edit/Write)` | Warns before creating functions/classes that already exist in the project |
 | code-verify-flag | `hooks/code-verify-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project for post-session type/test verification |
@@ -153,9 +153,9 @@ The hook uses **symlinks**, not copies. Each skill directory, workflow file, and
 | Skills (`go-*/`) | `go-beast/go-*/` | `~/.claude/skills/go-*/` | `ln -s` |
 | Workflows (`*.js`) | `go-beast/workflows/` | `~/.claude/workflows/` | `ln -s` |
 | Hooks (`*.sh`) | `go-beast/hooks/` | `~/.claude/hooks/` | `ln -s` |
-| Global instructions | `go-beast/CLAUDE.global.md` | `~/.claude/CLAUDE.md` | `cp` (overwrite) |
+| Global instructions | `go-beast/AGENTS.global.md` | `~/.claude/CLAUDE.md` | `cp` (overwrite) |
 
-`CLAUDE.global.md` is the only file that is **copied**, not linked — because Claude Code reads `~/.claude/CLAUDE.md` directly and the source must stay in the repo for version control.
+`AGENTS.global.md` is the only file that is **copied**, not linked — because Claude Code reads `~/.claude/CLAUDE.md` directly and the source must stay in the repo for version control.
 
 **Adding a new beast after initial setup:** the symlink is created on the next session start. To activate immediately:
 

@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.9.0
+version: 1.10.0
 date:    2026-06-12
 author:  @cherry-c
 type:    skill-pack
@@ -15,8 +15,8 @@ scope:   full-stack software development lifecycle
 
 ```
 go-beast/
-├── CLAUDE.md              ← Agent context: conventions, eval usage, adding new beasts
-├── CLAUDE.global.md       ← Global agent instructions — synced to ~/.claude/CLAUDE.md on SessionStart
+├── AGENTS.md              ← Agent context: conventions, eval usage, adding new beasts
+├── AGENTS.global.md       ← Global agent instructions — synced to ~/.claude/CLAUDE.md on SessionStart
 ├── README.md              ← Pack index and pipeline map
 ├── PACKAGE.md             ← This file — manifest and metadata
 ├── CHANGELOG.md           ← Version history
@@ -69,7 +69,7 @@ go-beast/
 ├── workflows/
 │   └── go-star-eval.js    ← Eval pipeline for all go-* skills (A/B/C benchmark, args.skills filter)
 └── hooks/
-    ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks + copies CLAUDE.global.md
+    ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks + copies AGENTS.global.md
     ├── git-commit-guard.sh      ← PreToolUse(Bash): blocks commits of sensitive files/build artifacts
     ├── code-dedup-check.sh      ← PreToolUse(Edit/Write): warns on duplicate function/class names
     ├── code-verify-flag.sh      ← PostToolUse(Edit/Write): flags project for post-session verification

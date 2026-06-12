@@ -51,9 +51,9 @@ for hook_file in "$GO_BEAST_DIR"/hooks/*.sh; do
   fi
 done
 
-# Sync CLAUDE.global.md → ~/.claude/CLAUDE.md
-GLOBAL_MD="$GO_BEAST_DIR/CLAUDE.global.md"
+# Sync AGENTS.global.md → ~/.claude/CLAUDE.md
+GLOBAL_MD="$GO_BEAST_DIR/AGENTS.global.md"
 if [ -f "$GLOBAL_MD" ]; then
   cp "$GLOBAL_MD" "$HOME/.claude/CLAUDE.md"
-  echo "go-beast: synced CLAUDE.global.md → ~/.claude/CLAUDE.md"
+  echo "go-beast: synced AGENTS.global.md → ~/.claude/CLAUDE.md"
 fi

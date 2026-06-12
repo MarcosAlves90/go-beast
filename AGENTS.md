@@ -82,8 +82,8 @@ Note: `/go-star-eval` slash command does not support args — use the Workflow t
 
 ```
 go-beast/
-├── CLAUDE.md              ← This file (project-level agent context)
-├── CLAUDE.global.md       ← Global agent instructions — source of truth for ~/.claude/CLAUDE.md
+├── AGENTS.md              ← This file (project-level agent context)
+├── AGENTS.global.md       ← Global agent instructions — source of truth for ~/.claude/AGENTS.md
 ├── README.md              ← Pack index, pipeline map, install instructions
 ├── PACKAGE.md             ← Manifest, directory tree, dependency graph, versioning policy
 ├── CHANGELOG.md           ← Version history
@@ -92,7 +92,7 @@ go-beast/
 ├── workflows/
 │   └── go-star-eval.js    ← Eval pipeline (A/B/C benchmark, args.skills filter)
 └── hooks/
-    ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks + syncs CLAUDE.global.md
+    ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks + syncs AGENTS.global.md
     ├── git-commit-guard.sh      ← PreToolUse(Bash): blocks commits of sensitive files
     ├── code-dedup-check.sh      ← PreToolUse(Edit/Write): warns on duplicate declarations
     ├── code-verify-flag.sh      ← PostToolUse(Edit/Write): flags project for verification

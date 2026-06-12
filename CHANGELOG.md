@@ -11,6 +11,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.10.0] - 2026-06-12
+
+### Changed
+
+- **CLAUDE.md** renomeado para **AGENTS.md** — formato reconhecido por Claude Code, Gemini CLI, Copilot CLI e outros agentes.
+- **CLAUDE.global.md** renomeado para **AGENTS.global.md** — mantém convenção de nomes; remove prefixo Claude-específico.
+- **hooks/sync-go-beast-skills.sh**: atualizado para ler `AGENTS.global.md` em vez de `CLAUDE.global.md`. Destino (`~/.claude/CLAUDE.md`) inalterado.
+- **PACKAGE.md**, **README.md**: todas as referências aos arquivos renomeados atualizadas.
+
+---
+
 ## [1.9.0] - 2026-06-12
 
 ### Changed
