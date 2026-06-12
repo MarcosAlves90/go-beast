@@ -24,16 +24,16 @@ User: "Add a rule that the agent must always write tests before implementation."
 Check for all of these. Note which exist and which are absent.
 
 **Global (user-level)**
-- `~/.claude/CLAUDE.md`
-- `~/.claude/projects/<project-slug>/memory/*.md`
-- `~/.claude/projects/<project-slug>/memory/MEMORY.md`
+- `~/.claude/CLAUDE.md` *(Claude Code only)*
+- `~/.claude/projects/<project-slug>/memory/*.md` *(Claude Code only)*
+- `~/.claude/projects/<project-slug>/memory/MEMORY.md` *(Claude Code only)*
 
 **Project-level**
-- `.claude/CLAUDE.md`
+- `.claude/CLAUDE.md` *(Claude Code only)*
 - `AGENTS.md`
 - `GEMINI.md`, `COPILOT.md`
 - `CONTEXT.md` or any `*context*.md` at root
-- `.claude/settings.json` (for hooks and permissions — read only, don't edit unless asked)
+- `.claude/settings.json` *(Claude Code only)* (for hooks and permissions — read only, don't edit unless asked)
 
 ### 2. Read before writing
 
@@ -86,7 +86,7 @@ After writing, output:
 - Never fabricate instructions the user did not request.
 - Never delete existing rules without explicit user confirmation.
 - If a requested rule conflicts with an existing one, surface the conflict and ask which wins before writing.
-- If editing the global `~/.claude/CLAUDE.md`, state that the change affects **all projects** before proceeding.
+- If editing the global `~/.claude/CLAUDE.md` *(Claude Code only)*, state that the change affects **all projects** before proceeding.
 - Memory files (`memory/*.md`) have frontmatter — preserve the `name`, `description`, `metadata.type` fields exactly. Only edit the body.
 
 ## File-specific guidance

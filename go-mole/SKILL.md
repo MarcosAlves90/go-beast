@@ -23,7 +23,7 @@ go-mole digs through the project's written knowledge and surfaces it as a compac
 Search the working directory for (in priority order):
 
 **Agent/AI instructions**
-- [ ] `CLAUDE.md`, `.claude/CLAUDE.md`
+- [ ] `CLAUDE.md`, `.claude/CLAUDE.md` *(Claude Code only)*
 - [ ] `AGENTS.md`
 - [ ] `GEMINI.md`, `COPILOT.md`
 
