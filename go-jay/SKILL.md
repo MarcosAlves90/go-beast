@@ -1,13 +1,13 @@
 ---
 name: go-jay
-version: 1.0.0
-description: Creates, audits, edits, and synchronizes AI context files — CLAUDE.md (global and project), AGENTS.md, GEMINI.md, CONTEXT.md, and memory files under .claude/memory/. Rewrites affected sections cleanly to improve AI behavior without causing regressions. Use when the user wants to improve how an AI agent understands a project, add or change agent rules, fix outdated context, or sync instructions across multiple agent config files.
-when_to_use: Use when user says "update CLAUDE.md", "improve context", "add a rule for the agent", "fix the agent instructions", "sync AGENTS.md", "edit my memory files", or any request to change how an AI agent is configured or instructed in the current project or globally.
+version: 1.1.0
+description: Creates, audits, edits, and synchronizes AI agent context files — CLAUDE.md, AGENTS.md, GEMINI.md, COPILOT.md, CONTEXT.md, and agent memory files. Rewrites affected sections cleanly to improve agent behavior without causing regressions. Agent-agnostic: works with any context file format; Claude Code memory paths are one supported target among others.
+when_to_use: Use when the user wants to improve how an AI agent understands a project, add or change agent rules, fix outdated context, or sync instructions across multiple agent config files — regardless of which agent (Claude, Gemini, Copilot, etc.) is in use.
 ---
 
 # go-jay — AI Context File Editor
 
-go-jay writes and maintains the files that shape AI agent behavior: instructions, rules, context, and memory.
+go-jay writes and maintains the files that shape AI agent behavior: instructions, rules, context, and memory. It is agent-agnostic — the workflow applies to CLAUDE.md, AGENTS.md, GEMINI.md, COPILOT.md, or any other context format.
 
 ## Quick start
 

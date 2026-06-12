@@ -2,7 +2,7 @@
 name: go-beaver
 version: 1.1.0
 description: Creates a working, runnable project skeleton — monorepo or multi-repo structure, dependency install, linter, formatter, Git hooks, env files, and dev server validation.
-when_to_use: Use when starting a new project from scratch or restructuring an existing repo layout. Invoke after go-fox has produced STACK.md. Can also invoke the setup-pre-commit skill for Git hook configuration.
+when_to_use: Use when starting a new project from scratch or restructuring an existing repo layout. Invoke after go-fox has produced STACK.md. The setup-pre-commit skill can be loaded for Git hook configuration if available.
 ---
 
 # go-beaver — Scaffolding & Project Init

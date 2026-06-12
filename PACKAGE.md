@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.8.0
+version: 1.9.0
 date:    2026-06-12
 author:  @cherry-c
 type:    skill-pack

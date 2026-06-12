@@ -1,13 +1,14 @@
 ---
 name: go-swift
-version: 1.0.0
-description: Designs, writes, tests, and registers Claude Code hooks — shell scripts triggered by lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop, SubagentStop, PreCompact). Produces hook scripts, wires them into settings.json, and verifies execution.
-when_to_use: Use when the user wants to automate a behavior on a Claude Code event — before, after, or around tool calls, session start/stop, or compaction. Invoke after go-jay (context file edits) when the desired behavior cannot be expressed as instructions alone and requires shell-level automation. Invoke before go-raven when hooks are part of the deployment or developer-setup story.
+version: 1.1.0
+platform: Claude Code
+description: "[Claude Code] Designs, writes, tests, and registers Claude Code hooks — shell scripts triggered by lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop, SubagentStop, PreCompact). Produces hook scripts, wires them into settings.json, and verifies execution."
+when_to_use: "Use when the user wants to automate a behavior on a Claude Code lifecycle event — before, after, or around tool calls, session start/stop, or compaction. Claude Code only: other agents do not have an equivalent hook system. Invoke after go-jay when the desired behavior cannot be expressed as instructions alone. Invoke before go-raven when hooks are part of the deployment or developer-setup story."
 ---
 
-# go-swift — Claude Code Hook Authoring
+# go-swift — Claude Code Hook Authoring `[Claude Code only]`
 
-go-swift reacts before the moment passes. It does not build features — it wires automated responses to Claude Code lifecycle events.
+go-swift reacts before the moment passes. It does not build features — it wires automated responses to Claude Code lifecycle events. This skill is specific to Claude Code and has no equivalent for other agents.
 
 ## Quick start
 

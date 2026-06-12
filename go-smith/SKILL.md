@@ -162,6 +162,6 @@ Announce where the new beast inserts and why.
 
 ## Output
 
-- `~/.claude/skills/go-<animal>/SKILL.md` — complete, versioned skill file
+- `go-<animal>/SKILL.md` in the pack repository — complete, versioned skill file (the agent's skill loader directory, e.g. `~/.claude/skills/`, is populated by the sync hook)
 - Updated handoff sequence — where the new beast fits in the pack
 - Gap analysis note — why this domain was not covered before

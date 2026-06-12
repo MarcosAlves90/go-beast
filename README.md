@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.8.0** — 2026-06-12
+**1.9.0** — 2026-06-12
 
 ---
 
@@ -27,10 +27,10 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 | [go-bear](go-bear/SKILL.md) | Bear | Security | OWASP Top 10, secrets, dependency audit, threat model |
 | [go-raven](go-raven/SKILL.md) | Raven | CI/CD | Pipeline design, environment strategy, release automation |
 | [go-owl](go-owl/SKILL.md) | Owl | Documentation | README, API reference, ADRs, runbooks, changelog |
-| [go-jay](go-jay/SKILL.md) | Jay | AI Context | CLAUDE.md, AGENTS.md, GEMINI.md authoring and synchronization |
+| [go-jay](go-jay/SKILL.md) | Jay | AI Context | Agent context file authoring and synchronization (CLAUDE.md, AGENTS.md, GEMINI.md, COPILOT.md) |
 | [go-mole](go-mole/SKILL.md) | Mole | Briefing | Documentation scan, project briefing for downstream skills |
 | [go-smith](go-smith/SKILL.md) | Smith | Skill Authoring | Gap analysis, SKILL.md creation, pack integration (meta-skill) |
-| [go-swift](go-swift/SKILL.md) | Swift | Hook Authoring | Claude Code hook scripts, settings.json wiring, lifecycle automation |
+| [go-swift](go-swift/SKILL.md) `[Claude Code]` | Swift | Hook Authoring | Claude Code hook scripts, settings.json wiring, lifecycle automation |
 | [go-kite](go-kite/SKILL.md) | Kite | Architecture Audit | Health audit of existing systems: 5 dimensions, capability gaps, HTML report |
 | [go-crane](go-crane/SKILL.md) | Crane | Observability | Structured logging, metrics, distributed tracing, health endpoints, alerting |
 | [go-ant](go-ant/SKILL.md) | Ant | Performance | Profiling, bottleneck diagnosis, targeted optimization, before/after benchmarks |
@@ -105,7 +105,11 @@ go-kite                           (architecture audit before go-fox revisions)
 
 ---
 
-## Installing in Claude Code
+## Installation
+
+The skills are plain Markdown files — any agent that can read files can use them. Each agent has its own setup path.
+
+### Claude Code
 
 Clone the repo and run the sync hook once to wire everything up:
 
@@ -126,13 +130,23 @@ Then add the hook to `~/.claude/settings.json` so it runs on every session start
 }
 ```
 
-After setup, all skills, workflows, and hooks are available automatically in every Claude Code session.
+After setup, all skills and workflows are available automatically. Skills load with `/go-hawk`, `/go-fox`, etc. Workflows run via the Workflow tool or `/workflows`.
 
-Skills invoke with `/go-hawk`, `/go-fox`, etc. Workflows run via the Workflow tool or `/workflows`.
+### Gemini CLI / Copilot CLI / other agents
 
-### How the sync works
+Clone the repo:
 
-The hook uses **symlinks**, not copies. Each skill directory, workflow file, and hook script in the repo is linked into `~/.claude/` — so edits to the repo are reflected immediately without re-running the hook.
+```bash
+git clone <repo-url> ~/Documents/@cherry-c/go-beast
+```
+
+Point your agent at the skill directory. Each skill is a self-contained `SKILL.md` — no dependencies, no platform-specific syntax. Reference the skill file path in your agent's context or session start configuration according to that agent's documentation.
+
+> Note: `go-swift` `[Claude Code only]` requires Claude Code's hook system and is not applicable to other agents.
+
+### How the Claude Code sync works
+
+The hook uses **symlinks**, not copies. Each skill directory, workflow file, and hook script is linked into `~/.claude/` — so edits to the repo are reflected immediately without re-running the hook.
 
 | What | Source | Target | Mechanism |
 |------|--------|--------|-----------|
@@ -143,13 +157,13 @@ The hook uses **symlinks**, not copies. Each skill directory, workflow file, and
 
 `CLAUDE.global.md` is the only file that is **copied**, not linked — because Claude Code reads `~/.claude/CLAUDE.md` directly and the source must stay in the repo for version control.
 
-**Adding a new beast after the initial setup:** the symlink for the new skill directory is created the next time `sync-go-beast-skills.sh` runs (i.e., on the next Claude Code session start). To make it available immediately without restarting, run the sync script manually:
+**Adding a new beast after initial setup:** the symlink is created on the next session start. To activate immediately:
 
 ```bash
 bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
 ```
 
-**Removing a beast:** deleting the directory from the repo leaves a dangling symlink in `~/.claude/skills/`. Remove it manually:
+**Removing a beast:** deleting the directory from the repo leaves a dangling symlink. Remove it manually:
 
 ```bash
 rm ~/.claude/skills/go-<animal>

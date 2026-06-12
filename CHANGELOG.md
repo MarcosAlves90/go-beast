@@ -11,6 +11,20 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.9.0] - 2026-06-12
+
+### Changed
+
+- **go-swift/SKILL.md**: marcada explicitamente como `[Claude Code only]` no título e frontmatter. Adicionado campo `platform: Claude Code`. Conteúdo inalterado.
+- **go-jay/SKILL.md**: tornada agnóstica. Descrição reescrita para não citar Claude Code como primário — CLAUDE.md é um target entre outros. Título atualizado para refletir suporte a qualquer formato de contexto de agente.
+- **go-smith/SKILL.md**: output path generalizado — removida referência a `~/.claude/skills/` como destino; o diretório de skills do agente é responsabilidade do sistema de sync, não da skill.
+- **go-hawk/SKILL.md**: `invoke` → `load` na lista de meta-skills; go-swift adicionada com marcação `[Claude Code only]`.
+- **go-beaver/SKILL.md**: `invoke the setup-pre-commit skill` → `the setup-pre-commit skill can be loaded` (linguagem agnóstica).
+- **README.md**: seção "Installing in Claude Code" renomeada para "Installation" e expandida com instruções para Gemini CLI / Copilot CLI / outros agentes. Tabela de skills: go-jay e go-swift atualizadas para refletir escopo real.
+- **CLAUDE.md**: adicionada nota de escopo — este arquivo é o contexto do agente *mantenedor* do repo, não dos agentes que usam as skills.
+
+---
+
 ## [1.8.0] - 2026-06-12
 
 ### Added

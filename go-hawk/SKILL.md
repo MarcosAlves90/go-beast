@@ -64,10 +64,11 @@ go-hawk → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle
 
 Adjust based on actual requirements. Always call go-bear early if auth, PII, or payments are in scope.
 
-**Pack meta-skills (invoke on demand, not in sequence):**
+**Pack meta-skills (load on demand, not in sequence):**
 - `go-mole` — project briefing before any session
 - `go-jay` — AI context file editing
 - `go-smith` — create or audit skills for the go-* family
+- `go-swift` — Claude Code hook authoring `[Claude Code only]`
 
 ## Rules
 
