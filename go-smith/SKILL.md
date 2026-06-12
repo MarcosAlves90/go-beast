@@ -108,7 +108,7 @@ when_to_use: Use when <specific trigger — phase, artifact, user signal>. Invok
 - Max 1024 chars total in frontmatter
 - `description`: what it does — tools, artifacts, verifications (third person)
 - `when_to_use`: starts with "Use when" — trigger condition only, never workflow summary
-- Never summarize the workflow in `when_to_use` — Claude will follow the description instead of reading the skill
+- Never summarize the workflow in `when_to_use` — the agent will follow the description instead of reading the skill
 
 ### 4. Write the workflow steps
 

@@ -8,7 +8,7 @@ This is the go-beast skill pack repository. It contains skills, workflows, and h
 
 ## What this repo is
 
-A versioned collection of Claude Code skills (`go-hawk`, `go-fox`, etc.), one workflow (`go-star-eval`), and one hook (`sync-go-beast-skills.sh`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
+A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.), one workflow (`go-star-eval`), and one hook (`sync-go-beast-skills.sh`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
 
 ---
 
@@ -83,7 +83,7 @@ Note: `/go-star-eval` slash command does not support args — use the Workflow t
 ```
 go-beast/
 ├── AGENTS.md              ← This file (project-level agent context)
-├── AGENTS.global.md       ← Global agent instructions — source of truth for ~/.claude/AGENTS.md
+├── AGENTS.global.md       ← Global agent instructions — source of truth for ~/.claude/CLAUDE.md
 ├── README.md              ← Pack index, pipeline map, install instructions
 ├── PACKAGE.md             ← Manifest, directory tree, dependency graph, versioning policy
 ├── CHANGELOG.md           ← Version history
