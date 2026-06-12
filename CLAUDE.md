@@ -54,6 +54,12 @@ If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file
 6. Update `CHANGELOG.md` and bump version (minor)
 7. Run `go-star-eval` with `args: { skills: ["go-<animal>"] }` to validate the new skill before a full run
 
+**Symlink note:** the skill becomes available in Claude Code when `sync-go-beast-skills.sh` runs (next SessionStart). To use it immediately after creation, run the hook manually:
+
+```bash
+bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
+```
+
 ---
 
 ## Running the eval

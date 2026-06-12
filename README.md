@@ -128,6 +128,31 @@ After setup, all skills, workflows, and hooks are available automatically in eve
 
 Skills invoke with `/go-hawk`, `/go-fox`, etc. Workflows run via the Workflow tool or `/workflows`.
 
+### How the sync works
+
+The hook uses **symlinks**, not copies. Each skill directory, workflow file, and hook script in the repo is linked into `~/.claude/` — so edits to the repo are reflected immediately without re-running the hook.
+
+| What | Source | Target | Mechanism |
+|------|--------|--------|-----------|
+| Skills (`go-*/`) | `go-beast/go-*/` | `~/.claude/skills/go-*/` | `ln -s` |
+| Workflows (`*.js`) | `go-beast/workflows/` | `~/.claude/workflows/` | `ln -s` |
+| Hooks (`*.sh`) | `go-beast/hooks/` | `~/.claude/hooks/` | `ln -s` |
+| Global instructions | `go-beast/CLAUDE.global.md` | `~/.claude/CLAUDE.md` | `cp` (overwrite) |
+
+`CLAUDE.global.md` is the only file that is **copied**, not linked — because Claude Code reads `~/.claude/CLAUDE.md` directly and the source must stay in the repo for version control.
+
+**Adding a new beast after the initial setup:** the symlink for the new skill directory is created the next time `sync-go-beast-skills.sh` runs (i.e., on the next Claude Code session start). To make it available immediately without restarting, run the sync script manually:
+
+```bash
+bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
+```
+
+**Removing a beast:** deleting the directory from the repo leaves a dangling symlink in `~/.claude/skills/`. Remove it manually:
+
+```bash
+rm ~/.claude/skills/go-<animal>
+```
+
 ---
 
 ## Changelog
