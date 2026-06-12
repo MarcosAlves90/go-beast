@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.7.0** — 2026-06-12
+**1.8.0** — 2026-06-12
 
 ---
 
@@ -17,6 +17,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 | Skill | Animal | Phase | Unique responsibility |
 |---|---|---|---|
 | [go-hawk](go-hawk/SKILL.md) | Hawk | Discovery | Requirements elicitation, scope definition, handoff plan |
+| [go-lark](go-lark/SKILL.md) | Lark | Solution Exploration | Generate 3–5 approaches, evaluate trade-offs, select one with rationale |
 | [go-fox](go-fox/SKILL.md) | Fox | Architecture | Stack selection, ADRs, component diagrams, interface contracts |
 | [go-beaver](go-beaver/SKILL.md) | Beaver | Scaffolding | Monorepo setup, tooling config, dev environment bootstrap |
 | [go-wolf](go-wolf/SKILL.md) | Wolf | Backend | REST/GraphQL API, auth, business logic, server-side validation |
@@ -74,11 +75,12 @@ Optional tools that augment the pack's capabilities. Not phases — not required
 ## Standard pipeline
 
 ```
-go-hawk → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle → go-bear → go-raven → [go-crane] → go-owl
+go-hawk → [go-lark] → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle → go-bear → go-raven → [go-crane] → go-owl
 ```
 
 go-bear can be invoked earlier — and should be — whenever a feature involves auth, payments, PII, or file uploads.
 go-crane can be invoked after go-wolf when observability must be added before go-bear's pre-release review.
+go-lark is optional when requirements already constrain the solution to a single approach.
 go-ant is invoked only when a performance problem is proven with a numeric baseline — never speculatively.
 go-owl can be invoked at any phase.
 

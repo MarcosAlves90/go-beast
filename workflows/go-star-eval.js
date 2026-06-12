@@ -14,6 +14,10 @@ const SKILLS = {
     description: 'Conducts structured discovery interviews, produces a versioned REQUIREMENTS.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project.',
     checklist: ['Problem statement', 'Users and roles', 'Functional requirements', 'Out of scope', 'Risks', 'handoff'],
   },
+  'go-lark': {
+    description: 'Explores the solution space for approved requirements — generates 3–5 distinct approaches, evaluates each against the project constraints, selects one with explicit rationale, and produces APPROACH.md as a decision record.',
+    checklist: ['APPROACH.md', 'approaches considered', 'evaluation', 'selected approach', 'trade-offs', 'deferred decisions'],
+  },
   'go-fox': {
     description: 'Translates approved requirements into an architecture decision record (ADR), technology stack selection, Mermaid component diagram, and interface contracts.',
     checklist: ['ADR', 'Mermaid', 'STACK.md', 'CONTRACTS.md'],

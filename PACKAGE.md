@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.7.0
+version: 1.8.0
 date:    2026-06-12
 author:  @cherry-c
 type:    skill-pack
@@ -22,6 +22,8 @@ go-beast/
 ├── CHANGELOG.md           ← Version history
 ├── go-hawk/
 │   └── SKILL.md           ← Discovery & Requirements
+├── go-lark/
+│   └── SKILL.md           ← Solution Space Exploration
 ├── go-fox/
 │   └── SKILL.md           ← Architecture & Design
 ├── go-beaver/
@@ -85,7 +87,8 @@ Each skill lists its prerequisites. The canonical execution order is:
 
 ```
 go-hawk
-  └─► go-fox
+  └─► go-lark (optional — invoke when problem space is ambiguous)
+        └─► go-fox
         └─► go-otter (parallel with go-fox is fine)
         └─► go-beaver
               ├─► go-wolf

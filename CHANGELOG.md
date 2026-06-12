@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.8.0] - 2026-06-12
+
+### Added
+
+- **go-lark** — nova skill de exploração do espaço de soluções. Posição: `go-hawk → go-lark → go-fox`. Cobre: geração de 3–5 abordagens distintas, avaliação contra constraints e atributos de qualidade do projeto, seleção com rationale explícito. Produz `APPROACH.md` como handoff para go-fox. Opcional quando os requisitos já restringem a solução a uma única abordagem.
+
+---
+
 ## [1.7.0] - 2026-06-12
 
 ### Added
