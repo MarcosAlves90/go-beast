@@ -26,6 +26,13 @@ done
 
 # Sync workflows (*.js files)
 mkdir -p "$WORKFLOWS_DIR"
+# Remove dangling symlinks pointing into go-beast/workflows/ that no longer exist
+for target in "$WORKFLOWS_DIR"/*.js; do
+  [ -L "$target" ] || continue
+  dest=$(readlink "$target")
+  [[ "$dest" == "$GO_BEAST_DIR/workflows/"* ]] || continue
+  [ -f "$dest" ] || { rm "$target"; echo "go-beast: removed stale workflow symlink → $(basename "$target")"; }
+done
 for workflow_file in "$GO_BEAST_DIR"/workflows/*.js; do
   [ -f "$workflow_file" ] || continue
   workflow_name=$(basename "$workflow_file")
