@@ -19,8 +19,10 @@ rm -f "$FLAG_FILE"
 
 [[ ! -d "$PROJECT_DIR" ]] && exit 0
 
-# Detecta se há documentação no projeto para guiar o lembrete
+# Detecta se há documentação e versionamento no projeto para guiar o lembrete
 DOC_HINTS=""
+HAS_VERSIONING=false
+
 if [[ -f "$PROJECT_DIR/README.md" ]]; then
   DOC_HINTS="${DOC_HINTS}README.md "
 fi
@@ -30,6 +32,14 @@ fi
 if [[ -f "$PROJECT_DIR/CHANGELOG.md" ]]; then
   DOC_HINTS="${DOC_HINTS}CHANGELOG.md "
 fi
+
+# Detecta arquivos de versionamento
+for vfile in PACKAGE.md package.json pyproject.toml Cargo.toml go.mod; do
+  if [[ -f "$PROJECT_DIR/$vfile" ]]; then
+    HAS_VERSIONING=true
+    break
+  fi
+done
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════╗"
@@ -46,6 +56,9 @@ echo "║  Considere atualizar:                                   ║"
 echo "║  • README (uso, exemplos, configuração)                 ║"
 echo "║  • Comentários JSDoc/docstrings nas funções alteradas   ║"
 echo "║  • CHANGELOG se for uma mudança relevante               ║"
+if [[ "$HAS_VERSIONING" == "true" ]]; then
+echo "║  • Versão em PACKAGE.md/package.json e README           ║"
+fi
 echo "╚══════════════════════════════════════════════════════════╝"
 echo ""
 
