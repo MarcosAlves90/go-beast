@@ -78,9 +78,6 @@ go-beast/
     ├── docs-update-flag.sh      ← PostToolUse(Edit/Write): flags project when source files are modified
     ├── docs-update-remind.sh    ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
     ├── git-strip-coauthored.sh  ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
-    ├── taskflow-session-log.sh   ← SessionStart: logs session start to taskflow-sessions.log
-    ├── taskflow-guard-db.sh      ← PreToolUse(Bash): blocks destructive SQL without explicit bypass
-    └── taskflow-node-postrun.sh  ← PostToolUse(Bash): logs npm/node/jest errors to taskflow-errors.log
 ```
 
 ---
