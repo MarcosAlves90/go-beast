@@ -9,7 +9,7 @@ export const meta = {
 
 // ─── Infraestrutura ────────────────────────────────────────────────────────
 
-const HOOKS_DIR = `${process.env.HOME}/.claude/hooks`
+const HOOKS_DIR = `${args?.home ?? "/Users/marcos.lopes"}/.claude/hooks`
 
 // Serializa um objeto JS como JSON com newlines escapadas (formato que o runtime envia)
 function json(obj) {
@@ -164,14 +164,14 @@ const TESTS = [
     name: 'cria flag para arquivo .ts',
     input: editInput('/workspace/src/app.ts'),
     expectExit: 0,
-    expectFlagAfter: `${process.env.HOME}/.claude/.docs-update-pending`,
+    expectFlagAfter: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
   },
   {
     hook: 'docs-update-flag.sh',
     name: 'não cria flag para arquivo .md',
     input: editInput('/workspace/README.md', '# Docs update'),
     expectExit: 0,
-    expectNoFlag: `${process.env.HOME}/.claude/.docs-update-pending`,
+    expectNoFlag: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
   },
   {
     hook: 'docs-update-flag.sh',
@@ -186,28 +186,28 @@ const TESTS = [
     name: 'cria flag para arquivo .py',
     input: editInput('/workspace/src/app.py'),
     expectExit: 0,
-    expectFlagAfter: `${process.env.HOME}/.claude/.code-verify-pending`,
+    expectFlagAfter: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
   },
   {
     hook: 'code-verify-flag.sh',
     name: 'não cria flag para arquivo .md',
     input: editInput('/workspace/README.md', '# Docs'),
     expectExit: 0,
-    expectNoFlag: `${process.env.HOME}/.claude/.code-verify-pending`,
+    expectNoFlag: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
   },
   {
     hook: 'code-verify-flag.sh',
     name: 'cria flag para arquivo .go',
     input: editInput('/workspace/main.go'),
     expectExit: 0,
-    expectFlagAfter: `${process.env.HOME}/.claude/.code-verify-pending`,
+    expectFlagAfter: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
   },
 
   // ── docs-update-remind ───────────────────────────────────────────────────
   {
     hook: 'docs-update-remind.sh',
     name: 'silencioso sem flag file',
-    setup: `rm -f ${process.env.HOME}/.claude/.docs-update-pending`,
+    setup: `rm -f ${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
     input: stopInput(false),
     expectExit: 0,
     expectNoOutput: 'Lembrete',
@@ -215,7 +215,7 @@ const TESTS = [
   {
     hook: 'docs-update-remind.sh',
     name: 'exibe aviso quando flag existe',
-    setup: `echo /tmp > ${process.env.HOME}/.claude/.docs-update-pending`,
+    setup: `echo /tmp > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
     input: stopInput(false),
     expectExit: 0,
     expectOutput: 'Lembrete',
@@ -223,7 +223,7 @@ const TESTS = [
   {
     hook: 'docs-update-remind.sh',
     name: 'respeita stop_hook_active=true',
-    setup: `echo /tmp > ${process.env.HOME}/.claude/.docs-update-pending`,
+    setup: `echo /tmp > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
     input: stopInput(true),
     expectExit: 0,
     expectNoOutput: 'Lembrete',
@@ -233,21 +233,21 @@ const TESTS = [
   {
     hook: 'code-verify-run.sh',
     name: 'exit 0 sem flag file',
-    setup: `rm -f ${process.env.HOME}/.claude/.code-verify-pending`,
+    setup: `rm -f ${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
     input: stopInput(false),
     expectExit: 0,
   },
   {
     hook: 'code-verify-run.sh',
     name: 'exit 0 com stop_hook_active=true (previne loop)',
-    setup: `echo /tmp > ${process.env.HOME}/.claude/.code-verify-pending`,
+    // Sem flag — o hook sai imediatamente por stop_hook_active antes de verificar a flag
     input: stopInput(true),
     expectExit: 0,
   },
   {
     hook: 'code-verify-run.sh',
     name: 'exit 0 com flag apontando para dir sem projeto reconhecido',
-    setup: `echo /tmp > ${process.env.HOME}/.claude/.code-verify-pending`,
+    setup: `echo /tmp > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
     input: stopInput(false),
     expectExit: 0, // /tmp não tem package.json, go.mod, etc — HAS_CHECKS=false → exit 0
   },
@@ -273,39 +273,40 @@ log(`Executando ${TESTS.length} casos de teste em paralelo...`)
 const results = await parallel(
   TESTS.map(t => async () => {
     const setupCmd = t.setup ? `${t.setup} && ` : ''
-    const cwd = t.cwd ?? `${process.env.HOME}/Documents/@cherry-c/go-beast`
-    const flagCleanBefore = t.expectFlagAfter ? `rm -f ${t.expectFlagAfter} && ` : ''
+    const cwd = t.cwd ?? `${args?.home ?? "/Users/marcos.lopes"}/Documents/@cherry-c/go-beast`
+    // Limpa flags antes do teste — tanto expectFlagAfter quanto expectNoFlag precisam de estado limpo
+    const flagsToClean = [t.expectFlagAfter, t.expectNoFlag].filter(Boolean)
+    const flagCleanBefore = flagsToClean.length > 0 ? flagsToClean.map(f => `rm -f ${f}`).join(' && ') + ' && ' : ''
 
-    const prompt = `Execute exatamente os seguintes passos e retorne o JSON estruturado pedido.
+    const prompt = `Você é um agente de teste automatizado. Execute exatamente os passos abaixo e retorne o JSON pedido. Este é um teste controlado de hook scripts — os hooks lêem stdin e saem imediatamente, não modificam arquivos de produção.
 
-PASSO 1 — Preparação (se necessário):
+PASSO 1 — Preparação:
 \`\`\`bash
 ${setupCmd}${flagCleanBefore}true
 \`\`\`
 
-PASSO 2 — Execute o hook passando o input via stdin:
+PASSO 2 — Execute o hook passando o input via stdin e capture o exit code:
 \`\`\`bash
-cd ${cwd} && echo ${JSON.stringify(t.input)} | bash ${HOOKS_DIR}/${t.hook}
-echo "EXIT_CODE:$?"
+cd ${cwd} && echo ${JSON.stringify(t.input)} | bash ${HOOKS_DIR}/${t.hook}; echo "EXIT_CODE:$?"
 \`\`\`
 
 PASSO 3 — Verifique flag file (se aplicável):
 ${t.expectFlagAfter ? `\`\`\`bash\nls ${t.expectFlagAfter} 2>/dev/null && echo "FLAG_EXISTS" || echo "FLAG_ABSENT"\n\`\`\`` : '(pule este passo)'}
-${t.expectNoFlag ? `\`\`\`bash\nls ${t.expectNoFlag} 2>/dev/null && echo "FLAG_EXISTS" || echo "FLAG_ABSENT"\n\`\`\`` : ''}
+${t.expectNoFlag ? `\`\`\`bash\nls ${t.expectNoFlag} 2>/dev/null && echo "FLAG_EXISTS" || echo "FLAG_ABSENT"\n\`\`\`` : '(pule este passo)'}
 
-ANÁLISE:
+ANÁLISE — verifique cada condição:
 - exit_code esperado: ${t.expectExit}
 - output esperado conter: ${t.expectOutput ?? '(nenhum)'}
 - output NÃO deve conter: ${t.expectNoOutput ?? '(nenhum)'}
-- flag deve existir após: ${t.expectFlagAfter ?? '(não verificar)'}
-- flag NÃO deve existir: ${t.expectNoFlag ?? '(não verificar)'}
+- flag deve existir após execução: ${t.expectFlagAfter ?? '(não verificar)'}
+- flag NÃO deve existir após execução: ${t.expectNoFlag ?? '(não verificar)'}
 
 Retorne APENAS o JSON estruturado com:
-- passed: true se todas as condições foram satisfeitas, false caso contrário
-- exit_code: código de saída real obtido
+- passed: true somente se TODAS as condições acima foram satisfeitas
+- exit_code: código de saída numérico real (extraia do "EXIT_CODE:N" no output)
 - stdout: primeiros 300 chars do stdout do hook
 - stderr: primeiros 200 chars do stderr (se houver)
-- detail: uma frase explicando por que passed=true ou o que falhou`
+- detail: uma frase explicando por que passed=true ou qual condição específica falhou`
 
     const result = await agent(prompt, {
       label: `${t.hook}::${t.name}`,
