@@ -11,6 +11,29 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.12.0] - 2026-06-13
+
+### Added
+
+- **go-hook-eval**: harness de teste com 27 casos cobrindo todos os hooks de go-beast — blockers, observers, stop hooks, jq fallback com newlines literais, flag files e `stop_hook_active`. Bugs no harness corrigidos após primeira execução (cleanup de flags e remoção de setup desnecessário em `code-verify-run`).
+
+### Changed
+
+- **go-skill-eval**: `go-swift` e `go-jay` adicionadas ao `FILESYSTEM_SKILLS` — rodam apenas com inputs C e D (código real). Inputs C e D enriquecidos com `.claude/settings.json`, `CLAUDE.md` e `AGENTS.md` para contexto Claude Code. Instrução `skillOverrides` adicionada ao `buildPrompt` para go-kite, go-swift, go-jay e go-ant operar corretamente sem filesystem tools. Structural eval aceita traduções PT para `optimization`, `bottleneck`, `baseline`, `recommendation` e `rollback`.
+- **hooks/sync-go-beast-skills.sh**: remove symlinks órfãos de workflows renomeados antes de relinkar — previne dangling symlinks após renomeações.
+- **settings.json global**: removidos hooks taskflow-session-log, taskflow-guard-db e taskflow-node-postrun — eram artefatos de projeto fictício (TaskFlow API), não pertencem ao settings global.
+
+### Removed
+
+- **hooks/taskflow-session-log.sh**, **hooks/taskflow-guard-db.sh**, **hooks/taskflow-node-postrun.sh**: removidos do repo. Eram hooks gerados para o projeto fictício TaskFlow API durante sessões de eval.
+
+### Fixed
+
+- `~/.claude/hooks/sync-go-beast-skills.sh` estava como cópia local desatualizada; substituído por symlink para go-beast (versão com dangling cleanup e cp de AGENTS.global.md).
+- Symlinks órfãos `go-star-eval.js` e `hook-eval.js` em `~/.claude/workflows/` removidos após renomeação dos workflows.
+
+---
+
 ## [1.11.0] - 2026-06-13
 
 ### Added
