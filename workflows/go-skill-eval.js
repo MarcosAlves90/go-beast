@@ -212,12 +212,39 @@ Celery + Redis como broker. Jobs agendados via Celery Beat.
 - Redis precisa ser provisionado em produção (custo adicional)
 - Falhas de job precisam de dead letter queue (não implementado ainda)
 `,
+    // Arquivos Claude Code para go-swift e go-jay
+    '.claude/settings.json': `{
+  "hooks": {
+    "SessionStart": [],
+    "PreToolUse": [],
+    "PostToolUse": [],
+    "Stop": []
+  }
+}`,
+    'CLAUDE.md': `# PayLink — Agent Context
+
+## Stack
+Python 3.11, FastAPI, PostgreSQL, Redis/Celery, Stripe API.
+
+## Rules
+- Never hardcode secrets — use .env
+- Always run pytest before committing
+- Follow Conventional Commits
+
+## Known gaps
+- No pre-commit hooks configured
+- No deploy automation (DEPLOYMENT.md absent)
+`,
+    'AGENTS.md': `# PayLink — Agents Context
+
+Currently identical to CLAUDE.md — needs sync review.
+`,
   },
 }
 
 // Input D: projeto legado adversarial — múltiplas violações críticas deliberadas.
 // Propósito: testar se as skills IDENTIFICAM problemas reais em vez de gerar outputs genéricos.
-// Skills filesystem-dependent (go-kite, go-ant, go-crane) usam este input — tem código real.
+// Skills filesystem-dependent usam este input — tem código real + contexto Claude Code.
 const INPUT_D = {
   nome: 'ShopLegacy',
   dominio: 'E-commerce legado, loja online B2C',
@@ -302,6 +329,29 @@ ssh root@prod-server "cd /var/www/shop && python app.py &"
 # senha do banco em plain text no script
 mysql -h prod-server -u root -padmin1234 shopdb < schema.sql
 `,
+    // Arquivos Claude Code para go-swift e go-jay
+    '.claude/settings.json': `{
+  "hooks": {
+    "SessionStart": [],
+    "PreToolUse": [],
+    "PostToolUse": [],
+    "Stop": []
+  }
+}`,
+    'CLAUDE.md': `# ShopLegacy — Agent Context
+
+## Stack
+Python 2.7, Flask, MySQL sem ORM, jQuery.
+
+## Known issues
+- SQL injection em login e search
+- Segredos hardcoded em app.py
+- Sem testes, sem CI
+`,
+    'AGENTS.md': `# ShopLegacy — Agent Context
+
+Same as CLAUDE.md — not yet synchronized.
+`,
   },
 }
 
@@ -318,6 +368,16 @@ function buildPrompt(skillName, skillDesc, input, checklist) {
   const importanteNote = input.files
     ? 'IMPORTANTE: Os arquivos acima são o conteúdo real do projeto. Use-os como fonte primária — identifique problemas reais presentes no código, não invente nem ignore o que está escrito.'
     : 'IMPORTANTE: Este é um projeto fictício para fins de teste — não existem arquivos reais para escanear. Simule o que a skill produziria se o projeto existisse com a stack e domínio descritos acima.'
+
+  // Instruções específicas por skill para garantir output completo no contexto de eval
+  const skillOverrides = {
+    'go-kite': `CONTEXTO DE AVALIAÇÃO: Você não tem acesso a ferramentas de filesystem neste contexto. Os arquivos acima são o equivalente do output do repomix — trate-os como a codebase completa disponível. Produza a auditoria completa das 5 dimensões (structure, observability, reliability, scalability, security) E a seção de capability gaps E pelo menos 3 recommendations concretas com referência aos arquivos fornecidos. NÃO pule dimensões por falta de acesso a ferramentas.`,
+    'go-swift': `CONTEXTO DE AVALIAÇÃO: Você está gerando o output que go-swift produziria para um projeto Claude Code. O settings.json fornecido é o arquivo real a ser modificado. Produza o hook script completo, mostre as alterações no settings.json, especifique o evento (event), e inclua chmod.`,
+    'go-jay': `CONTEXTO DE AVALIAÇÃO: Os arquivos de contexto fornecidos (CLAUDE.md, AGENTS.md) são os arquivos reais a serem auditados e editados. Produza a análise completa, as edições propostas com before/after, e o regression check.`,
+    'go-ant': `CONTEXTO DE AVALIAÇÃO: Os arquivos de código acima são a codebase real. Simule o output completo de go-ant: baseline measurements, profiler output indicando bottlenecks, root cause analysis, optimization aplicada com before/after benchmark. Use os arquivos fornecidos como evidência.`,
+  }
+  const override = skillOverrides[skillName] ? `\n\n${skillOverrides[skillName]}` : ''
+
   return `Você é a skill ${skillName}. Sua função: ${skillDesc}
 
 Contexto do projeto:
@@ -329,17 +389,19 @@ Contexto do projeto:
 
 Execute sua função conforme sua definição. Produza todos os artefatos esperados em Markdown completo e detalhado. Não resuma — produza o output real que a skill geraria.
 
-ARTEFATOS OBRIGATÓRIOS: seu output DEVE conter explicitamente todos os seguintes itens (use estes termos exatos):
+ARTEFATOS OBRIGATÓRIOS: seu output DEVE conter explicitamente todos os seguintes itens (use estes termos exatos em inglês):
 ${checklist.map(item => `- ${item}`).join('\n')}
 
-${importanteNote}`
+${importanteNote}${override}`
 }
 
 // args.skills: array de nomes para filtrar (ex: ['go-swift']). Default: todas.
 // Skills filesystem-dependent recebem apenas C e D (código real).
 // go-kite, go-ant, go-crane: precisam de codebase para funcionar.
 // go-owl, go-beaver, go-mole: colapso confirmado em A/B sem projeto concreto (eval 2026-06-13).
-const FILESYSTEM_SKILLS = new Set(['go-kite', 'go-ant', 'go-crane', 'go-owl', 'go-beaver', 'go-mole'])
+// go-swift: Claude Code-specific; inputs B sem contexto hooks colapsam (eval 2026-06-13).
+// go-jay: sem arquivos de contexto reais, completude/aderência colapsam em A (eval 2026-06-13).
+const FILESYSTEM_SKILLS = new Set(['go-kite', 'go-ant', 'go-crane', 'go-owl', 'go-beaver', 'go-mole', 'go-swift', 'go-jay'])
 
 const skillFilter = args?.skills ?? null
 const RUNS = Object.entries(SKILLS)
@@ -423,6 +485,7 @@ const results = await pipeline(
 Regras de busca:
 - A busca é CASE-INSENSITIVE: "Mermaid", "mermaid" e "MERMAID" são equivalentes.
 - Aceite variações de plural/singular e sufixos comuns: "migration" aceita "migrations", "migrate", "migração", "migrações".
+- Aceite traduções para português: "optimization" aceita "otimização", "otimizações", "optimização"; "bottleneck" aceita "gargalo"; "baseline" aceita "linha de base"; "recommendation" aceita "recomendação"; "rollback" aceita "reversão".
 - Aceite menções em nomes de arquivo, headings e corpo do texto.
 - Não infira presença: se o conceito estiver implícito mas o termo não aparecer, marque como ausente.
 
