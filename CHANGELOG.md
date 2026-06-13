@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.15.0] - 2026-06-13
+
+### Fixed
+
+- **hooks/docs-update-remind.sh**: output redirecionado para stdout (Claude) e stderr (terminal) em paralelo — antes só saía no stdout, deixando o terminal sem output visível ("No stderr output").
+
+---
+
 ## [1.14.0] - 2026-06-13
 
 ### Changed

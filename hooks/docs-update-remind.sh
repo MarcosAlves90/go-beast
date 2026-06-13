@@ -41,27 +41,33 @@ for vfile in PACKAGE.md package.json pyproject.toml Cargo.toml go.mod; do
   fi
 done
 
-echo ""
-echo "╔══════════════════════════════════════════════════════════╗"
-echo "║  📝  Lembrete: verificar documentação                   ║"
-echo "╟──────────────────────────────────────────────────────────╢"
-echo "║  Arquivos de código foram modificados em:               ║"
-echo "║  $(echo "$PROJECT_DIR" | sed 's|'"$HOME"'|~|')$(printf '%*s' $((44 - ${#PROJECT_DIR})) '')║"
+# Constrói a mensagem (stdout → Claude como system-reminder; stderr → terminal para o usuário)
+MSG=""
+MSG+=$'\n'
+MSG+="╔══════════════════════════════════════════════════════════╗"$'\n'
+MSG+="║  📝  Lembrete: verificar documentação                   ║"$'\n'
+MSG+="╟──────────────────────────────────────────────────────────╢"$'\n'
+MSG+="║  Arquivos de código foram modificados em:               ║"$'\n'
+SHORT_DIR=$(echo "$PROJECT_DIR" | sed "s|$HOME|~|")
+MSG+="║  ${SHORT_DIR}$(printf '%*s' $((44 - ${#SHORT_DIR})) '')║"$'\n'
 if [[ -n "$DOC_HINTS" ]]; then
-echo "║                                                          ║"
-echo "║  Documentos detectados: $DOC_HINTS$(printf '%*s' $((34 - ${#DOC_HINTS})) '')║"
+  MSG+="║                                                          ║"$'\n'
+  MSG+="║  Documentos detectados: ${DOC_HINTS}$(printf '%*s' $((34 - ${#DOC_HINTS})) '')║"$'\n'
 fi
-echo "║                                                          ║"
-echo "║  Considere atualizar:                                   ║"
-echo "║  • README (uso, exemplos, configuração)                 ║"
-echo "║  • Comentários JSDoc/docstrings nas funções alteradas   ║"
-echo "║  • CHANGELOG se for uma mudança relevante               ║"
+MSG+="║                                                          ║"$'\n'
+MSG+="║  Atualize antes de encerrar:                            ║"$'\n'
+MSG+="║  • README (uso, exemplos, configuração)                 ║"$'\n'
+MSG+="║  • Comentários JSDoc/docstrings nas funções alteradas   ║"$'\n'
+MSG+="║  • CHANGELOG se for uma mudança relevante               ║"$'\n'
 if [[ "$HAS_VERSIONING" == "true" ]]; then
-echo "║  • Versão em PACKAGE.md/package.json e README           ║"
+  MSG+="║  • Versão em PACKAGE.md/package.json e README           ║"$'\n'
 fi
-echo "╚══════════════════════════════════════════════════════════╝"
-echo ""
+MSG+="╚══════════════════════════════════════════════════════════╝"$'\n'
 
-# exit 2 re-dispara o Claude com este output como feedback obrigatório.
-# O Claude deve atualizar os docs/versão antes de encerrar a sessão.
+# stdout → Claude (system-reminder via exit 2)
+echo "$MSG"
+# stderr → terminal (visível ao usuário)
+echo "$MSG" >&2
+
+# exit 2 re-dispara o Claude com o stdout como feedback obrigatório.
 exit 2
