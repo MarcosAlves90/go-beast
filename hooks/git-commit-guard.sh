@@ -5,18 +5,28 @@
 set -uo pipefail
 
 input=$(cat)
-tool_name=$(echo "$input" | jq -r '.tool_name // empty')
-[[ "$tool_name" != "Bash" ]] && exit 0
 
-command=$(echo "$input" | jq -r '.tool_input.command // empty')
-[[ -z "$command" ]] && exit 0
+# Extrai tool_name via jq; fallback para grep no raw input se jq falhar (newlines literais).
+tool_name=$(echo "$input" | jq -r '.tool_name // empty' 2>/dev/null || true)
+if [[ -z "$tool_name" ]]; then
+  echo "$input" | grep -q '"tool_name"[[:space:]]*:[[:space:]]*"Bash"' || exit 0
+else
+  [[ "$tool_name" != "Bash" ]] && exit 0
+fi
+
+# Extrai command via jq; fallback para raw input se jq falhar.
+command=$(echo "$input" | jq -r '.tool_input.command // empty' 2>/dev/null || true)
+if [[ -z "$command" ]]; then
+  # jq falhou — usa raw input diretamente para detecção
+  command="$input"
+fi
 
 # ── Detecta se há git commit ou git add no comando ──────────────────────────
 has_commit=false
 has_add=false
 
-echo "$command" | grep -qE '(^|;|&&|\|\|)[[:space:]]*git[[:space:]]+commit' && has_commit=true
-echo "$command" | grep -qE '(^|;|&&|\|\|)[[:space:]]*git[[:space:]]+add'    && has_add=true
+echo "$command" | grep -qE 'git[[:space:]]+commit' && has_commit=true
+echo "$command" | grep -qE 'git[[:space:]]+add'    && has_add=true
 
 [[ "$has_commit" == "false" && "$has_add" == "false" ]] && exit 0
 
