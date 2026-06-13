@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.13.0] - 2026-06-13
+
+### Changed
+
+- **hooks/docs-update-remind.sh**: detecta arquivos de versionamento (`PACKAGE.md`, `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`) e adiciona lembrete de bump de versão na caixa de aviso.
+
+---
+
 ## [1.12.0] - 2026-06-13
 
 ### Added

@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.12.0** — 2026-06-13
+**1.13.0** — 2026-06-13
 
 ---
 
