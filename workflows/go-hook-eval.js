@@ -214,10 +214,10 @@ const TESTS = [
   },
   {
     hook: 'docs-update-remind.sh',
-    name: 'exibe aviso quando flag existe',
+    name: 'exibe aviso quando flag existe (exit 2 — re-dispara Claude)',
     setup: `echo /tmp > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
     input: stopInput(false),
-    expectExit: 0,
+    expectExit: 2,
     expectOutput: 'Lembrete',
   },
   {

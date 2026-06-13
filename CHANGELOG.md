@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.14.0] - 2026-06-13
+
+### Changed
+
+- **hooks/docs-update-remind.sh**: convertido de observer passivo para blocker ativo — `exit 2` re-dispara o Claude com o lembrete como feedback obrigatório, forçando atualização de docs e versão antes de encerrar a sessão.
+- **workflows/go-hook-eval.js**: caso `exibe aviso quando flag existe` atualizado para `expectExit: 2`.
+
+---
+
 ## [1.13.0] - 2026-06-13
 
 ### Changed

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Lembra de atualizar a documentação após Claude finalizar modificações de código.
-# Event: Stop — observador puro, nunca bloqueia.
+# Força atualização de documentação e versionamento após modificações de código.
+# Event: Stop — exit 2 re-dispara o Claude com o lembrete como feedback obrigatório.
 
 set -uo pipefail
 
@@ -62,4 +62,6 @@ fi
 echo "╚══════════════════════════════════════════════════════════╝"
 echo ""
 
-exit 0
+# exit 2 re-dispara o Claude com este output como feedback obrigatório.
+# O Claude deve atualizar os docs/versão antes de encerrar a sessão.
+exit 2
