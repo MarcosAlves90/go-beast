@@ -23,8 +23,6 @@ User: "Review our architecture and tell me what we should improve."
 
 Use `repomix pack_codebase` on the project root. If the repo is large, compress with `compress: true`. Store the output ID — all subsequent searches run against this packed output.
 
-**If no codebase is available** (early planning phase, infrastructure-only project, or invoked with only conversational context): skip `pack_codebase`. Proceed directly to Step 2. All five dimensions and all capability gap sections must still be fully populated — a documentation-only audit is not a shorter audit. Mark every finding with `(doc-only — no code evidence)` and state the scope explicitly in the Executive Summary.
-
 ### 2. Load existing context
 
 Before reading a single line of code, pull what the project already knows about itself:
