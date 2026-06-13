@@ -2,3 +2,10 @@ extensions/*/mcp-server/node_modules/
 extensions/*/mcp-server/dist/
 extensions/*/mcp-server/package-lock.json
 *.DS_Store
+
+# Artefatos gerados por skills durante sessões de eval
+APPROACH.md
+REQUIREMENTS.md
+PERF.md
+OBSERVABILITY.md
+**/output/

@@ -58,6 +58,9 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 | docs-update-flag | `hooks/docs-update-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project when source code files are modified (ignores .md/.rst/docs/) |
 | docs-update-remind | `hooks/docs-update-remind.sh` | `Stop` | Reminds to update README, docstrings, and CHANGELOG after code modifications |
 | git-strip-coauthored | `hooks/git-strip-coauthored.sh` | `PreToolUse (Bash)` | Blocks commits whose message contains a `Co-Authored-By` tag |
+| taskflow-session-log | `hooks/taskflow-session-log.sh` | `SessionStart` | Logs session start timestamp, user, host, and working directory to `~/.claude/logs/taskflow-sessions.log` |
+| taskflow-guard-db | `hooks/taskflow-guard-db.sh` | `PreToolUse (Bash)` | Blocks destructive SQL operations (DROP, TRUNCATE, DELETE without WHERE) unless `# taskflow-allow-destructive` is present |
+| taskflow-node-postrun | `hooks/taskflow-node-postrun.sh` | `PostToolUse (Bash)` | Logs npm/node/npx/jest errors and warnings to `~/.claude/logs/taskflow-errors.log` |
 
 ---
 

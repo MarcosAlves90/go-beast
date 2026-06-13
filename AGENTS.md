@@ -100,5 +100,8 @@ go-beast/
     ├── code-verify-run.sh       ← Stop: runs tsc/mypy/go vet/cargo check + tests
     ├── docs-update-flag.sh      ← PostToolUse(Edit/Write): flags project when source files are modified
     ├── docs-update-remind.sh    ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
-    └── git-strip-coauthored.sh  ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
+    ├── git-strip-coauthored.sh  ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
+    ├── taskflow-session-log.sh   ← SessionStart: logs session start
+    ├── taskflow-guard-db.sh      ← PreToolUse(Bash): blocks destructive SQL
+    └── taskflow-node-postrun.sh  ← PostToolUse(Bash): logs npm/node/jest errors
 ```
