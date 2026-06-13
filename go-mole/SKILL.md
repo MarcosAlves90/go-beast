@@ -76,6 +76,8 @@ Output a single compact block under the heading `## Project Briefing`. Keep it u
 
 **When documentation is absent or minimal:** produce all sections anyway, marking inferred values with `(inferred)`. Base inference on: project name, stack, domain, config file metadata. Do not omit sections — a skeleton with `(inferred)` labels is more useful than a blank briefing. List every inferred section under **Gaps** so the reader knows what needs to be written.
 
+A label is not content. Each section must contain at least 1–2 concrete sentences — a specific command, a named dependency, a concrete constraint. `**Run:** (inferred)` with nothing after it is a failure; `**Run:** (inferred) — likely \`npm install && npm run dev\` based on package.json presence` is acceptable.
+
 Only omit a section if neither documentation nor any inferrable signal exists for it.
 
 ### 4. Hold in context

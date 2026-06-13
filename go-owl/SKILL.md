@@ -84,10 +84,11 @@ Use [Keep a Changelog](https://keepachangelog.com) format. Update on every relea
 ### 6. Quality bar
 
 Before considering documentation done:
-- [ ] Every command was actually run and produced the expected output
+- [ ] Every command was actually run and produced the expected output — **exception:** if no running server is available (planning phase, dry-run invocation), mark commands with `(unverified — no server running)` instead of skipping them
 - [ ] No dead links
 - [ ] No placeholders (TODO, TBD, coming soon)
 - [ ] Terminology is consistent with the codebase
+- [ ] Runbook steps use numbered lists and code blocks for every command — prose-only runbooks do not meet the bar
 
 ## Rules
 
