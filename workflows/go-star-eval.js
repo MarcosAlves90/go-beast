@@ -84,7 +84,7 @@ const SKILLS = {
   },
 }
 
-// Input A: projeto simples sem código real — testa skills de planejamento (go-hawk, go-lark, go-fox, go-beaver)
+// Input A: projeto simples sem código real — testa skills de planejamento (go-hawk, go-lark, go-fox)
 const INPUT_A = {
   nome: 'TaskFlow API',
   dominio: 'Gerenciamento de tarefas pessoais',
@@ -336,8 +336,10 @@ ${importanteNote}`
 }
 
 // args.skills: array de nomes para filtrar (ex: ['go-swift']). Default: todas.
-// Skills filesystem-dependent recebem Input D (código real) em vez de A/B.
-const FILESYSTEM_SKILLS = new Set(['go-kite', 'go-ant', 'go-crane'])
+// Skills filesystem-dependent recebem apenas C e D (código real).
+// go-kite, go-ant, go-crane: precisam de codebase para funcionar.
+// go-owl, go-beaver, go-mole: colapso confirmado em A/B sem projeto concreto (eval 2026-06-13).
+const FILESYSTEM_SKILLS = new Set(['go-kite', 'go-ant', 'go-crane', 'go-owl', 'go-beaver', 'go-mole'])
 
 const skillFilter = args?.skills ?? null
 const RUNS = Object.entries(SKILLS)
