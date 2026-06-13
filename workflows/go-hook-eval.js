@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'hook-eval',
+  name: 'go-hook-eval',
   description: 'Testa os hooks de go-beast com casos positivos, negativos e edge cases (jq fallback, newlines literais)',
   phases: [
     { title: 'Hook Tests', detail: 'Executa todos os casos de teste em paralelo' },

@@ -120,7 +120,8 @@ Non-go-* skills handle tasks outside the development lifecycle: `deep-research`,
 For tasks involving multiple independent steps, parallel research, or large-scale analysis, use the `Workflow` tool.
 **Why:** workflows fan out to many agents in parallel and handle scale that a single context window cannot — deep research, codebase audits, migrations, and multi-angle reviews are all faster and more thorough as workflows.
 
-`go-star-eval` — runs the full go-* eval pipeline (structural checklist + LLM-as-judge + A/B/C benchmark). Invoke to validate skills after changes.
+`go-skill-eval` — runs the full go-* skill eval pipeline (structural checklist + LLM-as-judge + adversarial A/B/C/D inputs). Invoke to validate skills after changes.
+`go-hook-eval` — runs the hook eval suite (27 cases across all go-beast hooks). Invoke after changing any hook.
 
 ---
 

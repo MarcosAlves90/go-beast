@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'go-star-eval',
+  name: 'go-skill-eval',
   description: 'Testa todas as skills go-* com eval estrutural + LLM-as-judge e benchmark A/B/C/D',
   phases: [
     { title: 'Skill Execution', detail: 'Executa combinações skill×input em paralelo' },

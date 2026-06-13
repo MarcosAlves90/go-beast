@@ -8,7 +8,7 @@ This is the go-beast skill pack repository. It contains skills, workflows, and h
 
 ## What this repo is
 
-A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.), one workflow (`go-star-eval`), and one hook (`sync-go-beast-skills.sh`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
+A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.), one workflow (`go-skill-eval`), and one hook (`sync-go-beast-skills.sh`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
 
 ---
 
@@ -32,9 +32,9 @@ Optional: `references/` subfolder for content referenced via `${CLAUDE_SKILL_DIR
 
 Always update `CHANGELOG.md` before bumping version in `PACKAGE.md` and `README.md`.
 
-### Checklist quality (for go-star-eval)
+### Checklist quality (for go-skill-eval)
 
-Checklist terms in `go-star-eval.js` must be:
+Checklist terms in `go-skill-eval.js` must be:
 - **English** — avoid accented characters or Portuguese terms
 - **Specific** — prefer artifact names (`SECURITY_REVIEW`, `erDiagram`) over concepts (`recomendações`)
 - **Plural/singular tolerant** — the eval uses case-insensitive matching with variant acceptance
@@ -52,9 +52,9 @@ If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file
 2. Create `go-<animal>/SKILL.md` following the structure above
 3. Add to skills table and dependency graph in `README.md`
 4. Add to directory tree in `PACKAGE.md`
-5. Add checklist entry in `go-star-eval.js` under `SKILLS`
+5. Add checklist entry in `go-skill-eval.js` under `SKILLS`
 6. Update `CHANGELOG.md` and bump version (minor)
-7. Run `go-star-eval` with `args: { skills: ["go-<animal>"] }` to validate the new skill before a full run
+7. Run `go-skill-eval` with `args: { skills: ["go-<animal>"] }` to validate the new skill before a full run
 
 **Symlink note:** the skill becomes available in Claude Code when `sync-go-beast-skills.sh` runs (next SessionStart). To use it immediately after creation, run the hook manually:
 
@@ -68,13 +68,13 @@ bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
 
 ```js
 // Full run (all skills)
-Workflow({ name: "go-star-eval" })
+Workflow({ name: "go-skill-eval" })
 
 // Filtered run (one or more skills)
-Workflow({ name: "go-star-eval", args: { skills: ["go-swift", "go-smith"] } })
+Workflow({ name: "go-skill-eval", args: { skills: ["go-swift", "go-smith"] } })
 ```
 
-Note: `/go-star-eval` slash command does not support args — use the Workflow tool directly for filtered runs.
+Note: `/go-skill-eval` slash command does not support args — use the Workflow tool directly for filtered runs.
 
 ---
 
@@ -90,7 +90,8 @@ go-beast/
 ├── go-*/
 │   └── SKILL.md           ← One skill per beast
 ├── workflows/
-│   └── go-star-eval.js    ← Eval pipeline (A/B/C benchmark, args.skills filter)
+│   ├── go-skill-eval.js   ← Skill eval (A/B/C/D benchmark, args.skills filter)
+│   └── go-hook-eval.js    ← Hook eval (27 test cases, blockers + observers)
 └── hooks/
     ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks + syncs AGENTS.global.md
     ├── git-commit-guard.sh      ← PreToolUse(Bash): blocks commits of sensitive files

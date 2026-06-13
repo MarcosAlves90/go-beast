@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.10.0** — 2026-06-12
+**1.11.0** — 2026-06-13
 
 ---
 
@@ -41,7 +41,8 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 | Workflow | File | Purpose |
 |---|---|---|
-| [go-star-eval](workflows/go-star-eval.js) | `workflows/go-star-eval.js` | Eval pipeline: tests all go-* skills with structural checklist + LLM-as-judge + A/B/C benchmark. Supports `args.skills` filter for isolated runs. |
+| [go-skill-eval](workflows/go-skill-eval.js) | `workflows/go-skill-eval.js` | Skill eval: tests all go-* skills, structural checklist + LLM-as-judge, adversarial A/B/C/D inputs. Supports `args.skills` filter. |
+| [go-hook-eval](workflows/go-hook-eval.js) | `workflows/go-hook-eval.js` | Hook eval: 27 test cases across all go-beast hooks — blockers, observers, jq fallback, flag files, stop_hook_active. |
 
 ---
 

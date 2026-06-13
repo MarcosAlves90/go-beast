@@ -11,6 +11,28 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.11.0] - 2026-06-13
+
+### Added
+
+- **go-hook-eval** workflow (`workflows/go-hook-eval.js`) — eval suite for all go-beast hooks. 27 test cases covering blockers (`git-strip-coauthored`, `git-commit-guard`), observers (`docs-update-flag`, `code-verify-flag`), stop hooks (`docs-update-remind`, `code-verify-run`), and `code-dedup-check`. Adversarial cases include jq fallback with literal newlines, `stop_hook_active=true`, flag file present/absent.
+
+### Changed
+
+- **go-star-eval** renamed to **go-skill-eval** (`workflows/go-skill-eval.js`) — name now reflects scope (skills only, not hooks).
+- **go-skill-eval**: Input D adversarial added — ShopLegacy Flask project with SQL injection, hardcoded secrets, auth bypass, `debug=True` in production, zero tests. Skills filesystem-dependent (`go-kite`, `go-ant`, `go-crane`, `go-owl`, `go-beaver`, `go-mole`) now run only with C and D (real code). Judge recalibrated: baseline 3.5 (was 4), automatic penalties for placeholders and missed vulnerabilities in Input D. Checklists expanded across 11 skills.
+- **hooks/git-strip-coauthored.sh**, **hooks/git-commit-guard.sh**: added raw-input fallback for when `jq` fails on literal-newline JSON — critical hooks now block even when `jq` cannot parse the input.
+- **hooks/docs-update-flag.sh**, **hooks/code-verify-flag.sh**, **hooks/docs-update-remind.sh**, **hooks/code-verify-run.sh**: `jq` calls silenced with `2>/dev/null`; exit early on parse failure (non-critical hooks — observer behavior preserved).
+- **go-mole/SKILL.md**: added "label is not content" rule — each `(inferred)` section must contain at least 1–2 concrete sentences, not just a label.
+- **go-owl/SKILL.md**: quality bar exception documented for environments without a running server; runbook steps now require numbered lists and code blocks.
+
+### Fixed
+
+- Removed `Co-Authored-By` tag from 4 commits (history rewritten via `filter-branch`). Root cause: `jq` parse error on literal-newline JSON caused `git-strip-coauthored` to exit 0 silently.
+- Replaced 4 independent skill directories (`go-ant`, `go-crane`, `go-kite`, `go-lark`) with symlinks to go-beast source — all 18 go-* skills in `~/.claude/skills/` are now symlinks.
+
+---
+
 ## [1.10.0] - 2026-06-12
 
 ### Changed

@@ -2,8 +2,8 @@
 
 ```
 name:    go-beast
-version: 1.10.0
-date:    2026-06-12
+version: 1.11.0
+date:    2026-06-13
 author:  @cherry-c
 type:    skill-pack
 scope:   full-stack software development lifecycle
@@ -67,7 +67,8 @@ go-beast/
 │       ├── docs/
 │       └── scripts/
 ├── workflows/
-│   └── go-star-eval.js    ← Eval pipeline for all go-* skills (A/B/C benchmark, args.skills filter)
+│   ├── go-skill-eval.js   ← Skill eval pipeline: all go-* skills, structural checklist + LLM-as-judge (A/B/C/D)
+│   └── go-hook-eval.js    ← Hook eval pipeline: 27 test cases across all go-beast hooks
 └── hooks/
     ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks + copies AGENTS.global.md
     ├── git-commit-guard.sh      ← PreToolUse(Bash): blocks commits of sensitive files/build artifacts
