@@ -5,12 +5,13 @@
 set -uo pipefail
 
 input=$(cat)
-tool_name=$(echo "$input" | jq -r '.tool_name // empty')
+tool_name=$(echo "$input" | jq -r '.tool_name // empty' 2>/dev/null || true)
+[[ -z "$tool_name" ]] && exit 0
 
 file_path=""
 case "$tool_name" in
   Edit|Write|MultiEdit)
-    file_path=$(echo "$input" | jq -r '.tool_input.file_path // empty')
+    file_path=$(echo "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
     ;;
   *)
     exit 0

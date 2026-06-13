@@ -7,7 +7,7 @@ set -uo pipefail
 FLAG_FILE="$HOME/.claude/.docs-update-pending"
 
 input=$(cat)
-stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false')
+stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
 # Não re-disparar quando o próprio hook já ativou o Claude
 [[ "$stop_hook_active" == "true" ]] && exit 0

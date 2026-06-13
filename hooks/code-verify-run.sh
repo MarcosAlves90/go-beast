@@ -7,7 +7,7 @@ set -uo pipefail
 FLAG_FILE="$HOME/.claude/.code-verify-pending"
 
 input=$(cat)
-stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false')
+stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
 # Previne loop infinito quando o próprio hook re-dispara Claude
 [[ "$stop_hook_active" == "true" ]] && exit 0
