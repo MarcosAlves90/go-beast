@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.18.3** — 2026-06-13
+**1.19.0** — 2026-06-14
 
 ---
 
@@ -112,9 +112,32 @@ go-kite                           (architecture audit before go-fox revisions)
 
 ## Installation
 
-The skills are plain Markdown files — any agent that can read files can use them. Each agent has its own setup path.
+The skills are plain Markdown files — any agent that can read files can use them.
 
-### Claude Code
+### Interactive installer (any agent)
+
+Clone the repo and run the interactive installer:
+
+```bash
+git clone <repo-url> ~/Documents/@cherry-c/go-beast
+bash ~/Documents/@cherry-c/go-beast/scripts/install.sh
+```
+
+The installer detects which agents are installed (Claude Code, Cursor, Gemini, Cline, Copilot, Codex), lets you select which skills, hooks (Claude Code only), and workflows (Claude Code only) to install, and creates symlinks. It also copies `AGENTS.global.md` to each agent's expected global instructions file.
+
+```bash
+# Non-interactive: install everything into all detected agents
+bash scripts/install.sh --all
+
+# Remove all repo symlinks from all agents
+bash scripts/install.sh --uninstall
+```
+
+Requires `fzf` for the multi-select UI (`brew install fzf`); falls back to a numbered menu without it.
+
+---
+
+### Claude Code (manual / session-start sync)
 
 Clone the repo and run the sync hook once to wire everything up:
 

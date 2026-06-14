@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.19.0] - 2026-06-14
+
+### Added
+
+- **scripts/install.sh** — interactive local installer. Detects installed agents, multi-selects skills/hooks/workflows via fzf (fallback: numbered menu), symlinks everything, and copies `AGENTS.global.md` to each agent's expected global instructions file. Supports `--all` (non-interactive, install everything) and `--uninstall` (remove all repo symlinks). Claude Code is the only agent that gets hooks and workflows; all agents get skills. Global instructions mapping: `claude-code` → `CLAUDE.md`, `cursor` → `.cursor/rules`, `gemini` → `GEMINI.md`, `cline/codex/agents` → `AGENTS.md`, `copilot` → `copilot-instructions.md`.
+
+---
+
 ## [1.18.3] - 2026-06-13
 
 ### Changed
