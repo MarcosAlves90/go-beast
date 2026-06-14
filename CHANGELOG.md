@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.23.4] - 2026-06-14
+
+### Fixed
+
+- **workflows/go-workflow-eval.js**: extractor now recognizes both `phase('...')` standalone calls AND `phase: '...'` as named parameters inside agent() calls — go-skill-eval uses the latter pattern, which was causing false "missing phase" findings. Added `expectOutput`, `label`, `schema` to patterns_found checklist. Removed `label` from go-hook-eval structural checklist (dynamic template labels match regex unreliably).
+
+---
+
 ## [1.23.3] - 2026-06-14
 
 ### Changed

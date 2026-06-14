@@ -22,7 +22,7 @@ const WORKFLOWS = {
   'go-hook-eval': {
     description: 'Tests go-beast hooks with positive, negative, and edge cases including jq fallback and stop_hook_active.',
     type: 'hook-eval',
-    checklist: ['TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'parallel', 'label', 'return', 'setup'],
+    checklist: ['TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'parallel', 'return', 'setup'],
   },
 }
 
@@ -109,11 +109,11 @@ Then extract and return a structured summary of the ENTIRE file. Do NOT read in 
 Extract:
 - meta_block: the full export const meta = { ... } literal as a string
 - schemas: names of all const *_SCHEMA = { ... } declarations
-- phases_called: all phase('...') call arguments
-- agent_calls_sample: first label from each distinct agent() call (up to 15)
+- phases_called: ALL phase references — both standalone phase('...') calls AND phase: '...' parameters inside agent() calls. List every unique phase name found by either pattern.
+- agent_calls_sample: first label from each distinct agent() call (up to 15) — look for both label: '...' and label: \`...\` patterns
 - has_return: does the file end with a return statement?
 - total_lines: approximate line count
-- patterns_found: which of these appear anywhere: ['pipeline', 'parallel', 'filter(Boolean)', 'skillOverrides', 'FILESYSTEM_SKILLS', 'TESTS', 'expectExit', 'stop_hook_active', 'setup']`,
+- patterns_found: which of these appear anywhere: ['pipeline', 'parallel', 'filter(Boolean)', 'skillOverrides', 'FILESYSTEM_SKILLS', 'TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'setup', 'label', 'schema']`,
       { label: `extract:${name}`, phase: 'Source Collection', schema: EXTRACT_SCHEMA }
     )
     if (!extracted) {
