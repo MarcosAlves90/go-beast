@@ -121,18 +121,24 @@ select_items() {
   local items=("$@")
 
   if command -v fzf &>/dev/null; then
-    # stdin is consumed by process substitution in callers (mapfile < <(...)).
-    # fzf needs a real terminal for its UI — open /dev/tty explicitly as stdin
-    # after the pipe delivers items, using a temp file to bridge both.
+    local sentinel="(select all)"
     local tmpfile; tmpfile="$(mktemp)"
-    printf '%s\n' "${items[@]}" > "$tmpfile"
-    fzf --multi \
+    printf '%s\n' "$sentinel" "${items[@]}" > "$tmpfile"
+
+    local selected
+    selected="$(fzf --multi \
         --prompt="$prompt > " \
-        --header="SPACE=toggle  ENTER=confirm  Alt-A=select all  Alt-D=deselect all" \
+        --header="SPACE=toggle  ENTER=confirm" \
         --height=40% --layout=reverse --border \
-        --bind "alt-a:select-all,alt-d:deselect-all,space:toggle" \
-        < "$tmpfile"
+        < "$tmpfile")"
     rm -f "$tmpfile"
+
+    # If sentinel was selected → return all real items
+    if echo "$selected" | grep -qxF "$sentinel"; then
+      printf '%s\n' "${items[@]}"
+    else
+      echo "$selected"
+    fi
   else
     echo -e "\n  ${CYAN}${prompt}${RESET}" >&2
     local i=1
