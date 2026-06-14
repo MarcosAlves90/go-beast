@@ -22,7 +22,7 @@ const WORKFLOWS = {
   'go-hook-eval': {
     description: 'Tests go-beast hooks with positive, negative, and edge cases including jq fallback and stop_hook_active.',
     type: 'hook-eval',
-    checklist: ['TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'parallel', 'label', 'return'],
+    checklist: ['TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'parallel', 'label', 'return', 'setup'],
   },
 }
 
@@ -87,8 +87,13 @@ const results = await pipeline(
 
   // ── Stage 1: Read source ────────────────────────────────────────────────────
   async ([name, wf]) => {
+    // Large files (>500 lines) stall read agents. Use mcp__filesystem__read_text_file
+    // directly via agent with explicit tool instruction and head/tail split for large files.
     const result = await agent(
-      `Read the file at ${REPO}/workflows/${name}.js using the Read or filesystem tool and return its complete, unmodified source code. Do not summarize or truncate.`,
+      `Use the mcp__filesystem__read_text_file tool to read the file at path: ${REPO}/workflows/${name}.js
+Read it in two calls if needed: first with offset=0, then offset=500 to cover files over 500 lines.
+Combine both parts and return the complete source.
+Do NOT use Bash cat. Do NOT summarize. Return the raw source code.`,
       { label: `read:${name}`, phase: 'Source Collection', schema: SRC_SCHEMA }
     )
     if (!result?.source) {

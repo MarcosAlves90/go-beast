@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.23.1] - 2026-06-14
+
+### Fixed
+
+- **workflows/go-workflow-eval.js**: source read stage now instructs agent to use `mcp__filesystem__read_text_file` in two calls (offset 0 then offset 500) for large files — go-skill-eval (1010 lines) was stalling the read agent on every attempt. Updated go-hook-eval checklist to include `setup`.
+- **workflows/go-hook-eval.js**: added two missing test cases — (1) `code-dedup-check.sh` blocking case: sets up a file with a function in the project, then tries to write the same function again (expectExit:1); (2) `code-verify-run.sh` exit 1 path: creates a minimal TypeScript project with a deliberate type error, flags it, and expects the hook to exit 1 with a check failure message.
+
+---
+
 ## [1.23.0] - 2026-06-14
 
 ### Added

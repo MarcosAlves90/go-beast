@@ -157,6 +157,16 @@ const TESTS = [
     expectExit: 0,
     cwd: '/tmp',
   },
+  {
+    hook: 'code-dedup-check.sh',
+    name: 'warns when function already exists in project',
+    // Setup: write a file with the function into /tmp first, then try to add it again
+    setup: `mkdir -p /tmp/hook-eval-dup && echo 'export function duplicateFunctionAlpha() { return 1; }' > /tmp/hook-eval-dup/existing.ts`,
+    input: writeInput('/tmp/hook-eval-dup/new.ts', 'export function duplicateFunctionAlpha() { return 2; }'),
+    expectExit: 1,
+    expectOutput: 'duplicateFunctionAlpha',
+    cwd: '/tmp/hook-eval-dup',
+  },
 
   // ── docs-update-flag ─────────────────────────────────────────────────────
   {
@@ -250,6 +260,21 @@ const TESTS = [
     setup: `echo /tmp > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
     input: stopInput(false),
     expectExit: 0, // /tmp has no package.json, go.mod, etc — HAS_CHECKS=false → exit 0
+  },
+  {
+    hook: 'code-verify-run.sh',
+    name: 'exit 1 when tsc reports type errors in flagged project',
+    // Setup: create a minimal TS project with a type error and flag it
+    setup: `
+      dir=$(mktemp -d /tmp/hook-eval-ts-XXXXXX)
+      echo '{"compilerOptions":{"strict":true}}' > "$dir/tsconfig.json"
+      echo 'const x: number = "not a number";' > "$dir/bad.ts"
+      echo "$dir" > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending
+      echo "$dir"
+    `.trim().replace(/\n\s*/g, ' && ').replace('      ', ''),
+    input: stopInput(false),
+    expectExit: 1,
+    expectOutput: 'check',
   },
 ]
 
