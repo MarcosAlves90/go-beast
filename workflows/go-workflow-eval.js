@@ -118,7 +118,7 @@ Extract:
 - agent_calls_sample: first label from each distinct agent() call (up to 15) — look for both label: '...' and label: \`...\` patterns
 - has_return: does the file end with a return statement?
 - total_lines: approximate line count
-- patterns_found: which of these appear anywhere: ['pipeline', 'parallel', 'filter(Boolean)', 'skillOverrides', 'FILESYSTEM_SKILLS', 'TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'setup', 'label', 'schema']`,
+- patterns_found: which of these appear anywhere: ['pipeline', 'parallel', 'filter(Boolean)', 'skillOverrides', 'FILESYSTEM_SKILLS', 'TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'setup', 'label', 'schema', 'DIMENSIONS', 'outputDir', 'repoPath', 'args?.repoPath', 'args?.outputDir']`,
       { label: `extract:${name}`, phase: 'Source Collection', schema: EXTRACT_SCHEMA }
     )
     if (!extracted) {

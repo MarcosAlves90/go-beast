@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.24.1] - 2026-06-14
+
+### Fixed
+
+- **workflows/go-workflow-eval.js**: added `DIMENSIONS`, `outputDir`, `repoPath`, `args?.repoPath`, `args?.outputDir` to the patterns_found checklist in the extractor — these patterns were present in go-deep-analysis.js but missed by the extractor, causing false structural failures.
+- **workflows/go-workflow-eval.js**: added `analysis` type-specific judge criteria for go-deep-analysis.
+
+---
+
 ## [1.24.0] - 2026-06-14
 
 ### Added
