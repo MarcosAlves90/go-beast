@@ -1,18 +1,18 @@
-// Teste de integração: handshake completo — token HTTP + WebSocket
-// Sobe um bridge real em porta aleatória, simula a extensão, verifica autenticação.
+// Integration test: full handshake — HTTP token + WebSocket
+// Starts a real bridge on a random port, simulates the extension, verifies authentication.
 import { test, describe, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { WebSocket } from "ws";
 
-// Precisamos de uma versão isolada do bridge para testes com porta configurável.
-// Duplicamos a lógica mínima aqui para não poluir o módulo de produção com hacks de teste.
-// Se bridge.ts crescer, extrair uma factory testável é o próximo passo.
+// We need an isolated version of the bridge for tests with a configurable port.
+// We duplicate the minimal logic here to avoid polluting the production module with test hacks.
+// If bridge.ts grows, extracting a testable factory is the next step.
 
 import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 import { randomUUID } from "node:crypto";
 
-const HANDSHAKE_TIMEOUT_MS = 500; // mais curto para testes rápidos
+const HANDSHAKE_TIMEOUT_MS = 500; // shorter for fast tests
 
 function createTestBridge(wsPort: number, httpPort: number) {
   const token = randomUUID();
@@ -91,20 +91,20 @@ describe("handshake WebSocket", () => {
     await bridge.close();
   });
 
-  test("token endpoint entrega token uma vez", async () => {
+  test("token endpoint delivers token once", async () => {
     const res = await fetch(`http://127.0.0.1:${HTTP_PORT}/token`);
     assert.equal(res.status, 200);
     const { token } = await res.json() as { token: string };
-    assert.match(token, /^[0-9a-f-]{36}$/, "deve ser UUID v4");
+    assert.match(token, /^[0-9a-f-]{36}$/, "should be UUID v4");
   });
 
-  test("token endpoint retorna 404 na segunda requisição (one-shot)", async () => {
+  test("token endpoint returns 404 on second request (one-shot)", async () => {
     const res = await fetch(`http://127.0.0.1:${HTTP_PORT}/token`);
-    assert.equal(res.status, 404, "segundo fetch deve retornar 404");
+    assert.equal(res.status, 404, "second fetch should return 404");
   });
 
-  test("cliente com token correto é autenticado e recebe handshake_ok", async () => {
-    // Novo bridge para este teste ter token fresco
+  test("client with correct token is authenticated and receives handshake_ok", async () => {
+    // New bridge so this test has a fresh token
     const b = await createTestBridge(WS_PORT + 2, HTTP_PORT + 2);
     try {
       const res = await fetch(`http://127.0.0.1:${b.httpPort}/token`);
@@ -120,48 +120,48 @@ describe("handshake WebSocket", () => {
           resolve();
         });
         ws.on("error", reject);
-        setTimeout(() => reject(new Error("timeout aguardando handshake_ok")), 2000);
+        setTimeout(() => reject(new Error("timeout waiting for handshake_ok")), 2000);
       });
 
-      assert.ok(b.getLastSocket() !== null, "socket deve estar autenticado");
+      assert.ok(b.getLastSocket() !== null, "socket should be authenticated");
     } finally {
       await b.close();
     }
   });
 
-  test("cliente com token errado é rejeitado com code 1008", async () => {
+  test("client with wrong token is rejected with code 1008", async () => {
     const b = await createTestBridge(WS_PORT + 4, HTTP_PORT + 4);
     try {
       await new Promise<void>((resolve, reject) => {
         const ws = new WebSocket(`ws://127.0.0.1:${b.wsPort}`);
-        ws.on("open", () => ws.send(JSON.stringify({ type: "handshake", token: "token-errado" })));
+        ws.on("open", () => ws.send(JSON.stringify({ type: "handshake", token: "wrong-token" })));
         ws.on("close", (code) => {
-          assert.equal(code, 1008, "deve fechar com 1008");
+          assert.equal(code, 1008, "should close with 1008");
           resolve();
         });
         ws.on("error", reject);
-        setTimeout(() => reject(new Error("timeout aguardando close")), 2000);
+        setTimeout(() => reject(new Error("timeout waiting for close")), 2000);
       });
 
       assert.equal(b.getLastRejection(), "invalid_token");
-      assert.ok(b.getLastSocket() === null, "socket não deve estar autenticado");
+      assert.ok(b.getLastSocket() === null, "socket should not be authenticated");
     } finally {
       await b.close();
     }
   });
 
-  test("cliente sem handshake é desconectado por timeout", async () => {
+  test("client without handshake is disconnected by timeout", async () => {
     const b = await createTestBridge(WS_PORT + 6, HTTP_PORT + 6);
     try {
       await new Promise<void>((resolve, reject) => {
         const ws = new WebSocket(`ws://127.0.0.1:${b.wsPort}`);
-        // não envia nada — espera o timeout
+        // sends nothing — waits for timeout
         ws.on("close", (code) => {
-          assert.equal(code, 1008, "deve fechar com 1008 por timeout");
+          assert.equal(code, 1008, "should close with 1008 due to timeout");
           resolve();
         });
         ws.on("error", reject);
-        setTimeout(() => reject(new Error("timeout de teste excedido")), 2000);
+        setTimeout(() => reject(new Error("test timeout exceeded")), 2000);
       });
 
       assert.equal(b.getLastRejection(), "handshake_timeout");

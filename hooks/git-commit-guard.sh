@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Bloqueia git commit/add com arquivos sensíveis ou artefatos de build.
+# Blocks git commit/add when sensitive files or build artifacts are staged.
 # Event: PreToolUse (Bash)
 
 set -uo pipefail
 
 input=$(cat)
 
-# Extrai tool_name via jq; fallback para grep no raw input se jq falhar (newlines literais).
+# Extract tool_name via jq; fallback to grep on raw input if jq fails (literal newlines).
 tool_name=$(echo "$input" | jq -r '.tool_name // empty' 2>/dev/null || true)
 if [[ -z "$tool_name" ]]; then
   echo "$input" | grep -q '"tool_name"[[:space:]]*:[[:space:]]*"Bash"' || exit 0
@@ -14,14 +14,14 @@ else
   [[ "$tool_name" != "Bash" ]] && exit 0
 fi
 
-# Extrai command via jq; fallback para raw input se jq falhar.
+# Extract command via jq; fallback to raw input if jq fails.
 command=$(echo "$input" | jq -r '.tool_input.command // empty' 2>/dev/null || true)
 if [[ -z "$command" ]]; then
-  # jq falhou — usa raw input diretamente para detecção
+  # jq failed — use raw input directly for detection
   command="$input"
 fi
 
-# ── Detecta se há git commit ou git add no comando ──────────────────────────
+# ── Detect git commit or git add in the command ──────────────────────────────
 has_commit=false
 has_add=false
 
@@ -30,12 +30,12 @@ echo "$command" | grep -qE 'git[[:space:]]+add'    && has_add=true
 
 [[ "$has_commit" == "false" && "$has_add" == "false" ]] && exit 0
 
-# ── Classifica um caminho como perigoso ──────────────────────────────────────
+# ── Classify a path as dangerous ─────────────────────────────────────────────
 is_dangerous() {
   local f="$1"
   [[ -z "$f" ]] && return 1
 
-  # Exceções: arquivos de exemplo são seguros
+  # Exceptions: example files are safe
   if echo "$f" | grep -qE '(^|/)\.env\.(example|sample|template|dist)$'; then
     return 1
   fi
@@ -48,11 +48,11 @@ is_dangerous() {
   echo "$f" | grep -qE '\.(pem|key|p12|pfx|cer|crt|der|jks|keystore)$' && return 0
   echo "$f" | grep -qE '\.(tfstate|tfstate\.backup)$' && return 0
 
-  # Diretórios de dependências e build
+  # Dependency and build directories
   echo "$f" | grep -qE '(^|/)node_modules/' && return 0
   echo "$f" | grep -qE '(^|/)(dist|build|out|\.next|\.nuxt|\.svelte-kit|\.turbo|\.parcel-cache)/' && return 0
   echo "$f" | grep -qE '(^|/)(coverage|\.nyc_output|\.c8)/' && return 0
-  echo "$f" | grep -qE '(^|/)(target|vendor)/' && return 0       # Rust/Java/Go
+  echo "$f" | grep -qE '(^|/)(target|vendor)/' && return 0       # Rust / Java / Go
   echo "$f" | grep -qE '(^|/)(__pycache__|\.venv|[Vv]env|\.mypy_cache|\.pytest_cache)/' && return 0
   echo "$f" | grep -qE '(^|/)\.terraform/' && return 0
   echo "$f" | grep -qE '\.(pyc|pyo|class|jar)$' && return 0
@@ -84,7 +84,7 @@ if [[ "$has_commit" == "true" ]]; then
   staged=$(git diff --cached --name-only 2>/dev/null || true)
   [[ -n "$staged" ]] && collect_violations <<< "$staged"
 
-  # git commit -am também inclui tracked files modificados
+  # git commit -am also includes modified tracked files
   if echo "$command" | grep -qE 'git[[:space:]]+commit[[:space:]].*-[a-zA-Z]*a'; then
     modified=$(git diff --name-only 2>/dev/null || true)
     [[ -n "$modified" ]] && collect_violations <<< "$modified"
@@ -111,14 +111,14 @@ if [[ "$has_add" == "true" ]]; then
   fi
 fi
 
-# ── Reporta violações ────────────────────────────────────────────────────────
+# ── Report violations ────────────────────────────────────────────────────────
 if [[ -n "$VIOLATIONS" ]]; then
-  echo "🚫 Bloqueado: arquivos sensíveis ou artefatos detectados para commit/staging:"
+  echo "🚫 Blocked: sensitive files or build artifacts detected for commit/staging:"
   echo ""
   printf '%b' "$VIOLATIONS"
   echo ""
-  echo "Esses arquivos não devem ser versionados."
-  echo "Adicione-os ao .gitignore e remova do stage com:  git reset HEAD <arquivo>"
+  echo "These files must not be committed."
+  echo "Add them to .gitignore and remove from staging with:  git reset HEAD <file>"
   exit 1
 fi
 

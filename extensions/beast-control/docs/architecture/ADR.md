@@ -3,44 +3,44 @@
 
 ---
 
-## ADR-001: Manifest V3 como base da extensão
+## ADR-001: Manifest V3 as the extension base
 **Status:** Accepted  **Date:** 2026-06-10
 
 ### Context
-Zen Browser 1.20.2b roda sobre Firefox/Gecko 151. O Firefox implementou suporte completo a MV3 a partir do Firefox 127. MV2 ainda funciona mas está em deprecação ativa pela Mozilla.
+Zen Browser 1.20.2b runs on Firefox/Gecko 151. Firefox implemented full MV3 support starting from Firefox 127. MV2 still works but is under active deprecation by Mozilla.
 
 ### Decision
-Usar Manifest V3 com Service Worker como background script.
+Use Manifest V3 with Service Worker as the background script.
 
 ### Consequences
-- `eval_js` usa `chrome.scripting.executeScript` com `world: "MAIN"` para acesso ao contexto da página
-- Service worker pode ser terminado pelo browser; o background deve reconectar o WebSocket via `chrome.alarms` (keepalive a cada 25s)
-- Permissões necessárias: `scripting`, `activeTab`, `storage`, `tabs`
-- A permissão `<all_urls>` é necessária para `scripting.executeScript` funcionar em qualquer página
+- `eval_js` uses `chrome.scripting.executeScript` with `world: "MAIN"` for access to the page context
+- The service worker may be terminated by the browser; the background must reconnect the WebSocket via `chrome.alarms` (keepalive every 25s)
+- Required permissions: `scripting`, `activeTab`, `storage`, `tabs`
+- The `<all_urls>` permission is required for `scripting.executeScript` to work on any page
 
 ### Alternatives considered
-- **MV2:** Funciona hoje, mas seria escolher tecnologia morta; background persistente seria mais simples para WebSocket, mas não justifica a dívida técnica
+- **MV2:** Works today, but would mean choosing dead technology; a persistent background would be simpler for WebSocket, but does not justify the technical debt
 
 ---
 
-## ADR-002: WebSocket como protocolo de bridge entre MCP server e extensão
+## ADR-002: WebSocket as the bridge protocol between MCP server and extension
 **Status:** Accepted  **Date:** 2026-06-10
 
 ### Context
-A extensão Firefox não pode ser chamada diretamente via HTTP ou Native Messaging sem instalação de um host nativo separado. O WebSocket iniciado pela extensão (cliente) conectando a um servidor local (MCP server) inverte esse problema: a extensão puxa a conexão, sem necessidade de permissões extras de sistema.
+The Firefox extension cannot be called directly via HTTP or Native Messaging without installing a separate native host. A WebSocket initiated by the extension (client) connecting to a local server (MCP server) inverts this problem: the extension pulls the connection, without needing extra system permissions.
 
 ### Decision
-A extensão age como **cliente WebSocket**; o MCP server age como **servidor WebSocket** em `ws://127.0.0.1:7331`.
+The extension acts as the **WebSocket client**; the MCP server acts as the **WebSocket server** at `ws://127.0.0.1:7331`.
 
 ### Consequences
-- Bind exclusivo em `127.0.0.1` — inacessível via rede externa
-- A extensão deve reconectar com backoff exponencial (máx 30s) quando o servidor não está disponível
-- O MCP server deve iniciar o WebSocket server imediatamente ao ser spawned pelo Claude Code via stdio
-- Sem autenticação de WebSocket (tráfego localhost-only, requisito explícito)
+- Exclusive bind on `127.0.0.1` — inaccessible via external network
+- The extension must reconnect with exponential backoff (max 30s) when the server is unavailable
+- The MCP server must start the WebSocket server immediately upon being spawned by Claude Code via stdio
+- No WebSocket authentication (localhost-only traffic, explicit requirement)
 
 ### Alternatives considered
-- **Native Messaging:** Mais seguro (comunicação direta sem porta de rede), mas requer instalação de um host nativo (.json em diretório do sistema) — alto atrito para usuário não-técnico
-- **HTTP polling:** Mais simples mas introduz latência e complexidade de estado; WebSocket é bidirecional por natureza
+- **Native Messaging:** More secure (direct communication without a network port), but requires installing a native host (.json in a system directory) — high friction for non-technical users
+- **HTTP polling:** Simpler but introduces latency and state complexity; WebSocket is bidirectional by nature
 
 ---
 
@@ -48,54 +48,54 @@ A extensão age como **cliente WebSocket**; o MCP server age como **servidor Web
 **Status:** Accepted  **Date:** 2026-06-10
 
 ### Context
-O SDK MCP suporta dois transportes: stdio (Claude Code spawna o processo) e HTTP/SSE (daemon persistente). Para uso local sem instalação de daemon, stdio é o caminho de menor atrito.
+The MCP SDK supports two transports: stdio (Claude Code spawns the process) and HTTP/SSE (persistent daemon). For local use without daemon installation, stdio is the lowest-friction path.
 
 ### Decision
-O MCP server usa transporte **stdio**. Claude Code o spawna a cada sessão via configuração em `~/.claude/claude.json` ou `.mcp.json` no projeto.
+The MCP server uses **stdio** transport. Claude Code spawns it each session via configuration in `~/.claude/claude.json` or `.mcp.json` in the project.
 
 ### Consequences
-- O WebSocket server (porta 7331) sobe junto com o processo MCP e desce quando Claude Code termina a sessão
-- Sem gerenciamento de daemon pelo usuário — sem `pm2`, `launchd`, ou `systemd`
-- Se a extensão estava conectada e o MCP server reinicia, a extensão reconecta automaticamente (ADR-002)
+- The WebSocket server (port 7331) starts with the MCP process and shuts down when Claude Code ends the session
+- No daemon management by the user — no `pm2`, `launchd`, or `systemd`
+- If the extension was connected and the MCP server restarts, the extension reconnects automatically (ADR-002)
 
 ### Alternatives considered
-- **Daemon persistente (HTTP/SSE):** Melhor para múltiplas sessões simultâneas; desnecessário para uso single-user local
+- **Persistent daemon (HTTP/SSE):** Better for multiple simultaneous sessions; unnecessary for local single-user use
 
 ---
 
-## ADR-004: Redação de campos sensíveis no content script (não no MCP server)
+## ADR-004: Sensitive field redaction in the content script (not in the MCP server)
 **Status:** Accepted  **Date:** 2026-06-10
 
 ### Context
-A redação pode ocorrer em dois pontos: no content script (antes de sair do browser) ou no MCP server (antes de chegar ao Claude). Redagir no content script garante que dados sensíveis nunca saem do processo do browser.
+Redaction can occur at two points: in the content script (before leaving the browser) or in the MCP server (before reaching Claude). Redacting in the content script ensures that sensitive data never leaves the browser process.
 
 ### Decision
-Toda redação de texto e pintura de screenshots acontece no **content script**, antes de qualquer transmissão via WebSocket.
+All text redaction and screenshot painting happens in the **content script**, before any transmission via WebSocket.
 
 ### Consequences
-- O content script mantém uma lista de seletores sensíveis: `[type=password]`, `[type=tel]`, `[autocomplete~=cc-number]`, `[name*=card]`, `[name*=cvv]`, `[name*=ssn]`, `[name*=cpf]`
-- Para screenshots: o content script localiza os bounding boxes dos campos sensíveis, os serializa junto com a imagem; o MCP server pinta os retângulos em preto sobre o base64 antes de retornar ao Claude
-- O toggle de bypass (F-08) é lido do `browser.storage.local` pelo content script; quando ativo, nenhuma redação é aplicada
+- The content script maintains a list of sensitive selectors: `[type=password]`, `[type=tel]`, `[autocomplete~=cc-number]`, `[autocomplete~=cc-csc]`, `[name*=card]`, `[name*=cvv]`, `[name*=ssn]`, `[name*=cpf]`
+- For screenshots: the content script locates the bounding boxes of sensitive fields and serializes them alongside the image; the MCP server paints black rectangles over the base64 before returning to Claude
+- The bypass toggle (F-08) is read from `browser.storage.local` by the content script; when active, no redaction is applied
 
 ### Alternatives considered
-- **Redação no MCP server:** Os dados já saíram do browser — não elimina o risco de exposição em memória ou logs do processo Node
-- **Redação no background script:** O background não tem acesso direto ao DOM; delegaria ao content script de qualquer forma
+- **Redaction in the MCP server:** The data has already left the browser — does not eliminate the risk of exposure in memory or Node process logs
+- **Redaction in the background script:** The background has no direct DOM access; it would delegate to the content script anyway
 
 ---
 
-## ADR-005: Identificação de comandos por `requestId` único
+## ADR-005: Command identification via unique `requestId`
 **Status:** Accepted  **Date:** 2026-06-10
 
 ### Context
-O WebSocket é full-duplex. O MCP server pode enviar múltiplos comandos antes de receber respostas. Sem identificador de correlação, respostas fora de ordem não têm destinatário.
+WebSocket is full-duplex. The MCP server can send multiple commands before receiving responses. Without a correlation identifier, out-of-order responses have no recipient.
 
 ### Decision
-Todo comando carrega um `requestId` (UUID v4 gerado pelo MCP server). A extensão ecoa o mesmo `requestId` na resposta. O MCP server usa um Map de promises pendentes keyed por `requestId`, com timeout de 30s.
+Every command carries a `requestId` (UUID v4 generated by the MCP server). The extension echoes the same `requestId` in the response. The MCP server uses a Map of pending promises keyed by `requestId`, with a 30s timeout.
 
 ### Consequences
-- Timeout de 30s por comando — após isso, a promise rejeita com erro de timeout
-- Máximo de 1 comando em voo por vez não é necessário — o protocolo suporta concorrência (mas o Claude Code tipicamente envia um comando por vez)
-- `requestId` nunca é reusado na mesma sessão
+- 30s timeout per command — after that, the promise rejects with a timeout error
+- A maximum of 1 in-flight command at a time is not required — the protocol supports concurrency (but Claude Code typically sends one command at a time)
+- `requestId` is never reused within the same session
 
 ### Alternatives considered
-- **Fila sequencial (um comando por vez):** Mais simples, sem necessidade de correlação, mas bloqueia o MCP server enquanto o browser executa — prejudica latência percebida
+- **Sequential queue (one command at a time):** Simpler, no need for correlation, but blocks the MCP server while the browser executes — degrades perceived latency

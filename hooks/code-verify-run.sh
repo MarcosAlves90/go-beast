@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Executa verificação de tipagem e testes após Claude finalizar modificações de código.
-# Event: Stop — sai com código não-zero se houver falhas para re-disparar Claude.
+# Runs type checking and tests after Claude finishes modifying code.
+# Event: Stop — exits non-zero on failures to re-trigger Claude.
 
 set -uo pipefail
 
@@ -9,7 +9,7 @@ FLAG_FILE="$HOME/.claude/.code-verify-pending"
 input=$(cat)
 stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
-# Previne loop infinito quando o próprio hook re-dispara Claude
+# Prevent infinite loop when the hook itself re-triggers Claude
 [[ "$stop_hook_active" == "true" ]] && exit 0
 
 [[ ! -f "$FLAG_FILE" ]] && exit 0
@@ -58,11 +58,11 @@ if [[ -f "package.json" ]]; then
 
   if [[ -n "$test_cmd" ]]; then
     HAS_CHECKS=true
-    append "--- Testes (Node.js): $test_cmd ---"
+    append "--- Tests (Node.js): $test_cmd ---"
     if test_out=$($test_cmd 2>&1); then
-      append "✓ Testes passaram"
+      append "✓ Tests passed"
     else
-      append "✗ Testes falharam:"
+      append "✗ Tests failed:"
       append "$(echo "$test_out" | tail -40)"
       ERRORS=$((ERRORS + 1))
     fi
@@ -76,9 +76,9 @@ if [[ -f "pyproject.toml" || -f "setup.py" || -f "setup.cfg" ]]; then
     HAS_CHECKS=true
     append "--- Python: mypy ---"
     if mypy_out=$(mypy . 2>&1); then
-      append "✓ Tipagem OK"
+      append "✓ Type check OK"
     else
-      append "✗ Erros de tipagem (mypy):"
+      append "✗ Type errors (mypy):"
       append "$(echo "$mypy_out" | tail -30)"
       ERRORS=$((ERRORS + 1))
     fi
@@ -89,9 +89,9 @@ if [[ -f "pyproject.toml" || -f "setup.py" || -f "setup.cfg" ]]; then
     HAS_CHECKS=true
     append "--- Python: pytest ---"
     if pytest_out=$(pytest --tb=short -q 2>&1); then
-      append "✓ Testes passaram"
+      append "✓ Tests passed"
     else
-      append "✗ Testes falharam:"
+      append "✗ Tests failed:"
       append "$(echo "$pytest_out" | tail -40)"
       ERRORS=$((ERRORS + 1))
     fi
@@ -106,7 +106,7 @@ if [[ -f "go.mod" ]]; then
   if vet_out=$(go vet ./... 2>&1); then
     append "✓ Vet OK"
   else
-    append "✗ go vet encontrou problemas:"
+    append "✗ go vet found issues:"
     append "$vet_out"
     ERRORS=$((ERRORS + 1))
   fi
@@ -114,9 +114,9 @@ if [[ -f "go.mod" ]]; then
 
   append "--- Go: test ---"
   if test_out=$(go test ./... 2>&1); then
-    append "✓ Testes passaram"
+    append "✓ Tests passed"
   else
-    append "✗ Testes falharam:"
+    append "✗ Tests failed:"
     append "$(echo "$test_out" | tail -40)"
     ERRORS=$((ERRORS + 1))
   fi
@@ -130,7 +130,7 @@ if [[ -f "Cargo.toml" ]]; then
   if check_out=$(cargo check 2>&1); then
     append "✓ Check OK"
   else
-    append "✗ Erros de compilação (cargo check):"
+    append "✗ Compilation errors (cargo check):"
     append "$(echo "$check_out" | tail -30)"
     ERRORS=$((ERRORS + 1))
   fi
@@ -138,9 +138,9 @@ if [[ -f "Cargo.toml" ]]; then
 
   append "--- Rust: cargo test ---"
   if test_out=$(cargo test 2>&1); then
-    append "✓ Testes passaram"
+    append "✓ Tests passed"
   else
-    append "✗ Testes falharam:"
+    append "✗ Tests failed:"
     append "$(echo "$test_out" | tail -40)"
     ERRORS=$((ERRORS + 1))
   fi
@@ -149,13 +149,13 @@ fi
 
 [[ "$HAS_CHECKS" == "false" ]] && exit 0
 
-echo "=== Verificação pós-modificação: $PROJECT_DIR ==="
+echo "=== Post-modification checks: $PROJECT_DIR ==="
 printf '%b' "$OUTPUT"
 
 if [[ $ERRORS -gt 0 ]]; then
-  echo "⚠ $ERRORS verificação(ões) com falhas. Corrija os problemas acima antes de prosseguir."
+  echo "⚠ $ERRORS check(s) failed. Fix the issues above before proceeding."
   exit 1
 fi
 
-echo "✓ Todas as verificações passaram."
+echo "✓ All checks passed."
 exit 0

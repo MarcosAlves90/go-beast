@@ -1,54 +1,54 @@
-# Estratégia de Testes — beast-control
+# Testing Strategy — beast-control
 
-## Pirâmide
+## Pyramid
 
 ```
        /\
-      /  \   E2E — fora do escopo automatizado
-     /----\          (testes manuais via MCP tools)
+      /  \   E2E — outside automated scope
+     /----\          (manual tests via MCP tools)
     /      \
-   / Integr \  handshake WebSocket completo
+   / Integr \  full WebSocket handshake
   /----------\
- /   Unit     \  redação, sanitização, seletores
+ /   Unit     \  redaction, sanitization, selectors
 /--------------\
 ```
 
-**Justificativa por nível:**
+**Rationale by level:**
 
-| Nível | Ferramenta | O que cobre | Por que esta escolha |
+| Level | Tool | What it covers | Why this choice |
 |-------|-----------|------------|----------------------|
-| Unit | `node:test` + `tsx` | `sanitizeError`, lógica de `isSensitive`, serialização | Sem browser, sem rede — rápido e determinístico |
-| Integration | `node:test` + WebSocket real | Handshake token HTTP + autenticação WS | Testa o contrato de segurança SEC-001 de ponta a ponta |
-| E2E | Manual via MCP tools | Navegação, screenshots, multi-tab | Requer browser real; coberto em sessão de desenvolvimento |
+| Unit | `node:test` + `tsx` | `sanitizeError`, `isSensitive` logic, serialization | No browser, no network — fast and deterministic |
+| Integration | `node:test` + real WebSocket | HTTP token handshake + WS authentication | Tests the SEC-001 security contract end to end |
+| E2E | Manual via MCP tools | Navigation, screenshots, multi-tab | Requires a real browser; covered during development sessions |
 
-## Arquivos de teste
+## Test files
 
-| Arquivo | Tipo | O que testa |
+| File | Type | What it tests |
 |---------|------|------------|
-| `src/bridge.test.ts` | Unit | `sanitizeError` — normalização de erros (SEC-009) |
-| `src/handshake.test.ts` | Integration | Token endpoint one-shot + rejeição de clientes não autenticados (SEC-001) |
-| `src/redaction.test.ts` | Unit | `isSensitive` — seletores de campos sensíveis; `sanitizeError` inline |
+| `src/bridge.test.ts` | Unit | `sanitizeError` — error normalization (SEC-009) |
+| `src/handshake.test.ts` | Integration | One-shot token endpoint + unauthenticated client rejection (SEC-001) |
+| `src/redaction.test.ts` | Unit | `isSensitive` — sensitive field selectors; `sanitizeError` inline |
 
-## Rodar os testes
+## Running tests
 
 ```bash
 cd mcp-server
-npm test          # roda todos os testes
-npm run typecheck # verifica tipos sem compilar
+npm test          # runs all tests
+npm run typecheck # type-checks without compiling
 ```
 
-## Política de cobertura
+## Coverage policy
 
-- Toda lógica de segurança (redação, handshake, sanitização) deve ter cobertura explícita
-- Não há floor numérico — o critério é: cada decisão de segurança tem pelo menos um teste de happy path e um de falha
-- Código de wiring (registro de tools MCP, `main()`) fica fora da cobertura automatizada
+- All security logic (redaction, handshake, sanitization) must have explicit coverage
+- No numeric floor — the criterion is: each security decision has at least one happy-path test and one failure test
+- Wiring code (MCP tool registration, `main()`) is outside automated coverage
 
-## Política de flakiness
+## Flakiness policy
 
-- Testes com timeout (ex: `handshake.test.ts` testa rejeição por timeout em 500ms) são aceitáveis desde que o timeout seja controlável por parâmetro
-- Qualquer teste que falhe de forma intermitente deve ser corrigido ou deletado na mesma sprint
+- Tests with timeouts (e.g., `handshake.test.ts` tests rejection by timeout at 500ms) are acceptable as long as the timeout is controllable by parameter
+- Any test that fails intermittently must be fixed or deleted in the same sprint
 
-## CI gate (quando aplicável)
+## CI gate (when applicable)
 
 ```
 npm run typecheck  # < 5s

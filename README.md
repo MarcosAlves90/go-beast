@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.15.0** — 2026-06-13
+**1.15.2** — 2026-06-13
 
 ---
 
@@ -103,6 +103,7 @@ go-kite                           (architecture audit before go-fox revisions)
 3. **Output is concrete.** Every skill produces named files. Nothing ends with "think about it."
 4. **Security is not a phase.** go-bear can interrupt any beast at any time.
 5. **Do not skip steps.** Each beast reduces the cost of every beast that follows.
+6. **English only.** All content in this repo — skills, docs, commits, and PRs — must be written in English. See `AGENTS.md` for the full policy.
 
 ---
 

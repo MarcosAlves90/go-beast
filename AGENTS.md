@@ -32,6 +32,19 @@ Optional: `references/` subfolder for content referenced via `${CLAUDE_SKILL_DIR
 
 Always update `CHANGELOG.md` before bumping version in `PACKAGE.md` and `README.md`.
 
+### Language
+
+All content in this repository must be written in **English** — no exceptions:
+
+- Skill files (`SKILL.md`, `references/`)
+- Documentation (`README.md`, `AGENTS.md`, `AGENTS.global.md`, `CHANGELOG.md`, `PACKAGE.md`, `APPROACH.md`)
+- Commit messages
+- Pull request titles and descriptions
+- Code comments inside hooks and workflows
+- Checklist terms in `go-skill-eval.js`
+
+This rule applies to the AI agent maintaining the repo and to any human contributor. If content arrives in another language, translate it to English before committing.
+
 ### Checklist quality (for go-skill-eval)
 
 Checklist terms in `go-skill-eval.js` must be:

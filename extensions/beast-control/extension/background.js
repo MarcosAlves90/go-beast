@@ -1,5 +1,5 @@
 const DEFAULT_PORT = 7331;
-const KEEPALIVE_INTERVAL_MINUTES = 0.4; // ~24s — abaixo do limite de 30s do SW
+const KEEPALIVE_INTERVAL_MINUTES = 0.4; // ~24s — below the 30s SW limit
 const CONTENT_SCRIPT_READY_RETRIES = 5;
 const CONTENT_SCRIPT_READY_DELAY_MS = 150;
 
@@ -7,7 +7,7 @@ let ws = null;
 let reconnectTimer = null;
 let reconnectDelay = 1000;
 
-// ── Logger mínimo ─────────────────────────────────────────────────────────────
+// ── Minimal logger ────────────────────────────────────────────────────────────
 
 const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
 const LOG_LEVEL = LOG_LEVELS["info"];
@@ -19,7 +19,7 @@ function log(level, msg, ctx = {}) {
   fn("[beast-control]", JSON.stringify(entry));
 }
 
-// ── Estado ────────────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────────────────
 
 async function getState() {
   const data = await browser.storage.local.get(["port", "bypassActive", "recentCommands", "evalEnabled"]);
@@ -41,29 +41,29 @@ async function pushCommand(entry) {
   await saveState({ recentCommands: updated });
 }
 
-// ── Badge / ícone dinâmico ────────────────────────────────────────────────────
+// ── Badge / dynamic icon ──────────────────────────────────────────────────────
 
-// Gera ImageData 19×19 com anel + C — ícone de toolbar do beast-control.
-// OffscreenCanvas está disponível no Service Worker do Firefox 112+.
+// Generates 19×19 ImageData with ring + C — beast-control toolbar icon.
+// OffscreenCanvas is available in the Firefox 112+ Service Worker.
 function makeIconImageData(dotColor) {
   const SIZE = 19;
   try {
     const canvas = new OffscreenCanvas(SIZE, SIZE);
     const ctx = canvas.getContext("2d");
 
-    // Fundo arredondado escuro
+    // Dark rounded background
     ctx.fillStyle = "#111114";
     roundRect(ctx, 1, 1, SIZE-2, SIZE-2, 4);
     ctx.fill();
 
-    // Anel
+    // Ring
     ctx.strokeStyle = dotColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(SIZE/2, SIZE/2, 7, 0, 2*Math.PI);
     ctx.stroke();
 
-    // Letra C
+    // Letter C
     ctx.strokeStyle = "#e2e2e8";
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
@@ -71,13 +71,13 @@ function makeIconImageData(dotColor) {
     ctx.arc(SIZE/2, SIZE/2, 4, Math.PI * 0.35, Math.PI * 1.65);
     ctx.stroke();
 
-    // Dot de status (canto inferior direito)
+    // Status dot (bottom-right corner)
     ctx.fillStyle = dotColor;
     ctx.beginPath();
     ctx.arc(SIZE - 4, SIZE - 4, 2.5, 0, 2*Math.PI);
     ctx.fill();
 
-    // Anel de contraste ao redor do dot
+    // Contrast ring around the dot
     ctx.strokeStyle = "#111114";
     ctx.lineWidth = 1.2;
     ctx.beginPath();
@@ -128,8 +128,8 @@ async function updateBadge() {
 
 // ── WebSocket + handshake ─────────────────────────────────────────────────────
 
-// SEC-001: busca o token de sessão do endpoint HTTP one-shot antes de conectar.
-// O endpoint só entrega o token uma vez e recusa origens externas.
+// SEC-001: fetches the session token from the one-shot HTTP endpoint before connecting.
+// The endpoint delivers the token only once and rejects external origins.
 async function fetchSessionToken(port) {
   try {
     const res = await fetch(`http://127.0.0.1:${port + 1}/token`);
@@ -146,22 +146,22 @@ async function connect() {
 
   const { port } = await getState();
 
-  // Busca o token antes de abrir o WebSocket
+  // Fetch the token before opening the WebSocket
   const sessionToken = await fetchSessionToken(port);
   if (!sessionToken) {
-    log("warn", "token de sessão indisponível — MCP server ainda não está pronto ou já foi buscado");
+    log("warn", "session token unavailable — MCP server not yet ready or already fetched");
     scheduleReconnect();
     return;
   }
 
   const url = `ws://127.0.0.1:${port}`;
-  log("info", "conectando ao MCP server", { url });
+  log("info", "connecting to MCP server", { url });
   ws = new WebSocket(url);
 
   ws.onopen = () => {
-    // Envia o token como primeiro frame — o server só aceita mensagens após validar
+    // Send the token as the first frame — the server only accepts messages after validating
     ws.send(JSON.stringify({ type: "handshake", token: sessionToken }));
-    log("info", "handshake enviado");
+    log("info", "handshake sent");
   };
 
   ws.onmessage = async (event) => {
@@ -169,14 +169,14 @@ async function connect() {
     try {
       msg = JSON.parse(event.data);
     } catch {
-      log("warn", "mensagem WebSocket inválida (não é JSON)");
+      log("warn", "invalid WebSocket message (not JSON)");
       return;
     }
 
-    // Primeiro frame de retorno é sempre a confirmação do handshake
+    // First return frame is always the handshake confirmation
     if (msg.type === "handshake_ok") {
       reconnectDelay = 1000;
-      log("info", "conectado e autenticado");
+      log("info", "connected and authenticated");
       updateBadge();
       notifyPopup({ event: "connected" });
       return;
@@ -187,7 +187,7 @@ async function connect() {
 
   ws.onclose = () => {
     ws = null;
-    log("info", "desconectado do MCP server", { proximaTentativa: `${reconnectDelay}ms` });
+    log("info", "disconnected from MCP server", { nextAttempt: `${reconnectDelay}ms` });
     updateBadge();
     notifyPopup({ event: "disconnected" });
     scheduleReconnect();
@@ -206,8 +206,8 @@ function scheduleReconnect() {
   }, reconnectDelay);
 }
 
-// Resolve qual aba usar para um comando.
-// Prioridade: tabId explícito > tabIndex > tabTitle (parcial, case-insensitive) > aba ativa
+// Resolves which tab to use for a command.
+// Priority: explicit tabId > tabIndex > tabTitle (partial, case-insensitive) > active tab
 async function resolveTab(tabId, tabIndex, tabTitle) {
   if (tabId != null) {
     const tab = await browser.tabs.get(tabId).catch(() => null);
@@ -231,13 +231,13 @@ function sendResponse(requestId, ok, result, error) {
   ws.send(JSON.stringify({ requestId, ok, result: result ?? {}, error: error ?? null }));
 }
 
-// ── Dispatcher de comandos ────────────────────────────────────────────────────
+// ── Command dispatcher ────────────────────────────────────────────────────────
 
 async function handleCommand(msg) {
   const { requestId, type, payload } = msg;
   if (!requestId || !type) return;
 
-  log("debug", "comando recebido", { requestId, type });
+  log("debug", "command received", { requestId, type });
 
   let ok = true;
   let result = {};
@@ -246,9 +246,9 @@ async function handleCommand(msg) {
   try {
     const { bypassActive } = await getState();
 
-    // Resolve a aba alvo: tabId explícito > índice > título > aba ativa
+    // Resolve the target tab: explicit tabId > index > title > active tab
     const tabId = await resolveTab(payload?.tabId, payload?.tabIndex, payload?.tabTitle);
-    if (!tabId) throw new Error("Nenhuma aba encontrada");
+    if (!tabId) throw new Error("No tab found");
 
     switch (type) {
       case "ping": {
@@ -271,11 +271,11 @@ async function handleCommand(msg) {
         break;
 
       case "screenshot": {
-        // captureVisibleTab captura a janela atual — se a aba alvo não for a ativa, foca nela primeiro
+        // captureVisibleTab captures the current window — if the target tab is not active, focus it first
         const targetTab = await browser.tabs.get(tabId);
         if (!targetTab.active) {
           await browser.tabs.update(tabId, { active: true });
-          // aguarda um frame para o browser renderizar
+          // wait one frame for the browser to render
           await new Promise((r) => setTimeout(r, 100));
         }
         const rects = bypassActive ? [] : await getContentResult(tabId, "get_sensitive_rects", {});
@@ -286,9 +286,9 @@ async function handleCommand(msg) {
           try {
             redactedImage = await redactScreenshot(tabId, dataUrl, rects);
           } catch (e) {
-            // fallback: retorna screenshot sem redação com flag de aviso
+            // fallback: return screenshot without redaction with a warning flag
             redactError = e.message ?? String(e);
-            log("warn", "falha ao redigir screenshot — retornando sem redação", { error: redactError });
+            log("warn", "failed to redact screenshot — returning without redaction", { error: redactError });
           }
         }
         result = {
@@ -307,11 +307,11 @@ async function handleCommand(msg) {
       }
     }
 
-    log("debug", "comando executado com sucesso", { requestId, type });
+    log("debug", "command executed successfully", { requestId, type });
   } catch (e) {
     ok = false;
     error = e.message ?? String(e);
-    log("warn", "falha ao executar comando", { requestId, type, error });
+    log("warn", "failed to execute command", { requestId, type, error });
   }
 
   await pushCommand({ type, ok, ts: Date.now(), error: ok ? null : error });
@@ -329,7 +329,7 @@ async function getContentResult(tabId, action, payload) {
         return;
       }
       if (!response?.ok) {
-        reject(new Error(response?.error ?? "Erro desconhecido no content script"));
+        reject(new Error(response?.error ?? "Unknown error in content script"));
         return;
       }
       resolve(response.result ?? {});
@@ -337,36 +337,36 @@ async function getContentResult(tabId, action, payload) {
   });
 }
 
-// Injeta o content script se não estiver presente e aguarda com retry
-// até o listener estar registrado antes de prosseguir
+// Injects the content script if not present and waits with retry
+// until the listener is registered before proceeding
 async function ensureContentScript(tabId) {
-  // Tenta ping primeiro — se responder, o script já está injetado
+  // Try ping first — if it responds, the script is already injected
   for (let i = 0; i < CONTENT_SCRIPT_READY_RETRIES; i++) {
     try {
       await browser.tabs.sendMessage(tabId, { action: "ping" });
-      return; // script presente e responsivo
+      return; // script present and responsive
     } catch {
       if (i === 0) {
-        // Primeira falha: injeta o script
+        // First failure: inject the script
         try {
           await browser.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
-          log("debug", "content script injetado", { tabId });
+          log("debug", "content script injected", { tabId });
         } catch (e) {
-          throw new Error(`Não foi possível injetar content script na aba ${tabId}: ${e.message}`);
+          throw new Error(`Could not inject content script into tab ${tabId}: ${e.message}`);
         }
       }
-      // Aguarda antes de tentar o ping novamente
+      // Wait before retrying the ping
       await new Promise((r) => setTimeout(r, CONTENT_SCRIPT_READY_DELAY_MS));
     }
   }
-  throw new Error(`Content script não respondeu após ${CONTENT_SCRIPT_READY_RETRIES} tentativas na aba ${tabId}`);
+  throw new Error(`Content script did not respond after ${CONTENT_SCRIPT_READY_RETRIES} attempts on tab ${tabId}`);
 }
 
 function waitForTabLoad(tabId) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       browser.tabs.onUpdated.removeListener(listener);
-      // Timeout não é falha fatal — verifica o estado final da aba
+      // Timeout is not a fatal failure — check the final tab state
       browser.tabs.get(tabId).then(resolve).catch(reject);
     }, 10000);
 
@@ -399,28 +399,28 @@ async function redactScreenshot(tabId, dataUrl, rects) {
           for (const r of rectsData) ctx.fillRect(r.x, r.y, r.width, r.height);
           resolve(canvas.toDataURL("image/png"));
         };
-        img.onerror = () => resolve(null); // sinaliza falha ao caller
+        img.onerror = () => resolve(null); // signals failure to caller
         img.src = src;
       });
     },
     args: [dataUrl, rects],
   });
-  if (!result) throw new Error("Falha ao renderizar canvas de redação");
+  if (!result) throw new Error("Failed to render redaction canvas");
   return result;
 }
 
-// ── Injeção proativa do content script ───────────────────────────────────────
+// ── Proactive content script injection ───────────────────────────────────────
 
 async function injectIntoTab(tabId) {
   try {
     await browser.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
-    log("debug", "content script injetado proativamente", { tabId });
+    log("debug", "content script proactively injected", { tabId });
   } catch {
-    // Ignora: tabs de sistema (about:, moz-extension:) rejeitam injeção — comportamento esperado
+    // Ignore: system tabs (about:, moz-extension:) reject injection — expected behavior
   }
 }
 
-// Injeta em todas as abas já abertas ao iniciar a extensão
+// Inject into all already-open tabs when the extension starts
 async function injectIntoAllTabs() {
   const tabs = await browser.tabs.query({ status: "complete" });
   for (const tab of tabs) {
@@ -428,12 +428,12 @@ async function injectIntoAllTabs() {
   }
 }
 
-// Injeta em novas abas quando terminam de carregar
+// Inject into new tabs when they finish loading
 browser.tabs.onUpdated.addListener((tabId, info) => {
   if (info.status === "complete") injectIntoTab(tabId);
 });
 
-// ── Mensagens do popup ────────────────────────────────────────────────────────
+// ── Popup messages ────────────────────────────────────────────────────────────
 
 function notifyPopup(msg) {
   browser.runtime.sendMessage({ source: "background", ...msg }).catch(() => {});
@@ -469,7 +469,7 @@ async function handlePopupMessage(msg) {
       return { evalEnabled: !evalEnabled };
     }
     default:
-      return { ok: false, error: "Ação desconhecida" };
+      return { ok: false, error: "Unknown action" };
   }
 }
 

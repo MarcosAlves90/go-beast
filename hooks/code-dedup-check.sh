@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Verifica se funções/classes no novo código já existem no projeto.
-# Avisa Claude antes de criar código potencialmente duplicado.
+# Checks whether functions/classes in the new code already exist in the project.
+# Warns Claude before creating potentially duplicate code.
 # Event: PreToolUse (Edit, Write, MultiEdit)
 
 set -uo pipefail
@@ -13,7 +13,7 @@ case "$tool_name" in
   *) exit 0 ;;
 esac
 
-# ── Extrai conteúdo novo e arquivo alvo ────────────────────────────────────
+# ── Extract new content and target file ────────────────────────────────────
 new_content=""
 target_file=""
 
@@ -34,7 +34,7 @@ esac
 
 [[ -z "$new_content" || -z "$target_file" ]] && exit 0
 
-# Só processa arquivos de código-fonte
+# Only process source code files
 echo "$target_file" | grep -qE '\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|rb|swift|c|cpp|h|hpp)$' || exit 0
 
 PROJECT_DIR=$(pwd)
@@ -44,7 +44,7 @@ else
   target_file_abs="$target_file"
 fi
 
-# ── Extrai nomes de declarações do novo conteúdo ────────────────────────────
+# ── Extract declaration names from the new content ──────────────────────────
 new_names=$(
   {
     echo "$new_content" | grep -E '^\s*(export\s+)?(default\s+)?(async\s+)?function\s+[a-zA-Z_$][a-zA-Z0-9_$]*' | \
@@ -115,7 +115,7 @@ while IFS= read -r name; do
   combined=$(echo "$combined" | grep -v '^$' | head -5 || true)
 
   if [[ -n "$combined" ]]; then
-    FOUND="${FOUND}  '${name}' já existe em:\n"
+    FOUND="${FOUND}  '${name}' already exists in:\n"
     while IFS= read -r line; do
       FOUND="${FOUND}    ${line}\n"
     done <<< "$combined"
@@ -124,11 +124,11 @@ while IFS= read -r name; do
 done <<< "$new_names"
 
 if [[ -n "$FOUND" ]]; then
-  echo "⚠ Possível código duplicado — os seguintes identificadores já existem no projeto:"
+  echo "⚠ Possible duplicate code — the following identifiers already exist in the project:"
   echo ""
   printf '%b' "$FOUND"
-  echo "Antes de criar código novo, verifique se o existente pode ser reutilizado ou modificado."
-  echo "Se a duplicação for intencional (override, teste isolado, namespace diferente), prossiga normalmente."
+  echo "Before creating new code, check whether the existing one can be reused or modified."
+  echo "If the duplication is intentional (override, isolated test, different namespace), proceed normally."
   exit 1
 fi
 

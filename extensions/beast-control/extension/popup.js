@@ -16,7 +16,7 @@ function send(msg) {
 }
 
 function formatTime(ts) {
-  return new Date(ts).toLocaleTimeString("pt-BR", {
+  return new Date(ts).toLocaleTimeString("en-US", {
     hour: "2-digit", minute: "2-digit", second: "2-digit",
   });
 }
@@ -26,13 +26,13 @@ function renderState({ connected, bypassActive, evalEnabled, port, recentCommand
   statusIndicator.className = "status-indicator";
   if (bypassActive) {
     statusIndicator.classList.add("status--bypass");
-    statusLabel.textContent = "Bypass ativo";
+    statusLabel.textContent = "Bypass active";
   } else if (connected) {
     statusIndicator.classList.add("status--connected");
-    statusLabel.textContent = "Conectado";
+    statusLabel.textContent = "Connected";
   } else {
     statusIndicator.classList.add("status--disconnected");
-    statusLabel.textContent = "Desconectado";
+    statusLabel.textContent = "Disconnected";
   }
 
   portInput.value = port;
@@ -45,14 +45,14 @@ function renderState({ connected, bypassActive, evalEnabled, port, recentCommand
   evalWarning.hidden = !evalEnabled;
 
   if (!recentCommands.length) {
-    commandLog.innerHTML = '<li class="empty">Nenhum comando ainda</li>';
+    commandLog.innerHTML = '<li class="empty">No commands yet</li>';
     return;
   }
 
   commandLog.innerHTML = recentCommands.map(({ type, ok, ts, error }) => {
     const name = type.replace(/_/g, "_​"); // zero-width space para quebra suave
     const statusClass = ok ? "cmd-status--ok" : "cmd-status--fail";
-    const statusText  = ok ? "ok" : "erro";
+    const statusText  = ok ? "ok" : "error";
     const title = error ? ` title="${error.slice(0, 140).replace(/"/g, "&quot;")}"` : "";
     return `<li${title}>
       <span class="cmd-name">${name}</span>
@@ -71,10 +71,10 @@ portSave.addEventListener("click", async () => {
   const port = parseInt(portInput.value, 10);
   if (port < 1024 || port > 65535) return;
   await send({ action: "set_port", port });
-  portSave.textContent = "Salvo!";
+  portSave.textContent = "Saved!";
   portSave.style.background = "var(--green)";
   setTimeout(() => {
-    portSave.textContent = "Salvar";
+    portSave.textContent = "Save";
     portSave.style.background = "";
   }, 1500);
 });

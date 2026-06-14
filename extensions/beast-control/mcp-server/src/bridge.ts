@@ -3,13 +3,13 @@ import { randomUUID } from "node:crypto";
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 
 const PORT = parseInt(process.env.BEAST_CONTROL_PORT ?? "7331", 10);
-const TOKEN_PORT = PORT + 1; // endpoint HTTP one-shot para entrega do token
+const TOKEN_PORT = PORT + 1; // one-shot HTTP endpoint for token delivery
 const REQUEST_TIMEOUT_MS = 30_000;
-const HANDSHAKE_TIMEOUT_MS = 5_000; // extensão tem 5s para enviar o token após conectar
+const HANDSHAKE_TIMEOUT_MS = 5_000; // extension has 5s to send the token after connecting
 
-// Token gerado uma vez por processo — nunca trafega pela rede de forma exposta
+// Token generated once per process — never transmitted over the network in an exposed form
 const SESSION_TOKEN = randomUUID();
-let tokenDelivered = false; // o token só pode ser buscado uma vez
+let tokenDelivered = false; // the token can only be fetched once
 
 type PendingRequest = {
   resolve: (value: unknown) => void;
@@ -17,7 +17,7 @@ type PendingRequest = {
   timer: NodeJS.Timeout;
 };
 
-// Normaliza erros antes de expor ao Claude — remove stack traces e caminhos internos
+// Normalizes errors before exposing to Claude — removes stack traces and internal paths
 function sanitizeError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
   return msg.replace(/\/[^\s"')]+/g, (p) =>
@@ -28,15 +28,15 @@ function sanitizeError(e: unknown): string {
 let extensionSocket: WebSocket | null = null;
 const pending = new Map<string, PendingRequest>();
 
-// ── Endpoint HTTP one-shot para entrega do token ──────────────────────────────
-// A extensão faz GET http://127.0.0.1:TOKEN_PORT/token uma vez.
-// CORS bloqueia páginas externas de fazerem esse fetch (Private Network Access).
-// Após a primeira entrega, o endpoint retorna 404 — replay impossível.
+// ── One-shot HTTP endpoint for token delivery ─────────────────────────────────
+// The extension does GET http://127.0.0.1:TOKEN_PORT/token once.
+// CORS blocks external pages from making this fetch (Private Network Access).
+// After first delivery, the endpoint returns 404 — replay is impossible.
 
 function startTokenServer(): Promise<void> {
   return new Promise((resolve) => {
     const http = createServer((req: IncomingMessage, res: ServerResponse) => {
-      // Private Network Access: só aceita requisições de origem de extensão ou localhost
+      // Private Network Access: only accepts requests from extension or localhost origins
       const origin = req.headers["origin"] ?? "";
       const isMozExtension = origin.startsWith("moz-extension://");
       const isLocalhost = origin === "" || origin.startsWith("http://127.0.0.1") || origin.startsWith("http://localhost");
@@ -76,28 +76,28 @@ export async function startBridge(): Promise<void> {
 
   const wss = new WebSocketServer({ host: "127.0.0.1", port: PORT });
 
-  // SEC-002: mitiga DNS rebinding rejeitando conexões com Host fora de 127.0.0.1/localhost
+  // SEC-002: mitigates DNS rebinding by rejecting connections with a Host outside 127.0.0.1/localhost
   wss.on("headers", (_headers, req) => {
     const host = req.headers["host"] ?? "";
     const allowed =
       host === "127.0.0.1" || host.startsWith("127.0.0.1:") ||
       host === "localhost"  || host.startsWith("localhost:");
     if (!allowed) {
-      req.destroy(new Error(`Host WebSocket rejeitado: ${host}`));
+      req.destroy(new Error(`Rejected WebSocket Host: ${host}`));
     }
   });
 
   wss.on("connection", (socket) => {
-    // Limita a 1 conexão simultânea
+    // Limit to 1 simultaneous connection
     if (extensionSocket && extensionSocket.readyState === WebSocket.OPEN) {
-      extensionSocket.close(1001, "Nova conexão recebida — encerrando sessão anterior");
+      extensionSocket.close(1001, "New connection received — closing previous session");
     }
 
-    // SEC-001: aguarda o token de handshake antes de marcar conexão como autenticada
+    // SEC-001: waits for the handshake token before marking the connection as authenticated
     let authenticated = false;
     const handshakeTimer = setTimeout(() => {
       if (!authenticated) {
-        socket.close(1008, "Timeout de handshake — token não recebido");
+        socket.close(1008, "Handshake timeout — token not received");
       }
     }, HANDSHAKE_TIMEOUT_MS);
 
@@ -106,12 +106,12 @@ export async function startBridge(): Promise<void> {
       try {
         frame = JSON.parse(raw.toString());
       } catch {
-        socket.close(1008, "Frame de handshake inválido");
+        socket.close(1008, "Invalid handshake frame");
         return;
       }
 
       if (frame.type !== "handshake" || frame.token !== SESSION_TOKEN) {
-        socket.close(1008, "Token de handshake inválido");
+        socket.close(1008, "Invalid handshake token");
         return;
       }
 
@@ -119,10 +119,10 @@ export async function startBridge(): Promise<void> {
       authenticated = true;
       extensionSocket = socket;
 
-      // Confirma handshake para a extensão
+      // Confirm handshake to the extension
       socket.send(JSON.stringify({ type: "handshake_ok" }));
 
-      // A partir daqui, processa mensagens normais
+      // From here on, process normal messages
       socket.on("message", (rawMsg) => {
         let msg: { requestId?: string; ok?: boolean; result?: unknown; error?: string | null };
         try {
@@ -143,7 +143,7 @@ export async function startBridge(): Promise<void> {
         if (msg.ok) {
           pending_req.resolve(msg.result ?? {});
         } else {
-          pending_req.reject(new Error(msg.error ?? "Erro desconhecido na extensão"));
+          pending_req.reject(new Error(msg.error ?? "Unknown error in extension"));
         }
       });
 
@@ -151,7 +151,7 @@ export async function startBridge(): Promise<void> {
         if (extensionSocket === socket) extensionSocket = null;
         for (const [id, req] of pending) {
           clearTimeout(req.timer);
-          req.reject(new Error("Conexão com a extensão encerrada"));
+          req.reject(new Error("Connection to extension closed"));
           pending.delete(id);
         }
       });
@@ -165,7 +165,7 @@ export function sendCommand(type: string, payload: Record<string, unknown> = {})
   if (!extensionSocket || extensionSocket.readyState !== WebSocket.OPEN) {
     return Promise.reject(
       new Error(
-        "Extensão beast-control não conectada. Abra o Zen Browser e verifique se a extensão está instalada e conectada."
+        "beast-control extension not connected. Open Zen Browser and verify that the extension is installed and connected."
       )
     );
   }
@@ -175,7 +175,7 @@ export function sendCommand(type: string, payload: Record<string, unknown> = {})
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       pending.delete(requestId);
-      reject(new Error(`Timeout (${REQUEST_TIMEOUT_MS / 1000}s) aguardando resposta da extensão`));
+      reject(new Error(`Timeout (${REQUEST_TIMEOUT_MS / 1000}s) waiting for extension response`));
     }, REQUEST_TIMEOUT_MS);
 
     pending.set(requestId, { resolve, reject, timer });
@@ -185,7 +185,7 @@ export function sendCommand(type: string, payload: Record<string, unknown> = {})
     } catch (e) {
       clearTimeout(timer);
       pending.delete(requestId);
-      reject(new Error(`Falha ao enviar comando: ${sanitizeError(e)}`));
+      reject(new Error(`Failed to send command: ${sanitizeError(e)}`));
     }
   });
 }

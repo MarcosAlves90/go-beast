@@ -11,11 +11,28 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.15.2] - 2026-06-13
+
+### Changed
+
+- **Full repository translation to English**: all Portuguese content translated across hooks, workflows, docs, and the beast-control extension — `hooks/*.sh` comments and user-facing strings, `workflows/go-hook-eval.js` (meta, test case names, prompts, report), `workflows/go-skill-eval.js` (meta, input data, prompts, report), `CHANGELOG.md` historical entries, `extensions/beast-control/` docs and source code (JS/TS comments, error strings, test names).
+
+---
+
+## [1.15.1] - 2026-06-13
+
+### Added
+
+- **AGENTS.md**: `### Language` convention — all content in the repo (skills, docs, commits, PRs, code comments) must be written in English.
+- **README.md**: design principle 6 — "English only" — with a pointer to `AGENTS.md` for the full policy.
+
+---
+
 ## [1.15.0] - 2026-06-13
 
 ### Fixed
 
-- **hooks/docs-update-remind.sh**: output redirecionado para stdout (Claude) e stderr (terminal) em paralelo — antes só saía no stdout, deixando o terminal sem output visível ("No stderr output").
+- **hooks/docs-update-remind.sh**: output redirected to stdout (Claude) and stderr (terminal) in parallel — previously only stdout was used, leaving the terminal with no visible output ("No stderr output").
 
 ---
 
@@ -23,8 +40,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **hooks/docs-update-remind.sh**: convertido de observer passivo para blocker ativo — `exit 2` re-dispara o Claude com o lembrete como feedback obrigatório, forçando atualização de docs e versão antes de encerrar a sessão.
-- **workflows/go-hook-eval.js**: caso `exibe aviso quando flag existe` atualizado para `expectExit: 2`.
+- **hooks/docs-update-remind.sh**: converted from passive observer to active blocker — `exit 2` re-triggers Claude with the reminder as mandatory feedback, forcing docs and version updates before ending the session.
+- **workflows/go-hook-eval.js**: case `shows reminder when flag exists` updated to `expectExit: 2`.
 
 ---
 
@@ -32,7 +49,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **hooks/docs-update-remind.sh**: detecta arquivos de versionamento (`PACKAGE.md`, `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`) e adiciona lembrete de bump de versão na caixa de aviso.
+- **hooks/docs-update-remind.sh**: detects versioning files (`PACKAGE.md`, `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`) and adds a version bump reminder to the warning box.
 
 ---
 
@@ -40,22 +57,22 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **go-hook-eval**: harness de teste com 27 casos cobrindo todos os hooks de go-beast — blockers, observers, stop hooks, jq fallback com newlines literais, flag files e `stop_hook_active`. Bugs no harness corrigidos após primeira execução (cleanup de flags e remoção de setup desnecessário em `code-verify-run`).
+- **go-hook-eval**: test harness with 27 cases covering all go-beast hooks — blockers, observers, stop hooks, jq fallback with literal newlines, flag files, and `stop_hook_active`. Harness bugs fixed after first run (flag cleanup and removal of unnecessary setup in `code-verify-run`).
 
 ### Changed
 
-- **go-skill-eval**: `go-swift` e `go-jay` adicionadas ao `FILESYSTEM_SKILLS` — rodam apenas com inputs C e D (código real). Inputs C e D enriquecidos com `.claude/settings.json`, `CLAUDE.md` e `AGENTS.md` para contexto Claude Code. Instrução `skillOverrides` adicionada ao `buildPrompt` para go-kite, go-swift, go-jay e go-ant operar corretamente sem filesystem tools. Structural eval aceita traduções PT para `optimization`, `bottleneck`, `baseline`, `recommendation` e `rollback`.
-- **hooks/sync-go-beast-skills.sh**: remove symlinks órfãos de workflows renomeados antes de relinkar — previne dangling symlinks após renomeações.
-- **settings.json global**: removidos hooks taskflow-session-log, taskflow-guard-db e taskflow-node-postrun — eram artefatos de projeto fictício (TaskFlow API), não pertencem ao settings global.
+- **go-skill-eval**: `go-swift` and `go-jay` added to `FILESYSTEM_SKILLS` — run only with inputs C and D (real code). Inputs C and D enriched with `.claude/settings.json`, `CLAUDE.md`, and `AGENTS.md` for Claude Code context. `skillOverrides` instruction added to `buildPrompt` so go-kite, go-swift, go-jay, and go-ant operate correctly without filesystem tools. Structural eval removed Portuguese term acceptance (no longer needed after full English translation).
+- **hooks/sync-go-beast-skills.sh**: removes stale symlinks from renamed workflows before re-linking — prevents dangling symlinks after renames.
+- **global settings.json**: removed hooks taskflow-session-log, taskflow-guard-db, and taskflow-node-postrun — they were artifacts of the fictional TaskFlow API project and do not belong in the global settings.
 
 ### Removed
 
-- **hooks/taskflow-session-log.sh**, **hooks/taskflow-guard-db.sh**, **hooks/taskflow-node-postrun.sh**: removidos do repo. Eram hooks gerados para o projeto fictício TaskFlow API durante sessões de eval.
+- **hooks/taskflow-session-log.sh**, **hooks/taskflow-guard-db.sh**, **hooks/taskflow-node-postrun.sh**: removed from repo. They were hooks generated for the fictional TaskFlow API project during eval sessions.
 
 ### Fixed
 
-- `~/.claude/hooks/sync-go-beast-skills.sh` estava como cópia local desatualizada; substituído por symlink para go-beast (versão com dangling cleanup e cp de AGENTS.global.md).
-- Symlinks órfãos `go-star-eval.js` e `hook-eval.js` em `~/.claude/workflows/` removidos após renomeação dos workflows.
+- `~/.claude/hooks/sync-go-beast-skills.sh` was a stale local copy; replaced with a symlink to go-beast (version with dangling cleanup and cp of AGENTS.global.md).
+- Stale symlinks `go-star-eval.js` and `hook-eval.js` in `~/.claude/workflows/` removed after workflow renames.
 
 ---
 
@@ -85,10 +102,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **CLAUDE.md** renomeado para **AGENTS.md** — formato reconhecido por Claude Code, Gemini CLI, Copilot CLI e outros agentes.
-- **CLAUDE.global.md** renomeado para **AGENTS.global.md** — mantém convenção de nomes; remove prefixo Claude-específico.
-- **hooks/sync-go-beast-skills.sh**: atualizado para ler `AGENTS.global.md` em vez de `CLAUDE.global.md`. Destino (`~/.claude/CLAUDE.md`) inalterado.
-- **PACKAGE.md**, **README.md**: todas as referências aos arquivos renomeados atualizadas.
+- **CLAUDE.md** renamed to **AGENTS.md** — format recognized by Claude Code, Gemini CLI, Copilot CLI, and other agents.
+- **CLAUDE.global.md** renamed to **AGENTS.global.md** — maintains naming convention; removes Claude-specific prefix.
+- **hooks/sync-go-beast-skills.sh**: updated to read `AGENTS.global.md` instead of `CLAUDE.global.md`. Destination (`~/.claude/CLAUDE.md`) unchanged.
+- **PACKAGE.md**, **README.md**: all references to renamed files updated.
 
 ---
 
@@ -96,13 +113,13 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **go-swift/SKILL.md**: marcada explicitamente como `[Claude Code only]` no título e frontmatter. Adicionado campo `platform: Claude Code`. Conteúdo inalterado.
-- **go-jay/SKILL.md**: tornada agnóstica. Descrição reescrita para não citar Claude Code como primário — CLAUDE.md é um target entre outros. Título atualizado para refletir suporte a qualquer formato de contexto de agente.
-- **go-smith/SKILL.md**: output path generalizado — removida referência a `~/.claude/skills/` como destino; o diretório de skills do agente é responsabilidade do sistema de sync, não da skill.
-- **go-hawk/SKILL.md**: `invoke` → `load` na lista de meta-skills; go-swift adicionada com marcação `[Claude Code only]`.
-- **go-beaver/SKILL.md**: `invoke the setup-pre-commit skill` → `the setup-pre-commit skill can be loaded` (linguagem agnóstica).
-- **README.md**: seção "Installing in Claude Code" renomeada para "Installation" e expandida com instruções para Gemini CLI / Copilot CLI / outros agentes. Tabela de skills: go-jay e go-swift atualizadas para refletir escopo real.
-- **CLAUDE.md**: adicionada nota de escopo — este arquivo é o contexto do agente *mantenedor* do repo, não dos agentes que usam as skills.
+- **go-swift/SKILL.md**: explicitly marked as `[Claude Code only]` in title and frontmatter. Added `platform: Claude Code` field. Content unchanged.
+- **go-jay/SKILL.md**: made agent-agnostic. Description rewritten to not cite Claude Code as primary — CLAUDE.md is one target among others. Title updated to reflect support for any agent context format.
+- **go-smith/SKILL.md**: output path generalized — removed reference to `~/.claude/skills/` as destination; the agent's skills directory is the sync system's responsibility, not the skill's.
+- **go-hawk/SKILL.md**: `invoke` → `load` in meta-skills list; go-swift added with `[Claude Code only]` marker.
+- **go-beaver/SKILL.md**: `invoke the setup-pre-commit skill` → `the setup-pre-commit skill can be loaded` (agent-agnostic language).
+- **README.md**: "Installing in Claude Code" section renamed to "Installation" and expanded with instructions for Gemini CLI / Copilot CLI / other agents. Skills table: go-jay and go-swift updated to reflect real scope.
+- **CLAUDE.md**: added scope note — this file is the context for the repo *maintainer* agent, not for agents that use the skills.
 
 ---
 
@@ -110,7 +127,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **go-lark** — nova skill de exploração do espaço de soluções. Posição: `go-hawk → go-lark → go-fox`. Cobre: geração de 3–5 abordagens distintas, avaliação contra constraints e atributos de qualidade do projeto, seleção com rationale explícito. Produz `APPROACH.md` como handoff para go-fox. Opcional quando os requisitos já restringem a solução a uma única abordagem.
+- **go-lark** — new solution-space exploration skill. Position: `go-hawk → go-lark → go-fox`. Covers: generating 3–5 distinct approaches, evaluating against project constraints and quality attributes, selecting one with explicit rationale. Produces `APPROACH.md` as handoff to go-fox. Optional when requirements already constrain the solution to a single approach.
 
 ---
 
@@ -118,7 +135,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **go-ant** — nova skill de profiling e otimização de performance. Cobre: baseline obrigatório antes de qualquer mudança, profiling com ferramentas nativas por stack (pprof, clinic.js, EXPLAIN ANALYZE, Lighthouse), diagnóstico de root cause (N+1, índice ausente, bundle excessivo, etc.), aplicação de fix cirúrgico, e benchmark antes/depois. Produz `PERF.md` com evidências. Nunca é invocada especulativamente — requer problema comprovado com dado numérico. Posição: após go-crane (métricas revelam o problema) ou após go-eagle (load tests revelam gargalo).
+- **go-ant** — new performance profiling and optimization skill. Covers: mandatory baseline before any change, profiling with stack-native tools (pprof, clinic.js, EXPLAIN ANALYZE, Lighthouse), root cause diagnosis (N+1, missing index, excessive bundle, etc.), surgical fix application, and before/after benchmark. Produces `PERF.md` with evidence. Never invoked speculatively — requires a proven problem with a numeric baseline. Position: after go-crane (metrics reveal the problem) or after go-eagle (load tests reveal the bottleneck).
 
 ---
 
@@ -126,7 +143,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **go-crane** — nova skill de observabilidade e monitoramento. Cobre: logging estruturado com correlation IDs, métricas (Prometheus/OpenTelemetry), tracing distribuído, health endpoints (`/health`, `/ready`, `/live`), alertas com runbooks, e dashboards. Produz `OBSERVABILITY.md`. Posição no pipeline: após go-raven ou após go-wolf antes da revisão go-bear.
+- **go-crane** — new observability and monitoring skill. Covers: structured logging with correlation IDs, metrics (Prometheus/OpenTelemetry), distributed tracing, health endpoints (`/health`, `/ready`, `/live`), alerts with runbooks, and dashboards. Produces `OBSERVABILITY.md`. Pipeline position: after go-raven or after go-wolf before the go-bear review.
 
 ---
 
@@ -134,7 +151,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **hooks/git-strip-coauthored.sh** — `PreToolUse (Bash)`: bloqueia commits cuja mensagem contenha a tag `Co-Authored-By` (case-insensitive). Exige que o Claude reenvie o commit sem a tag antes de prosseguir.
+- **hooks/git-strip-coauthored.sh** — `PreToolUse (Bash)`: blocks commits whose message contains the `Co-Authored-By` tag (case-insensitive). Requires Claude to resend the commit without the tag before proceeding.
 
 ---
 
@@ -142,7 +159,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- **go-smith/SKILL.md** e **go-swift/SKILL.md** adicionados ao repositório. Os dois diretórios estavam documentados em README.md, PACKAGE.md, CHANGELOG.md e go-star-eval.js desde v1.3.0, mas os arquivos físicos existiam apenas em `~/.claude/skills/` e nunca foram commitados no repo. Copiados da instalação local.
+- **go-smith/SKILL.md** and **go-swift/SKILL.md** added to the repository. Both directories had been documented in README.md, PACKAGE.md, CHANGELOG.md, and go-star-eval.js since v1.3.0, but the physical files existed only in `~/.claude/skills/` and had never been committed to the repo. Copied from the local installation.
 
 ---
 
@@ -265,7 +282,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **go-raven**: step 3 (CD pipeline) inlined staging + production pipeline templates, deploy strategy table, and rollback procedure — replaces the `${CLAUDE_SKILL_DIR}/references/pipeline-templates.md` reference that was unreadable at runtime, causing A=3 aderência.
+- **go-raven**: step 3 (CD pipeline) inlined staging + production pipeline templates, deploy strategy table, and rollback procedure — replaces the `${CLAUDE_SKILL_DIR}/references/pipeline-templates.md` reference that was unreadable at runtime, causing A=3 adherence.
 - **go-owl**: step 4 (Runbooks) inlined runbook template and minimum required runbooks list — replaces the `${CLAUDE_SKILL_DIR}/references/runbook-template.md` reference for the same reason.
 - **workflows/go-star-eval.js**: added Input C (PayLink — mid-complexity SaaS payments platform with simulated existing documentation) as a third benchmark input. RUNS expanded from 24 to 36 (12 skills × 3 inputs). Report comparativo updated to A/B/C. `buildPrompt` now surfaces `docs_existentes` field when present, enabling go-mole, go-owl, and go-raven to be tested with realistic documentation context.
 
@@ -276,7 +293,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - **go-mole**: step 3 now specifies "when documentation is absent or minimal, produce all sections with `(inferred)` labels rather than omitting them" — resolves the R=3 score on sparse/fictional projects by making inference explicit and listing inferred sections under **Gaps**.
-- **go-bear**: step 6 (infrastructure hardening) inlined a concrete checklist (IAM, network, secrets in CI, logging/monitoring) replacing the `${CLAUDE_SKILL_DIR}/references/infra-hardening.md` reference that the LLM cannot read at runtime — step was previously skipped, causing A=3 on aderência.
+- **go-bear**: step 6 (infrastructure hardening) inlined a concrete checklist (IAM, network, secrets in CI, logging/monitoring) replacing the `${CLAUDE_SKILL_DIR}/references/infra-hardening.md` reference that the LLM cannot read at runtime — step was previously skipped, causing A=3 on adherence.
 - **go-beaver**: step 1 now provides an explicit decision table (single-repo vs monorepo vs multi-repo) with signal-based criteria — previously defaulted to monorepo for all projects, producing over-engineered scaffolds for simple apps.
 
 ---

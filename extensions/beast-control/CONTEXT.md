@@ -1,39 +1,39 @@
 # Context — beast-control
 
-## O que é este projeto
+## What this project is
 
-**beast-control** é uma ferramenta opcional do pacote go-*: uma extensão Firefox/Zen + servidor MCP Node.js que expõe controle do browser real como ferramentas para Claude Code.
+**beast-control** is an optional tool in the go-* pack: a Firefox/Zen extension + Node.js MCP server that exposes real browser control as tools for Claude Code.
 
-Registrado como MCP tool `beast-control`, é usado pelos beasts go-lynx, go-eagle e go-bear quando precisam interagir com o browser do usuário — páginas autenticadas, estado real de sessão, inspeção de UI. Quando não está disponível, os beasts usam Playwright como fallback.
+Registered as the MCP tool `beast-control`, it is used by the beasts go-lynx, go-eagle, and go-bear when they need to interact with the user's browser — authenticated pages, real session state, UI inspection. When unavailable, the beasts fall back to Playwright.
 
-## Terminologia canônica
+## Canonical terminology
 
-| Termo | Significado |
+| Term | Meaning |
 |-------|------------|
-| **extensão** | A extensão Firefox (MV3) que roda no Zen Browser |
-| **background** | O service worker da extensão (`extension/background.js`) |
-| **content script** | O script injetado nas páginas para executar ações DOM (`extension/content.js`) |
-| **bridge** | O WebSocket server no MCP server (`mcp-server/src/bridge.ts`) |
-| **MCP server** | O processo Node.js spawned pelo Claude Code via stdio |
-| **handshake** | O protocolo de autenticação por token one-shot (SEC-001) |
-| **redação** | Substituição de valores de campos sensíveis por `[REDACTED]` |
-| **bypass** | Modo que desativa a redação — ativado manualmente no popup |
-| **eval** | Execução de JS arbitrário via `browser_eval` — desabilitado por padrão |
+| **extension** | The Firefox (MV3) extension running in Zen Browser |
+| **background** | The extension's service worker (`extension/background.js`) |
+| **content script** | The script injected into pages to execute DOM actions (`extension/content.js`) |
+| **bridge** | The WebSocket server in the MCP server (`mcp-server/src/bridge.ts`) |
+| **MCP server** | The Node.js process spawned by Claude Code via stdio |
+| **handshake** | The one-shot token authentication protocol (SEC-001) |
+| **redaction** | Replacing sensitive field values with `[REDACTED]` |
+| **bypass** | Mode that disables redaction — activated manually in the popup |
+| **eval** | Execution of arbitrary JS via `browser_eval` — disabled by default |
 
-## Arquitetura em uma linha
+## Architecture in one line
 
 ```
 Claude Code → MCP server (stdio) → WebSocket 127.0.0.1:7331 → background SW → content script → DOM
 ```
 
-## Posição no pacote go-*
+## Position in the go-* pack
 
-Ferramenta opcional — não é um beast de fase. Documentada no CLAUDE.md global como MCP tool `beast-control`. Beasts que a usam quando disponível: go-lynx, go-eagle, go-bear.
+Optional tool — not a phase beast. Documented in the global CLAUDE.md as MCP tool `beast-control`. Beasts that use it when available: go-lynx, go-eagle, go-bear.
 
-## Decisões já tomadas (não reabrir sem evidência)
+## Decisions already made (do not reopen without evidence)
 
-- MV3 com service worker (não MV2) — veja ADR-001
-- WebSocket como protocolo de bridge (não Native Messaging) — veja ADR-002
-- MCP via stdio (não daemon HTTP) — veja ADR-003
-- Redação no content script, não no MCP server — veja ADR-004
-- Token one-shot via HTTP (não arquivo, não Native Messaging) — veja docs/security/SECURITY_REVIEW.md SEC-001
+- MV3 with service worker (not MV2) — see ADR-001
+- WebSocket as bridge protocol (not Native Messaging) — see ADR-002
+- MCP via stdio (not HTTP daemon) — see ADR-003
+- Redaction in the content script, not in the MCP server — see ADR-004
+- One-shot token via HTTP (not file, not Native Messaging) — see docs/security/SECURITY_REVIEW.md SEC-001

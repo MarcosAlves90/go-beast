@@ -1,11 +1,11 @@
-// Testa a lógica de redação de campos sensíveis do content script.
-// O content.js usa globals do browser (document, Element) — aqui simulamos
-// com objetos mínimos para testar apenas a lógica de seleção de campos.
+// Tests the sensitive field redaction logic from the content script.
+// content.js uses browser globals (document, Element) — here we simulate
+// with minimal objects to test only the field selection logic.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 
-// ── Replica a lógica de SENSITIVE_SELECTORS do content.js ────────────────────
-// Mantida em sync manualmente. Se content.js mudar, atualizar aqui.
+// ── Replicates the SENSITIVE_SELECTORS logic from content.js ─────────────────
+// Kept in sync manually. If content.js changes, update here.
 
 const SENSITIVE_SELECTORS = [
   '[type="password"]',
@@ -19,17 +19,17 @@ const SENSITIVE_SELECTORS = [
   '[name*="password" i]',
 ];
 
-// Simulação mínima de Element.matches() para testes sem browser
+// Minimal simulation of Element.matches() for browser-less tests
 function matchesSelector(attrs: Record<string, string>, selector: string): boolean {
   // [attr="value"]
   const exact = selector.match(/^\[(\w+)="([^"]+)"\]$/);
   if (exact) return attrs[exact[1]] === exact[2];
 
-  // [attr~="value"] — value é uma das palavras separadas por espaço
+  // [attr~="value"] — value is one of the space-separated words
   const word = selector.match(/^\[(\w+)~="([^"]+)"\]$/);
   if (word) return (attrs[word[1]] ?? "").split(/\s+/).includes(word[2]);
 
-  // [attr*="value" i] — contém substring, case-insensitive
+  // [attr*="value" i] — contains substring, case-insensitive
   const contains = selector.match(/^\[(\w+)\*="([^"]+)"\s+i\]$/);
   if (contains) return (attrs[contains[1]] ?? "").toLowerCase().includes(contains[2].toLowerCase());
 
@@ -40,86 +40,86 @@ function isSensitive(attrs: Record<string, string>): boolean {
   return SENSITIVE_SELECTORS.some((sel) => matchesSelector(attrs, sel));
 }
 
-// ── Testes ────────────────────────────────────────────────────────────────────
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("isSensitive — campos que devem ser redactados", () => {
-  test("campo password por type", () => {
+describe("isSensitive — fields that should be redacted", () => {
+  test("password field by type", () => {
     assert.ok(isSensitive({ type: "password" }));
   });
 
-  test("campo tel por type", () => {
+  test("tel field by type", () => {
     assert.ok(isSensitive({ type: "tel" }));
   });
 
-  test("campo cc-number por autocomplete", () => {
+  test("cc-number field by autocomplete", () => {
     assert.ok(isSensitive({ autocomplete: "cc-number" }));
   });
 
-  test("campo cc-number junto com outros tokens de autocomplete", () => {
+  test("cc-number alongside other autocomplete tokens", () => {
     assert.ok(isSensitive({ autocomplete: "billing cc-number" }));
   });
 
-  test("campo cc-csc por autocomplete", () => {
+  test("cc-csc field by autocomplete", () => {
     assert.ok(isSensitive({ autocomplete: "cc-csc" }));
   });
 
-  test("campo com name contendo 'card' (case-insensitive)", () => {
+  test("field with name containing 'card' (case-insensitive)", () => {
     assert.ok(isSensitive({ name: "cardNumber" }));
     assert.ok(isSensitive({ name: "CARD_NUM" }));
     assert.ok(isSensitive({ name: "creditcard" }));
   });
 
-  test("campo com name contendo 'cvv'", () => {
+  test("field with name containing 'cvv'", () => {
     assert.ok(isSensitive({ name: "cvv" }));
     assert.ok(isSensitive({ name: "CVV2" }));
   });
 
-  test("campo com name contendo 'ssn'", () => {
+  test("field with name containing 'ssn'", () => {
     assert.ok(isSensitive({ name: "ssn" }));
     assert.ok(isSensitive({ name: "user_ssn" }));
   });
 
-  test("campo com name contendo 'cpf'", () => {
+  test("field with name containing 'cpf'", () => {
     assert.ok(isSensitive({ name: "cpf" }));
     assert.ok(isSensitive({ name: "CPF_input" }));
   });
 
-  test("campo com name contendo 'password'", () => {
+  test("field with name containing 'password'", () => {
     assert.ok(isSensitive({ name: "password" }));
     assert.ok(isSensitive({ name: "confirm_password" }));
   });
 });
 
-describe("isSensitive — campos que NÃO devem ser redactados", () => {
-  test("campo email", () => {
+describe("isSensitive — fields that should NOT be redacted", () => {
+  test("email field", () => {
     assert.ok(!isSensitive({ type: "email" }));
   });
 
-  test("campo text genérico", () => {
+  test("generic text field", () => {
     assert.ok(!isSensitive({ type: "text", name: "username" }));
   });
 
-  test("campo search", () => {
+  test("search field", () => {
     assert.ok(!isSensitive({ type: "search" }));
   });
 
-  test("campo number sem nome sensível", () => {
+  test("number field without sensitive name", () => {
     assert.ok(!isSensitive({ type: "number", name: "quantity" }));
   });
 
-  test("campo com autocomplete de nome não sensível", () => {
+  test("field with non-sensitive autocomplete name", () => {
     assert.ok(!isSensitive({ autocomplete: "given-name" }));
     assert.ok(!isSensitive({ autocomplete: "email" }));
   });
 
-  test("campo sem atributos", () => {
+  test("field with no attributes", () => {
     assert.ok(!isSensitive({}));
   });
 
-  test("campo name que contém substring de falso positivo", () => {
-    // 'cardigan' contém 'card' — deve ser sensível por design (false positive aceitável)
+  test("field name containing a false positive substring", () => {
+    // 'cardigan' contains 'card' — should be sensitive by design (acceptable false positive)
     assert.ok(isSensitive({ name: "cardigan" }));
-    // mas 'discount_code' não
+    // but 'discount_code' should not
     assert.ok(!isSensitive({ name: "discount_code" }));
   });
 });

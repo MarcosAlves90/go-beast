@@ -1,4 +1,4 @@
-// Seletores de campos considerados sensíveis por padrão
+// Selectors for fields considered sensitive by default
 const SENSITIVE_SELECTORS = [
   '[type="password"]',
   '[type="tel"]',
@@ -46,14 +46,14 @@ const handlers = {
 
   click({ selector }) {
     const el = document.querySelector(selector);
-    if (!el) return { ok: false, error: `Elemento não encontrado: ${selector}` };
+    if (!el) return { ok: false, error: `Element not found: ${selector}` };
     el.click();
     return { ok: true, result: {} };
   },
 
   type({ selector, text, clearFirst }) {
     const el = document.querySelector(selector);
-    if (!el) return { ok: false, error: `Elemento não encontrado: ${selector}` };
+    if (!el) return { ok: false, error: `Element not found: ${selector}` };
     el.focus();
     if (clearFirst) el.value = "";
     el.value += text;
@@ -67,7 +67,7 @@ const handlers = {
     let filled = 0;
     for (const { selector, value } of fields) {
       const el = document.querySelector(selector);
-      if (!el) { errors.push(`Elemento não encontrado: ${selector}`); continue; }
+      if (!el) { errors.push(`Element not found: ${selector}`); continue; }
       el.focus();
       el.value = value;
       el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -90,7 +90,7 @@ const handlers = {
 
   get_dom({ selector, bypassActive }) {
     const root = selector ? document.querySelector(selector) : document.documentElement;
-    if (!root) return { ok: false, error: `Elemento não encontrado: ${selector}` };
+    if (!root) return { ok: false, error: `Element not found: ${selector}` };
 
     let html = root.outerHTML;
     let redacted = false;
@@ -114,18 +114,18 @@ const handlers = {
 
   get_text({ selector, bypassActive }) {
     const el = selector ? document.querySelector(selector) : document.body;
-    if (!el) return { ok: false, error: `Elemento não encontrado: ${selector}` };
+    if (!el) return { ok: false, error: `Element not found: ${selector}` };
     const raw = el.innerText ?? el.textContent ?? "";
     const redacted = !bypassActive && isSensitive(el);
     return { ok: true, result: { text: redacted ? "[REDACTED]" : raw, redacted } };
   },
 
   eval_js({ expression, evalEnabled }) {
-    // SEC-003: eval_js desabilitado por padrão; requer flag explícita no storage
+    // SEC-003: eval_js disabled by default; requires explicit flag in storage
     if (!evalEnabled) {
       return {
         ok: false,
-        error: "eval_js está desabilitado. Ative 'Permitir execução de JS' no popup da extensão para usar este comando.",
+        error: "eval_js is disabled. Enable 'Allow JS execution' in the extension popup to use this command.",
       };
     }
     try {
@@ -147,7 +147,7 @@ const handlers = {
 browser.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   const handler = handlers[msg.action];
   if (!handler) {
-    sendResponse({ ok: false, error: `Ação desconhecida: ${msg.action}` });
+    sendResponse({ ok: false, error: `Unknown action: ${msg.action}` });
     return;
   }
   try {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Marca projeto para verificação quando Claude modifica arquivos de código-fonte.
+# Flags the project for type/test verification when Claude modifies source code files.
 # Event: PostToolUse (Edit, Write, MultiEdit)
 
 set -uo pipefail

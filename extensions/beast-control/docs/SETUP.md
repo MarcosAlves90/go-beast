@@ -1,58 +1,58 @@
-# Instalação do beast-control
+# beast-control Setup
 
-O beast-control tem duas partes: uma **extensão** para o Zen Browser e um **servidor MCP** que o Claude Code usa. Você precisa instalar as duas.
+beast-control has two parts: an **extension** for Zen Browser and an **MCP server** used by Claude Code. You need to install both.
 
 ---
 
-## Pré-requisitos
+## Prerequisites
 
-- [Zen Browser](https://zen-browser.app) instalado
-- [Node.js](https://nodejs.org) versão 20 ou superior
-- [Claude Code](https://claude.ai/code) instalado
+- [Zen Browser](https://zen-browser.app) installed
+- [Node.js](https://nodejs.org) version 20 or higher
+- [Claude Code](https://claude.ai/code) installed
 
-Para verificar o Node.js, abra o terminal e rode:
+To verify Node.js, open a terminal and run:
 ```
 node --version
 ```
-O resultado deve ser `v20.x.x` ou maior.
+The output should be `v20.x.x` or higher.
 
 ---
 
-## Parte 1 — Instalar a extensão no Zen Browser
+## Part 1 — Install the extension in Zen Browser
 
-1. Abra o **Zen Browser**
-2. Na barra de endereço, digite `about:debugging` e pressione Enter
-3. Clique em **"Este Firefox"** no menu à esquerda
-4. Clique em **"Carregar extensão temporária..."**
-5. Navegue até a pasta `beast-control/extension/` e selecione o arquivo `manifest.json`
-6. A extensão aparece na lista — você verá o ícone do beast-control na barra de ferramentas
+1. Open **Zen Browser**
+2. In the address bar, type `about:debugging` and press Enter
+3. Click **"This Firefox"** in the left menu
+4. Click **"Load Temporary Add-on..."**
+5. Navigate to the `beast-control/extension/` folder and select the `manifest.json` file
+6. The extension appears in the list — you will see the beast-control icon in the toolbar
 
-> A extensão temporária precisa ser recarregada toda vez que o Zen Browser for reiniciado. Isso é esperado para extensões de desenvolvimento local.
+> The temporary extension must be reloaded every time Zen Browser is restarted. This is expected for local development extensions.
 
 ---
 
-## Parte 2 — Instalar o servidor MCP
+## Part 2 — Install the MCP server
 
-No terminal, entre na pasta do servidor e instale as dependências:
+In the terminal, go to the server folder and install dependencies:
 
 ```bash
-cd /caminho/para/beast-control/mcp-server
+cd /path/to/beast-control/mcp-server
 npm install
 npm run build
 ```
 
 ---
 
-## Parte 3 — Registrar o servidor no Claude Code
+## Part 3 — Register the server in Claude Code
 
-Crie ou edite o arquivo `.mcp.json` na pasta do seu projeto (ou `~/.claude/claude.json` para disponibilizar globalmente):
+Create or edit the `.mcp.json` file in your project folder (or `~/.claude/claude.json` to make it globally available):
 
 ```json
 {
   "mcpServers": {
     "beast-control": {
       "command": "node",
-      "args": ["/caminho/completo/para/beast-control/mcp-server/dist/index.js"],
+      "args": ["/full/path/to/beast-control/mcp-server/dist/index.js"],
       "env": {
         "BEAST_CONTROL_PORT": "7331"
       }
@@ -61,49 +61,49 @@ Crie ou edite o arquivo `.mcp.json` na pasta do seu projeto (ou `~/.claude/claud
 }
 ```
 
-Substitua `/caminho/completo/para/beast-control/` pelo caminho real no seu computador.
+Replace `/full/path/to/beast-control/` with the actual path on your machine.
 
 ---
 
-## Uso diário
+## Daily use
 
-1. Abra o **Zen Browser** (a extensão já está carregada)
-2. Abra o **Claude Code** — ele iniciará o servidor MCP automaticamente
-3. O ícone da extensão ficará **verde** quando a conexão estiver ativa
-4. Peça ao Claude para fazer coisas no browser: "clique no botão de login", "preencha o formulário", etc.
+1. Open **Zen Browser** (the extension is already loaded)
+2. Open **Claude Code** — it will start the MCP server automatically
+3. The extension icon will turn **green** when the connection is active
+4. Ask Claude to do things in the browser: "click the login button", "fill out the form", etc.
 
-### Toggle de privacidade
+### Privacy toggle
 
-Por padrão, campos de senha, CPF, cartão de crédito e similares são **ocultados** antes de chegar ao Claude.
+By default, password fields, tax ID numbers, credit card fields, and similar sensitive fields are **hidden** before reaching Claude.
 
-Para desativar temporariamente: clique no ícone do beast-control na barra do browser e ative o toggle **"Bypass de privacidade"**. O ícone ficará vermelho enquanto o bypass estiver ativo.
+To temporarily disable: click the beast-control icon in the browser toolbar and enable the **"Privacy bypass"** toggle. The icon will turn red while the bypass is active.
 
 ---
 
-## Comandos disponíveis (para desenvolvedores)
+## Available commands (for developers)
 
-Dentro do `mcp-server/`:
+Inside `mcp-server/`:
 
-| Comando | O que faz |
+| Command | What it does |
 |---------|-----------|
-| `npm run build` | Compila TypeScript para JavaScript |
-| `npm run dev` | Compila em modo watch (recompila ao salvar) |
-| `npm run typecheck` | Verifica tipos sem compilar |
+| `npm run build` | Compiles TypeScript to JavaScript |
+| `npm run dev` | Compiles in watch mode (recompiles on save) |
+| `npm run typecheck` | Type-checks without compiling |
 
 ---
 
-## Solução de problemas
+## Troubleshooting
 
-**Ícone da extensão está cinza (desconectado)**
-- Verifique se o Claude Code está aberto e o MCP server foi iniciado
-- Confirme que a porta no popup da extensão é a mesma do `BEAST_CONTROL_PORT` (padrão: 7331)
+**Extension icon is gray (disconnected)**
+- Verify that Claude Code is open and the MCP server has started
+- Confirm that the port in the extension popup matches `BEAST_CONTROL_PORT` (default: 7331)
 
-**"Extensão beast-control não conectada" no Claude**
-- Recarregue a extensão em `about:debugging`
-- Reinicie o Claude Code
+**"beast-control extension not connected" in Claude**
+- Reload the extension in `about:debugging`
+- Restart Claude Code
 
-**Porta em uso**
-- Mude `BEAST_CONTROL_PORT` no `.mcp.json` e atualize a porta no popup da extensão para o mesmo valor
+**Port in use**
+- Change `BEAST_CONTROL_PORT` in `.mcp.json` and update the port in the extension popup to the same value
 
-**A extensão sumiu após reiniciar o Zen Browser**
-- Extensões temporárias precisam ser recarregadas — veja o Passo 1.4 acima
+**The extension disappeared after restarting Zen Browser**
+- Temporary extensions must be reloaded — see Step 1.4 above

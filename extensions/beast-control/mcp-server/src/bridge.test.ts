@@ -3,32 +3,32 @@ import assert from "node:assert/strict";
 import { sanitizeError } from "./bridge.js";
 
 describe("sanitizeError", () => {
-  test("retorna a mensagem de um Error normal intacta", () => {
-    assert.equal(sanitizeError(new Error("elemento não encontrado")), "elemento não encontrado");
+  test("returns the message of a normal Error intact", () => {
+    assert.equal(sanitizeError(new Error("element not found")), "element not found");
   });
 
-  test("converte não-Error para string", () => {
-    assert.equal(sanitizeError("string crua"), "string crua");
+  test("converts non-Error to string", () => {
+    assert.equal(sanitizeError("raw string"), "raw string");
     assert.equal(sanitizeError(42), "42");
   });
 
-  test("remove caminho interno do beast-control", () => {
-    const err = new Error("falha em /Users/marcos.lopes/beast-control/mcp-server/src/bridge.ts:42");
+  test("removes internal beast-control path", () => {
+    const err = new Error("failure at /Users/marcos.lopes/beast-control/mcp-server/src/bridge.ts:42");
     const result = sanitizeError(err);
-    assert.ok(!result.includes("/beast-control/"), `não deve expor caminho: ${result}`);
-    assert.ok(result.includes("<internal>"), `deve substituir por <internal>: ${result}`);
+    assert.ok(!result.includes("/beast-control/"), `should not expose path: ${result}`);
+    assert.ok(result.includes("<internal>"), `should replace with <internal>: ${result}`);
   });
 
-  test("remove caminho de node_modules", () => {
-    const err = new Error("erro em /Users/marcos.lopes/beast-control/mcp-server/node_modules/ws/lib/websocket.js:100");
+  test("removes node_modules path", () => {
+    const err = new Error("error at /Users/marcos.lopes/beast-control/mcp-server/node_modules/ws/lib/websocket.js:100");
     const result = sanitizeError(err);
-    assert.ok(!result.includes("node_modules"), `não deve expor node_modules: ${result}`);
+    assert.ok(!result.includes("node_modules"), `should not expose node_modules: ${result}`);
   });
 
-  test("preserva caminhos externos não relacionados ao projeto", () => {
-    const err = new Error("falha ao acessar /etc/hosts");
+  test("preserves external paths unrelated to the project", () => {
+    const err = new Error("failed to access /etc/hosts");
     const result = sanitizeError(err);
-    // /etc/hosts não contém 'node_modules' nem '/beast-control/' então não é substituído
-    assert.ok(result.includes("/etc/hosts"), `deve preservar caminho externo: ${result}`);
+    // /etc/hosts does not contain 'node_modules' or '/beast-control/' so it is not replaced
+    assert.ok(result.includes("/etc/hosts"), `should preserve external path: ${result}`);
   });
 });

@@ -1,34 +1,34 @@
 # beast-control
 
-> Ferramenta opcional do pacote **go-****
+> Optional tool from the **go-*** pack
 
-Extensão para o Zen Browser que deixa o Claude Code controlar o browser por você — clicar em botões, preencher formulários, tirar screenshots, extrair texto, navegar entre páginas.
+A Firefox/Zen Browser extension that lets Claude Code control the browser for you — click buttons, fill forms, take screenshots, extract text, navigate between pages.
 
-Funciona como uma ponte: o Claude Code fala com um servidor local, o servidor fala com a extensão, a extensão executa a ação no browser.
-
----
-
-## O que você precisa
-
-- [Zen Browser](https://zen-browser.app) instalado
-- [Node.js](https://nodejs.org) versão 20 ou superior (`node --version` deve mostrar `v20` ou maior)
-- [Claude Code](https://claude.ai/code) instalado
+It works as a bridge: Claude Code talks to a local server, the server talks to the extension, the extension executes the action in the browser.
 
 ---
 
-## Instalação (uma vez só)
+## Requirements
 
-**1. Instalar a extensão no Zen Browser**
+- [Zen Browser](https://zen-browser.app) installed
+- [Node.js](https://nodejs.org) version 20 or higher (`node --version` should show `v20` or higher)
+- [Claude Code](https://claude.ai/code) installed
 
-1. Abra o Zen Browser
-2. Digite `about:debugging` na barra de endereço e pressione Enter
-3. Clique em **"Este Firefox"** no menu à esquerda
-4. Clique em **"Carregar extensão temporária..."**
-5. Navegue até a pasta `beast-control/extension/` e selecione `manifest.json`
+---
 
-O ícone do beast-control aparece na barra de ferramentas. Você vai precisar repetir esses passos toda vez que reiniciar o Zen Browser.
+## Installation (one-time)
 
-**2. Instalar o servidor MCP**
+**1. Install the extension in Zen Browser**
+
+1. Open Zen Browser
+2. Type `about:debugging` in the address bar and press Enter
+3. Click **"This Firefox"** in the left menu
+4. Click **"Load Temporary Add-on..."**
+5. Navigate to the `beast-control/extension/` folder and select `manifest.json`
+
+The beast-control icon appears in the toolbar. You will need to repeat these steps every time you restart Zen Browser.
+
+**2. Install the MCP server**
 
 ```bash
 cd /Users/marcos.lopes/Documents/@cherry-c/go-beast/extensions/beast-control/mcp-server
@@ -36,9 +36,9 @@ npm install
 npm run build
 ```
 
-**3. Registrar no Claude Code**
+**3. Register in Claude Code**
 
-Crie ou edite `~/.claude/claude.json` e adicione dentro de `"mcpServers"`:
+Create or edit `~/.claude/claude.json` and add inside `"mcpServers"`:
 
 ```json
 {
@@ -56,61 +56,61 @@ Crie ou edite `~/.claude/claude.json` e adicione dentro de `"mcpServers"`:
 
 ---
 
-## Uso
+## Usage
 
-1. Abra o Zen Browser com a extensão carregada
-2. Abra o Claude Code — o servidor MCP sobe automaticamente
-3. O ícone da extensão fica **verde** quando a conexão está ativa
-4. Peça ao Claude o que quiser: *"clique no botão de enviar"*, *"preencha o campo de e-mail com x@exemplo.com"*, *"tire um screenshot da página"*
+1. Open Zen Browser with the extension loaded
+2. Open Claude Code — the MCP server starts automatically
+3. The extension icon turns **green** when the connection is active
+4. Ask Claude whatever you want: *"click the submit button"*, *"fill the email field with x@example.com"*, *"take a screenshot of the page"*
 
-### Comandos disponíveis para o Claude
+### Available commands for Claude
 
-| Comando | O que faz |
+| Command | What it does |
+|---------|--------------|
+| `browser_ping` | Checks whether the extension is connected |
+| `browser_navigate` | Navigates to a URL |
+| `browser_click` | Clicks an element |
+| `browser_type` | Types text into a field |
+| `browser_fill_form` | Fills multiple fields at once |
+| `browser_scroll` | Scrolls the page |
+| `browser_screenshot` | Takes a screenshot of the active tab |
+| `browser_get_dom` | Gets the page HTML |
+| `browser_get_text` | Extracts visible text |
+| `browser_eval` | Executes JavaScript on the page (disabled by default) |
+
+---
+
+## Privacy
+
+By default, **password, credit card number, and CVV fields** are redacted before any information reaches Claude. Screenshots also have these areas painted black.
+
+**To temporarily disable:** click the extension icon and toggle "Privacy bypass". The icon turns red while active.
+
+**To enable JS execution (`browser_eval`):** toggle "Allow JS execution" in the popup. Disable it when not needed.
+
+---
+
+## Troubleshooting
+
+| Symptom | What to do |
 |---------|-----------|
-| `browser_ping` | Verifica se a extensão está conectada |
-| `browser_navigate` | Navega para uma URL |
-| `browser_click` | Clica em um elemento |
-| `browser_type` | Digita texto em um campo |
-| `browser_fill_form` | Preenche vários campos de uma vez |
-| `browser_scroll` | Rola a página |
-| `browser_screenshot` | Tira um screenshot da aba ativa |
-| `browser_get_dom` | Obtém o HTML da página |
-| `browser_get_text` | Extrai o texto visível |
-| `browser_eval` | Executa JavaScript na página (desabilitado por padrão) |
+| Gray icon (disconnected) | Confirm Claude Code is open; verify the port in the popup matches `BEAST_CONTROL_PORT` (default: 7331) |
+| "beast-control extension not connected" in Claude | Reload the extension at `about:debugging`; restart Claude Code |
+| Port in use | Change `BEAST_CONTROL_PORT` in `claude.json` and update the port in the extension popup |
+| Extension disappeared after restarting Zen | Reload via `about:debugging` → Load Temporary Add-on |
 
 ---
 
-## Privacidade
+## Technical documentation
 
-Por padrão, campos de **senha, CPF, cartão de crédito e CVV** são ocultados antes de qualquer informação chegar ao Claude. Screenshots também têm essas áreas pintadas de preto.
+- [Detailed setup](docs/SETUP.md)
+- [Architecture and technical decisions](docs/architecture/ADR.md)
+- [Interface contracts](docs/architecture/CONTRACTS.md)
+- [Security review](docs/security/SECURITY_REVIEW.md)
+- [Testing strategy](docs/TESTING.md)
 
-**Para desativar temporariamente:** clique no ícone da extensão e ative o toggle "Bypass de privacidade". O ícone fica vermelho enquanto estiver ativo.
+## Integration with the go-* pack
 
-**Para habilitar execução de JS (`browser_eval`):** ative o toggle "Permitir execução de JS" no popup. Desative quando não precisar.
+beast-control is registered as an optional MCP tool in Claude Code. The go-* pack beasts can use `browser_*` tools when Zen Browser is open with the extension active — go-lynx for UI verification, go-eagle for E2E tests, go-bear for inspecting security headers.
 
----
-
-## Solução de problemas
-
-| Sintoma | O que fazer |
-|---------|-------------|
-| Ícone cinza (desconectado) | Confirme que o Claude Code está aberto; verifique se a porta no popup bate com `BEAST_CONTROL_PORT` (padrão: 7331) |
-| "Extensão beast-control não conectada" no Claude | Recarregue a extensão em `about:debugging`; reinicie o Claude Code |
-| Porta em uso | Mude `BEAST_CONTROL_PORT` no `claude.json` e atualize a porta no popup da extensão |
-| Extensão sumiu após reiniciar o Zen | Recarregue via `about:debugging` → Carregar extensão temporária |
-
----
-
-## Documentação técnica
-
-- [Instalação detalhada](docs/SETUP.md)
-- [Arquitetura e decisões técnicas](docs/architecture/ADR.md)
-- [Contratos de interface](docs/architecture/CONTRACTS.md)
-- [Revisão de segurança](docs/security/SECURITY_REVIEW.md)
-- [Estratégia de testes](docs/TESTING.md)
-
-## Integração com o pacote go-*
-
-beast-control é registrado como MCP tool opcional no Claude Code. Os beasts do pacote go-* podem usar as tools `browser_*` quando o Zen Browser estiver aberto com a extensão ativa — go-lynx para verificar UI, go-eagle para testes E2E, go-bear para inspecionar headers de segurança.
-
-Se o beast-control não estiver conectado, os beasts caem de volta para o Playwright.
+If beast-control is not connected, beasts fall back to Playwright.

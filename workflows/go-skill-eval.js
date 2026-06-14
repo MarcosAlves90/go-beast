@@ -1,11 +1,11 @@
 export const meta = {
   name: 'go-skill-eval',
-  description: 'Testa todas as skills go-* com eval estrutural + LLM-as-judge e benchmark A/B/C/D',
+  description: 'Tests all go-* skills with structural eval + LLM-as-judge and A/B/C/D benchmark',
   phases: [
-    { title: 'Skill Execution', detail: 'Executa combinações skill×input em paralelo' },
-    { title: 'Structural Eval', detail: 'Checklist determinístico por skill' },
-    { title: 'LLM Judge', detail: 'Rubrica qualitativa 4 dimensões, calibrada adversarialmente' },
-    { title: 'Aggregation', detail: 'Consolida resultados e gera report' },
+    { title: 'Skill Execution', detail: 'Runs skill×input combinations in parallel' },
+    { title: 'Structural Eval', detail: 'Deterministic checklist per skill' },
+    { title: 'LLM Judge', detail: 'Qualitative 4-dimension rubric, adversarially calibrated' },
+    { title: 'Aggregation', detail: 'Consolidates results and generates report' },
   ],
 }
 
@@ -84,45 +84,45 @@ const SKILLS = {
   },
 }
 
-// Input A: projeto simples sem código real — testa skills de planejamento (go-hawk, go-lark, go-fox)
+// Input A: simple project without real code — tests planning skills (go-hawk, go-lark, go-fox)
 const INPUT_A = {
   nome: 'TaskFlow API',
-  dominio: 'Gerenciamento de tarefas pessoais',
+  dominio: 'Personal task management',
   stack: 'Node.js + PostgreSQL',
-  usuarios: 'Desenvolvedores individuais',
-  complexidade: 'baixa',
+  usuarios: 'Individual developers',
+  complexidade: 'low',
 }
 
-// Input B: projeto de infra sem camada de aplicação — testa skills filesystem-dependent com material de domínio rico
+// Input B: infra project without an application layer — tests filesystem-dependent skills with rich domain material
 const INPUT_B = {
   nome: 'ServerWatch',
-  dominio: 'Monitoramento de servidores em tempo real',
+  dominio: 'Real-time server monitoring',
   stack: 'Go + InfluxDB + Grafana',
-  usuarios: 'SREs e times de operações',
-  complexidade: 'alta — WebSockets, alertas, múltiplos serviços',
+  usuarios: 'SREs and operations teams',
+  complexidade: 'high — WebSockets, alerts, multiple services',
 }
 
-// Input C: projeto mid-complexity com arquivos reais simulados
-// Propósito: testar skills de doc, segurança e CI com material concreto parcialmente incompleto.
+// Input C: mid-complexity project with simulated real files
+// Purpose: test doc, security and CI skills with concrete partially incomplete material.
 const INPUT_C = {
   nome: 'PayLink',
-  dominio: 'Plataforma de pagamentos recorrentes para SaaS',
+  dominio: 'Recurring payments platform for SaaS',
   stack: 'Python (FastAPI) + PostgreSQL + Redis + Stripe API',
-  usuarios: 'Equipes de produto SaaS (B2B), 5–20 desenvolvedores',
-  complexidade: 'média — autenticação OAuth2, webhooks, jobs assíncronos, compliance PCI-DSS',
+  usuarios: 'SaaS product teams (B2B), 5–20 developers',
+  complexidade: 'medium — OAuth2 auth, webhooks, async jobs, PCI-DSS compliance',
   docs_existentes: `
-README.md: presente (desatualizado — aponta para porta 8080, app roda em 3000)
-docs/ARCHITECTURE.md: presente (ADR-001 escolha FastAPI, ADR-002 uso de Redis para jobs)
-CHANGELOG.md: presente (v1.2.0 última entrada, 3 meses atrás)
-CONTRIBUTING.md: presente (padrão de PR, branch naming: feat/, fix/, chore/)
-docs/DEPLOYMENT.md: ausente
-docs/runbooks/: ausente
-openapi.yaml: presente em docs/openapi.yaml (v1.2.0, pode estar desatualizado)
-.env.example: presente`,
+README.md: present (outdated — points to port 8080, app runs on 3000)
+docs/ARCHITECTURE.md: present (ADR-001 FastAPI choice, ADR-002 Redis for jobs)
+CHANGELOG.md: present (v1.2.0 last entry, 3 months ago)
+CONTRIBUTING.md: present (PR standard, branch naming: feat/, fix/, chore/)
+docs/DEPLOYMENT.md: absent
+docs/runbooks/: absent
+openapi.yaml: present at docs/openapi.yaml (v1.2.0, may be outdated)
+.env.example: present`,
   files: {
     'README.md': `# PayLink
 
-Plataforma de pagamentos recorrentes para SaaS.
+Recurring payments platform for SaaS.
 
 ## Setup
 
@@ -131,7 +131,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8080
 \`\`\`
 
-## Testes
+## Tests
 
 \`\`\`bash
 pytest
@@ -141,76 +141,76 @@ pytest
 
 - Python 3.11 + FastAPI
 - PostgreSQL 15
-- Redis 7 (filas de jobs via Celery)
-- Stripe API (pagamentos)
+- Redis 7 (job queues via Celery)
+- Stripe API (payments)
 
 ## Deploy
 
-Ver docs/DEPLOYMENT.md (ainda não escrito).
+See docs/DEPLOYMENT.md (not yet written).
 `,
     'CHANGELOG.md': `# Changelog
 
 ## [1.2.0] - 2026-03-10
 ### Added
-- Suporte a múltiplos planos de assinatura por cliente
-- Webhook handler para eventos Stripe (payment_failed, subscription_cancelled)
+- Support for multiple subscription plans per customer
+- Webhook handler for Stripe events (payment_failed, subscription_cancelled)
 ### Fixed
-- Race condition no processamento de jobs de cobrança recorrente
+- Race condition in recurring billing job processing
 
 ## [1.1.0] - 2026-01-15
 ### Added
-- Autenticação OAuth2 com Google e GitHub
-- Endpoint de relatório de receita mensal (MRR)
+- OAuth2 authentication with Google and GitHub
+- Monthly revenue report endpoint (MRR)
 
 ## [1.0.0] - 2025-11-01
 ### Added
-- MVP: criação de assinaturas, cobrança via Stripe, portal do cliente
+- MVP: subscription creation, billing via Stripe, customer portal
 `,
     'CONTRIBUTING.md': `# Contributing
 
 ## Branch naming
-- feat/<descricao>
-- fix/<descricao>
-- chore/<descricao>
+- feat/<description>
+- fix/<description>
+- chore/<description>
 
 ## Pull Requests
-- Mínimo 2 aprovações antes do merge
-- CI deve passar (lint + typecheck + tests)
-- Squash merge obrigatório
+- Minimum 2 approvals before merge
+- CI must pass (lint + typecheck + tests)
+- Squash merge required
 
 ## Commits
-Seguir Conventional Commits: feat:, fix:, chore:, docs:
+Follow Conventional Commits: feat:, fix:, chore:, docs:
 `,
     'docs/ARCHITECTURE.md': `# Architecture
 
-## ADR-001: Escolha do FastAPI
+## ADR-001: FastAPI choice
 
 **Status:** Accepted | **Date:** 2025-10-20
 
 ### Context
-Precisávamos de um framework Python com suporte nativo a async, validação de tipos, e geração automática de OpenAPI spec.
+We needed a Python framework with native async support, type validation, and automatic OpenAPI spec generation.
 
 ### Decision
-FastAPI com Pydantic v2.
+FastAPI with Pydantic v2.
 
 ### Consequences
-- OpenAPI spec gerada automaticamente em /docs
-- Validação de request/response em tempo de execução
-- Curva de aprendizado menor que Django REST Framework
+- OpenAPI spec auto-generated at /docs
+- Request/response validation at runtime
+- Smaller learning curve than Django REST Framework
 
-## ADR-002: Redis para filas de jobs
+## ADR-002: Redis for job queues
 
 **Status:** Accepted | **Date:** 2025-10-25
 
 ### Context
-Cobranças recorrentes precisam ser processadas de forma assíncrona sem bloquear requests HTTP.
+Recurring billing must be processed asynchronously without blocking HTTP requests.
 
 ### Decision
-Celery + Redis como broker. Jobs agendados via Celery Beat.
+Celery + Redis as broker. Jobs scheduled via Celery Beat.
 
 ### Consequences
-- Redis precisa ser provisionado em produção (custo adicional)
-- Falhas de job precisam de dead letter queue (não implementado ainda)
+- Redis must be provisioned in production (additional cost)
+- Job failures need a dead letter queue (not yet implemented)
 `,
     // Arquivos Claude Code para go-swift e go-jay
     '.claude/settings.json': `{
@@ -242,15 +242,15 @@ Currently identical to CLAUDE.md — needs sync review.
   },
 }
 
-// Input D: projeto legado adversarial — múltiplas violações críticas deliberadas.
-// Propósito: testar se as skills IDENTIFICAM problemas reais em vez de gerar outputs genéricos.
-// Skills filesystem-dependent usam este input — tem código real + contexto Claude Code.
+// Input D: adversarial legacy project — multiple deliberate critical violations.
+// Purpose: test whether skills IDENTIFY real problems instead of producing generic outputs.
+// Filesystem-dependent skills use this input — it has real code + Claude Code context.
 const INPUT_D = {
   nome: 'ShopLegacy',
-  dominio: 'E-commerce legado, loja online B2C',
-  stack: 'Python 2.7 + Flask + MySQL (sem ORM) + jQuery',
-  usuarios: 'Clientes finais e administradores internos',
-  complexidade: 'alta — autenticação custom, pagamentos, sessões em cookie não assinado, zero testes, sem CI',
+  dominio: 'Legacy e-commerce, B2C online store',
+  stack: 'Python 2.7 + Flask + MySQL (no ORM) + jQuery',
+  usuarios: 'End customers and internal administrators',
+  complexidade: 'high — custom auth, payments, unsigned cookie sessions, zero tests, no CI',
   files: {
     'app.py': `import MySQLdb
 from flask import Flask, request, session, redirect
@@ -266,19 +266,19 @@ conn = MySQLdb.connect(host="localhost", user="root", passwd=DB_PASS, db="shopdb
 def login():
     user = request.form['username']
     pwd  = request.form['password']
-    # SQL injection — concatenação direta
+    # SQL injection — direct concatenation
     cur = conn.cursor()
     cur.execute("SELECT * FROM users WHERE username='" + user + "' AND password='" + hashlib.md5(pwd).hexdigest() + "'")
     row = cur.fetchone()
     if row:
         session['user_id'] = row[0]
-        session['role'] = row[3]  # 'admin' or 'customer' — não validado no server
+        session['role'] = row[3]  # 'admin' or 'customer' — not validated server-side
         return redirect('/dashboard')
     return 'Login failed', 401
 
 @app.route('/admin/orders')
 def admin_orders():
-    # sem verificação de role — qualquer usuário logado acessa
+    # no role check — any logged-in user can access
     cur = conn.cursor()
     cur.execute("SELECT * FROM orders")
     return str(cur.fetchall())
@@ -294,39 +294,39 @@ def search():
 @app.route('/upload', methods=['POST'])
 def upload():
     f = request.files['file']
-    # sem validação de tipo ou tamanho
+    # no type or size validation
     f.save('/var/www/uploads/' + f.filename)
     return 'uploaded'
 
 if __name__ == '__main__':
-    app.run(debug=True)  # debug=True em produção
+    app.run(debug=True)  # debug=True in production
 `,
     'requirements.txt': `Flask==0.12.4
 MySQL-python==1.2.5
-# sem versões pinadas para outras deps
+# no pinned versions for other deps
 requests
 Pillow
 `,
     'README.md': `# ShopLegacy
 
-Loja online legada.
+Legacy online store.
 
-## Rodar
+## Run
 
 \`\`\`
 python app.py
 \`\`\`
 
 ## TODO
-- Adicionar testes (algum dia)
-- Migrar para Python 3
-- Corrigir os problemas de segurança conhecidos
+- Add tests (someday)
+- Migrate to Python 3
+- Fix the known security issues
 `,
     'deploy.sh': `#!/bin/bash
-# Script de deploy manual
+# Manual deploy script
 scp app.py root@prod-server:/var/www/shop/
 ssh root@prod-server "cd /var/www/shop && python app.py &"
-# senha do banco em plain text no script
+# database password in plain text in the script
 mysql -h prod-server -u root -padmin1234 shopdb < schema.sql
 `,
     // Arquivos Claude Code para go-swift e go-jay
@@ -341,12 +341,12 @@ mysql -h prod-server -u root -padmin1234 shopdb < schema.sql
     'CLAUDE.md': `# ShopLegacy — Agent Context
 
 ## Stack
-Python 2.7, Flask, MySQL sem ORM, jQuery.
+Python 2.7, Flask, MySQL without ORM, jQuery.
 
 ## Known issues
-- SQL injection em login e search
-- Segredos hardcoded em app.py
-- Sem testes, sem CI
+- SQL injection in login and search
+- Hardcoded secrets in app.py
+- No tests, no CI
 `,
     'AGENTS.md': `# ShopLegacy — Agent Context
 
@@ -357,50 +357,50 @@ Same as CLAUDE.md — not yet synchronized.
 
 function buildPrompt(skillName, skillDesc, input, checklist) {
   const docsSection = input.docs_existentes
-    ? `\nDocumentação existente no projeto:\n${input.docs_existentes}\n`
+    ? `\nExisting project documentation:\n${input.docs_existentes}\n`
     : ''
   const filesSection = input.files
-    ? '\n\nCONTEÚDO DOS ARQUIVOS DO PROJETO (use estes como fonte primária — não simule, leia):\n\n' +
+    ? '\n\nPROJECT FILE CONTENTS (use these as the primary source — do not simulate, read them):\n\n' +
       Object.entries(input.files)
         .map(([path, content]) => `### ${path}\n\`\`\`\n${content.trim()}\n\`\`\``)
         .join('\n\n')
     : ''
   const importanteNote = input.files
-    ? 'IMPORTANTE: Os arquivos acima são o conteúdo real do projeto. Use-os como fonte primária — identifique problemas reais presentes no código, não invente nem ignore o que está escrito.'
-    : 'IMPORTANTE: Este é um projeto fictício para fins de teste — não existem arquivos reais para escanear. Simule o que a skill produziria se o projeto existisse com a stack e domínio descritos acima.'
+    ? 'IMPORTANT: The files above are the real project content. Use them as the primary source — identify real problems present in the code; do not invent or ignore what is written.'
+    : 'IMPORTANT: This is a fictional project for test purposes — no real files exist to scan. Simulate what the skill would produce if the project existed with the stack and domain described above.'
 
-  // Instruções específicas por skill para garantir output completo no contexto de eval
+  // Per-skill overrides to ensure complete output in the eval context
   const skillOverrides = {
-    'go-kite': `CONTEXTO DE AVALIAÇÃO: Você não tem acesso a ferramentas de filesystem neste contexto. Os arquivos acima são o equivalente do output do repomix — trate-os como a codebase completa disponível. Produza a auditoria completa das 5 dimensões (structure, observability, reliability, scalability, security) E a seção de capability gaps E pelo menos 3 recommendations concretas com referência aos arquivos fornecidos. NÃO pule dimensões por falta de acesso a ferramentas.`,
-    'go-swift': `CONTEXTO DE AVALIAÇÃO: Você está gerando o output que go-swift produziria para um projeto Claude Code. O settings.json fornecido é o arquivo real a ser modificado. Produza o hook script completo, mostre as alterações no settings.json, especifique o evento (event), e inclua chmod.`,
-    'go-jay': `CONTEXTO DE AVALIAÇÃO: Os arquivos de contexto fornecidos (CLAUDE.md, AGENTS.md) são os arquivos reais a serem auditados e editados. Produza a análise completa, as edições propostas com before/after, e o regression check.`,
-    'go-ant': `CONTEXTO DE AVALIAÇÃO: Os arquivos de código acima são a codebase real. Simule o output completo de go-ant: baseline measurements, profiler output indicando bottlenecks, root cause analysis, optimization aplicada com before/after benchmark. Use os arquivos fornecidos como evidência.`,
+    'go-kite': `EVAL CONTEXT: You do not have access to filesystem tools in this context. The files above are the repomix output equivalent — treat them as the complete codebase. Produce the full audit across all 5 dimensions (structure, observability, reliability, scalability, security) AND the capability gaps section AND at least 3 concrete recommendations referencing the provided files. DO NOT skip dimensions due to lack of tool access.`,
+    'go-swift': `EVAL CONTEXT: You are generating the output go-swift would produce for a Claude Code project. The provided settings.json is the real file to be modified. Produce the complete hook script, show the settings.json changes, specify the event, and include chmod.`,
+    'go-jay': `EVAL CONTEXT: The provided context files (CLAUDE.md, AGENTS.md) are the real files to be audited and edited. Produce the full analysis, proposed edits with before/after, and the regression check.`,
+    'go-ant': `EVAL CONTEXT: The code files above are the real codebase. Simulate go-ant's complete output: baseline measurements, profiler output indicating bottlenecks, root cause analysis, applied optimization with before/after benchmark. Use the provided files as evidence.`,
   }
   const override = skillOverrides[skillName] ? `\n\n${skillOverrides[skillName]}` : ''
 
-  return `Você é a skill ${skillName}. Sua função: ${skillDesc}
+  return `You are the skill ${skillName}. Your function: ${skillDesc}
 
-Contexto do projeto:
-- Nome: ${input.nome}
-- Domínio: ${input.dominio}
+Project context:
+- Name: ${input.nome}
+- Domain: ${input.dominio}
 - Stack: ${input.stack}
-- Usuários: ${input.usuarios}
-- Complexidade: ${input.complexidade}${docsSection}${filesSection}
+- Users: ${input.usuarios}
+- Complexity: ${input.complexidade}${docsSection}${filesSection}
 
-Execute sua função conforme sua definição. Produza todos os artefatos esperados em Markdown completo e detalhado. Não resuma — produza o output real que a skill geraria.
+Execute your function as defined. Produce all expected artifacts in complete, detailed Markdown. Do not summarize — produce the real output the skill would generate.
 
-ARTEFATOS OBRIGATÓRIOS: seu output DEVE conter explicitamente todos os seguintes itens (use estes termos exatos em inglês):
+MANDATORY ARTIFACTS: your output MUST explicitly contain all of the following items (use these exact terms in English):
 ${checklist.map(item => `- ${item}`).join('\n')}
 
 ${importanteNote}${override}`
 }
 
-// args.skills: array de nomes para filtrar (ex: ['go-swift']). Default: todas.
-// Skills filesystem-dependent recebem apenas C e D (código real).
-// go-kite, go-ant, go-crane: precisam de codebase para funcionar.
-// go-owl, go-beaver, go-mole: colapso confirmado em A/B sem projeto concreto (eval 2026-06-13).
-// go-swift: Claude Code-specific; inputs B sem contexto hooks colapsam (eval 2026-06-13).
-// go-jay: sem arquivos de contexto reais, completude/aderência colapsam em A (eval 2026-06-13).
+// args.skills: array of names to filter (e.g. ['go-swift']). Default: all.
+// Filesystem-dependent skills receive only C and D (real code).
+// go-kite, go-ant, go-crane: require a codebase to function.
+// go-owl, go-beaver, go-mole: confirmed collapse on A/B without a concrete project (eval 2026-06-13).
+// go-swift: Claude Code-specific; B inputs without hook context collapse (eval 2026-06-13).
+// go-jay: without real context files, completeness/adherence collapse on A (eval 2026-06-13).
 const FILESYSTEM_SKILLS = new Set(['go-kite', 'go-ant', 'go-crane', 'go-owl', 'go-beaver', 'go-mole', 'go-swift', 'go-jay'])
 
 const skillFilter = args?.skills ?? null
@@ -408,7 +408,7 @@ const RUNS = Object.entries(SKILLS)
   .filter(([skillName]) => !skillFilter || skillFilter.includes(skillName))
   .flatMap(([skillName, skillDef]) => {
     if (FILESYSTEM_SKILLS.has(skillName)) {
-      // Estas skills precisam de código real — usa só C e D
+      // These skills require real code — use only C and D
       return [
         { skillName, skillDef, input: args?.inputC ?? INPUT_C, label: `${skillName}:C` },
         { skillName, skillDef, input: args?.inputD ?? INPUT_D, label: `${skillName}:D` },
@@ -442,10 +442,10 @@ const JUDGE_SCHEMA = {
     dimensions: {
       type: 'object',
       properties: {
-        relevancia: { type: 'number' },
-        completude: { type: 'number' },
-        clareza: { type: 'number' },
-        aderencia: { type: 'number' },
+        relevance: { type: 'number' },
+        completeness: { type: 'number' },
+        clarity: { type: 'number' },
+        adherence: { type: 'number' },
       },
     },
     rationale: { type: 'string' },
@@ -455,12 +455,12 @@ const JUDGE_SCHEMA = {
 }
 
 phase('Skill Execution')
-log(`Executando ${RUNS.length} combinações skill×input em paralelo...`)
+log(`Running ${RUNS.length} skill×input combinations in parallel...`)
 
 const results = await pipeline(
   RUNS,
 
-  // Estágio 1: Skill Execution
+  // Stage 1: Skill Execution
   async (run) => {
     const output = await agent(
       buildPrompt(run.skillName, run.skillDef.description, run.input, run.skillDef.checklist),
@@ -473,31 +473,30 @@ const results = await pipeline(
     return { run, output, tokens_approx }
   },
 
-  // Estágio 2: Structural Eval
+  // Stage 2: Structural Eval
   async (prev) => {
     if (!prev) return null
     const { run, output, tokens_approx } = prev
 
     const checklistItems = run.skillDef.checklist.join(', ')
     const structResult = await agent(
-      `Você é um avaliador técnico rigoroso. Analise o output abaixo e verifique se contém TODOS os seguintes itens obrigatórios para a skill ${run.skillName}: ${checklistItems}
+      `You are a rigorous technical evaluator. Analyze the output below and verify whether it contains ALL of the following required items for skill ${run.skillName}: ${checklistItems}
 
-Regras de busca:
-- A busca é CASE-INSENSITIVE: "Mermaid", "mermaid" e "MERMAID" são equivalentes.
-- Aceite variações de plural/singular e sufixos comuns: "migration" aceita "migrations", "migrate", "migração", "migrações".
-- Aceite traduções para português: "optimization" aceita "otimização", "otimizações", "optimização"; "bottleneck" aceita "gargalo"; "baseline" aceita "linha de base"; "recommendation" aceita "recomendação"; "rollback" aceita "reversão".
-- Aceite menções em nomes de arquivo, headings e corpo do texto.
-- Não infira presença: se o conceito estiver implícito mas o termo não aparecer, marque como ausente.
+Search rules:
+- Search is CASE-INSENSITIVE: "Mermaid", "mermaid" and "MERMAID" are equivalent.
+- Accept plural/singular and common suffix variants: "migration" accepts "migrations", "migrate".
+- Accept mentions in file names, headings, and body text.
+- Do not infer presence: if a concept is implicit but the term does not appear, mark it as absent.
 
-Estime o número aproximado de tokens no output (conte palavras × 1.3 como proxy).
-Estime a latência em ms com base no tamanho do output (use 10ms por 100 tokens como proxy).
+Estimate the approximate number of tokens in the output (word count × 1.3 as a proxy).
+Estimate latency in ms based on output size (use 10ms per 100 tokens as a proxy).
 
-OUTPUT A AVALIAR:
+OUTPUT TO EVALUATE:
 ---
 ${output}
 ---
 
-Retorne APENAS o JSON estruturado, sem texto adicional.`,
+Return ONLY the structured JSON, no additional text.`,
       {
         label: `struct:${run.label}`,
         phase: 'Structural Eval',
@@ -507,74 +506,74 @@ Retorne APENAS o JSON estruturado, sem texto adicional.`,
     return { run, output, tokens_approx, structResult }
   },
 
-  // Estágio 3: LLM Judge
+  // Stage 3: LLM Judge
   async (prev) => {
     if (!prev) return null
     const { run, output, tokens_approx, structResult } = prev
 
     const judgeResult = await agent(
-      `Você é um avaliador adversarial de outputs de agentes AI. Seu trabalho é encontrar gaps reais, não validar outputs. Avalie o output abaixo produzido pela skill ${run.skillName} para o projeto "${run.input.nome}".
+      `You are an adversarial evaluator of AI agent outputs. Your job is to find real gaps, not validate outputs. Evaluate the output below produced by skill ${run.skillName} for project "${run.input.nome}".
 
-## Calibração obrigatória
+## Mandatory calibration
 
-Score 3.5 é o baseline esperado para um output competente mas genérico. Score 4 exige especificidade real ao projeto. Score 5 é reservado para outputs que um engenheiro sênior usaria sem modificação — deve ser raro (< 10% dos casos). Scores abaixo de 3 indicam falha substantiva.
+Score 3.5 is the expected baseline for a competent but generic output. Score 4 requires real project specificity. Score 5 is reserved for outputs a senior engineer would use without modification — must be rare (< 10% of cases). Scores below 3 indicate substantive failure.
 
-**Penalidades automáticas (deduzir 0.5 por ocorrência, máximo -1.5 total):**
-- Uso de placeholders genéricos sem substituição (ex: "your-api-key", "<TOKEN>", "example.com" quando o projeto tem domínio concreto)
-- Seções obrigatórias da skill presentes mas vazias ou com uma linha
-- Para Input D (ShopLegacy com código adversarial): falhar em identificar SQL injection em app.py, segredo hardcoded (secret_key, DB_PASS), ou debug=True em produção — cada um é -0.5
+**Automatic penalties (deduct 0.5 per occurrence, maximum -1.5 total):**
+- Use of generic placeholders without substitution (e.g. "your-api-key", "<TOKEN>", "example.com" when the project has a concrete domain)
+- Required skill sections present but empty or single-line
+- For Input D (ShopLegacy with adversarial code): failing to identify SQL injection in app.py, hardcoded secret (secret_key, DB_PASS), or debug=True in production — each is -0.5
 
-## Rubrica com âncoras por nível
+## Rubric with per-level anchors
 
-### relevancia — O output é específico para este projeto?
+### relevance — Is the output specific to this project?
 
-- **1:** Totalmente genérico — não menciona o nome do projeto, stack ou domínio.
-- **2:** Menciona o nome do projeto, mas usa exemplos placeholder sem relação com o domínio real.
-- **3:** Referencia stack e domínio, mas perde elementos específicos críticos.
-- **4:** Claramente contextualizado — entidades, endpoints e exemplos correspondem ao projeto. Para Input D: identifica pelo menos 2 vulnerabilidades específicas do código fornecido.
-- **5:** Profundamente específico — cada artefato reflete o projeto com evidência de arquivo:linha. Para Input D: cobre todas as vulnerabilidades críticas com referência exata ao código.
+- **1:** Entirely generic — does not mention the project name, stack, or domain.
+- **2:** Mentions the project name but uses placeholder examples unrelated to the real domain.
+- **3:** References stack and domain but misses critical specific elements.
+- **4:** Clearly contextualized — entities, endpoints, and examples correspond to the project. For Input D: identifies at least 2 specific vulnerabilities from the provided code.
+- **5:** Deeply specific — each artifact reflects the project with file:line evidence. For Input D: covers all critical vulnerabilities with exact code references.
 
-### completude — Cobre todos os aspectos esperados da skill?
+### completeness — Does it cover all aspects expected of the skill?
 
-- **1:** Cobre apenas 1–2 aspectos.
-- **2:** Cobre metade dos outputs esperados.
-- **3:** Maioria das seções presentes, mas ao menos uma significativamente rasa.
-- **4:** Todas as seções presentes com profundidade adequada.
-- **5:** Todas as seções presentes, desenvolvidas além do mínimo, sem lacunas.
+- **1:** Covers only 1–2 aspects.
+- **2:** Covers half the expected outputs.
+- **3:** Most sections present, but at least one significantly shallow.
+- **4:** All sections present with adequate depth.
+- **5:** All sections present, developed beyond the minimum, no gaps.
 
-### clareza — Está bem estruturado e legível?
+### clarity — Is it well-structured and readable?
 
-- **1:** Sem estrutura; bloco de texto.
-- **2:** Estrutura inconsistente.
-- **3:** Estrutura clara mas prosa verbosa ou repetitiva.
-- **4:** Headings, listas e tabelas usados adequadamente; escaneável.
-- **5:** Organização exemplar; hierarquia imediatamente clara; formatação auxilia compreensão.
+- **1:** No structure; wall of text.
+- **2:** Inconsistent structure.
+- **3:** Clear structure but verbose or repetitive prose.
+- **4:** Headings, lists, and tables used appropriately; scannable.
+- **5:** Exemplary organization; hierarchy immediately clear; formatting aids comprehension.
 
-### aderencia — Fez o que a skill promete fazer?
+### adherence — Did it do what the skill promises?
 
-- **1:** Output não corresponde ao propósito da skill.
-- **2:** Segue parcialmente, pula etapas-chave.
-- **3:** Segue o propósito geral, mas falta ao menos um artefato obrigatório.
-- **4:** Entrega todos os artefatos centrais; desvios mínimos.
-- **5:** Entrega integralmente o que a skill promete, seguindo o workflow exatamente.
+- **1:** Output does not correspond to the skill's purpose.
+- **2:** Partially follows, skips key steps.
+- **3:** Follows general purpose but missing at least one required artifact.
+- **4:** Delivers all core artifacts; minimal deviations.
+- **5:** Fully delivers what the skill promises, following the workflow exactly.
 
-## Score final
+## Final score
 
-score = média aritmética das 4 dimensões (arredonde para 1 casa decimal), menos penalidades aplicáveis.
+score = arithmetic mean of the 4 dimensions (round to 1 decimal place), minus applicable penalties.
 
-CONTEXTO DO PROJETO:
-- Nome: ${run.input.nome}
-- Domínio: ${run.input.dominio}
+PROJECT CONTEXT:
+- Name: ${run.input.nome}
+- Domain: ${run.input.dominio}
 - Stack: ${run.input.stack}
-- Skill avaliada: ${run.skillName}
+- Skill evaluated: ${run.skillName}
 - Input: ${run.label.split(':')[1]}
 
-OUTPUT AVALIADO:
+OUTPUT EVALUATED:
 ---
 ${output}
 ---
 
-Retorne APENAS o JSON estruturado, sem texto adicional.`,
+Return ONLY the structured JSON, no additional text.`,
       {
         label: `judge:${run.label}`,
         phase: 'LLM Judge',
@@ -587,7 +586,7 @@ Retorne APENAS o JSON estruturado, sem texto adicional.`,
 )
 
 phase('Aggregation')
-log('Consolidando resultados e gerando report...')
+log('Consolidating results and generating report...')
 
 const validResults = results.filter(Boolean)
 
@@ -610,9 +609,9 @@ for (const r of validResults) {
   bySkill[skillName][getInputKey(r.run.input)] = r
 }
 
-// Skills filesystem-dependent só rodam com C e D (código real).
-// Não há inputs inadequados — o SKIP foi eliminado.
-// go-bear e go-raven mantêm skip em A por mismatch de domínio documentado.
+// Filesystem-dependent skills only run with C and D (real code).
+// No inadequate inputs — SKIP was eliminated.
+// go-bear and go-raven keep skip on A due to documented domain mismatch.
 const SKIP_INPUTS_FOR_SCORE = {
   'go-bear':  ['A'],
   'go-raven': ['A'],
@@ -659,12 +658,12 @@ const estimatedCostUSD = ((totalTokensAll * 0.7 / 1_000_000) * 3) + ((totalToken
 const reportLines = []
 
 reportLines.push(`# go-star-eval Report\n`)
-reportLines.push(`**Skills testadas:** ${Object.keys(SKILLS).length} go-* | **Inputs:** A (TaskFlow) · B (ServerWatch) · C (PayLink) · D (ShopLegacy adversarial)\n`)
-reportLines.push(`**Nota:** Skills filesystem-dependent (go-kite, go-ant, go-crane) rodam apenas com C e D (código real).\n`)
+reportLines.push(`**Skills tested:** ${Object.keys(SKILLS).length} go-* | **Inputs:** A (TaskFlow) · B (ServerWatch) · C (PayLink) · D (ShopLegacy adversarial)\n`)
+reportLines.push(`**Note:** Filesystem-dependent skills (go-kite, go-ant, go-crane) run only with C and D (real code).\n`)
 reportLines.push(`---\n`)
 
-reportLines.push(`## 1. Resultados por Skill\n`)
-reportLines.push(`| Skill | Input | Struct | Missing | Score | Dims (R/C/Cl/A) | Tokens | Latência |`)
+reportLines.push(`## 1. Results per Skill\n`)
+reportLines.push(`| Skill | Input | Struct | Missing | Score | Dims (R/C/Cl/A) | Tokens | Latency |`)
 reportLines.push(`|---|---|---|---|---|---|---|---|`)
 
 for (const r of validResults) {
@@ -672,13 +671,13 @@ for (const r of validResults) {
   const missing = r.structResult?.missing?.join(', ') || '—'
   const judgeScore = r.judgeResult?.score?.toFixed(1) ?? 'n/a'
   const d = r.judgeResult?.dimensions
-  const dims = d ? `R${d.relevancia} C${d.completude} Cl${d.clareza} A${d.aderencia}` : '—'
+  const dims = d ? `R${d.relevance} C${d.completeness} Cl${d.clarity} A${d.adherence}` : '—'
   const tokens = r.tokens_approx?.toLocaleString() ?? '—'
   const latency = r.structResult?.latency_ms ? `${r.structResult.latency_ms.toLocaleString()} ms` : '—'
   reportLines.push(`| ${r.run.skillName} | ${getInputKey(r.run.input)} | ${structPass} | ${missing} | ${judgeScore} | ${dims} | ${tokens} | ${latency} |`)
 }
 
-reportLines.push(`\n## 2. Comparativo por Skill\n`)
+reportLines.push(`\n## 2. Comparison per Skill\n`)
 for (const [skillName, inputs] of Object.entries(bySkill)) {
   const scores = Object.entries(inputs).map(([k, r]) => `${k}:${r.judgeResult?.score?.toFixed(1) ?? 'n/a'}`).join(' | ')
   const tokens = Object.entries(inputs).map(([k, r]) => `${k}:${(r.tokens_approx ?? 0).toLocaleString()}`).join(' | ')
@@ -691,45 +690,45 @@ for (const [skillName, inputs] of Object.entries(bySkill)) {
   reportLines.push(`### ${skillName}`)
   reportLines.push(`- Score: ${scores}`)
   reportLines.push(`- Tokens: ${tokens}`)
-  reportLines.push(`- Melhor input: **${bestLabel}**\n`)
+  reportLines.push(`- Best input: **${bestLabel}**\n`)
 }
 
-reportLines.push(`## 3. Sumário Executivo\n`)
-reportLines.push(`### Top 3 Skills (por score médio)`)
+reportLines.push(`## 3. Executive Summary\n`)
+reportLines.push(`### Top 3 Skills (by average score)`)
 for (const s of top3) {
-  const skipNote = s.skippedInputs?.length ? ` _(exclui Input ${s.skippedInputs.join('+')} — mismatch de domínio)_` : ''
+  const skipNote = s.skippedInputs?.length ? ` _(excludes Input ${s.skippedInputs.join('+')} — domain mismatch)_` : ''
   reportLines.push(`- **${s.skillName}**: ${s.avgScore?.toFixed(1) ?? 'n/a'}${skipNote}`)
 }
-reportLines.push(`\n### Bottom 3 Skills (candidatas a revisão)`)
+reportLines.push(`\n### Bottom 3 Skills (candidates for review)`)
 for (const s of bottom3) {
-  const skipNote = s.skippedInputs?.length ? ` _(exclui Input ${s.skippedInputs.join('+')} — mismatch de domínio)_` : ''
+  const skipNote = s.skippedInputs?.length ? ` _(excludes Input ${s.skippedInputs.join('+')} — domain mismatch)_` : ''
   reportLines.push(`- **${s.skillName}**: ${s.avgScore?.toFixed(1) ?? 'n/a'}${skipNote}`)
 }
 if (structFails.length > 0) {
-  reportLines.push(`\n### Skills com falha estrutural ⚠️`)
+  reportLines.push(`\n### Skills with structural failure ⚠️`)
   for (const r of structFails) {
-    reportLines.push(`- **${r.run.skillName}** (Input ${getInputKey(r.run.input)}): ausente: ${r.structResult?.missing?.join(', ')}`)
+    reportLines.push(`- **${r.run.skillName}** (Input ${getInputKey(r.run.input)}): missing: ${r.structResult?.missing?.join(', ')}`)
   }
 }
 if (outliers.length > 0) {
-  reportLines.push(`\n### Outliers detectados ⚠️`)
-  reportLines.push(`_Score desvia ≥1.5 pontos da mediana dos outros inputs da mesma skill._`)
+  reportLines.push(`\n### Outliers detected ⚠️`)
+  reportLines.push(`_Score deviates ≥1.5 points from the median of other inputs for the same skill._`)
   for (const o of outliers) {
     reportLines.push(`- **${o.skillName}** Input ${o.input}: score ${o.score.toFixed(1)} vs mediana ${o.median.toFixed(1)} (Δ${o.deviation.toFixed(1)})`)
   }
 }
-reportLines.push(`\n### Benchmark de Custo`)
-reportLines.push(`- Total de tokens (skills + evals): ${totalTokensAll.toLocaleString()}`)
-reportLines.push(`- Custo estimado (Sonnet 4.6): ~$${estimatedCostUSD.toFixed(4)} USD`)
-reportLines.push(`- Skills avaliadas: ${Object.keys(bySkill).length}/${Object.keys(SKILLS).length}`)
-reportLines.push(`- Runs com erro: ${results.filter(r => !r).length}`)
+reportLines.push(`\n### Cost Benchmark`)
+reportLines.push(`- Total tokens (skills + evals): ${totalTokensAll.toLocaleString()}`)
+reportLines.push(`- Estimated cost (Sonnet 4.6): ~$${estimatedCostUSD.toFixed(4)} USD`)
+reportLines.push(`- Skills evaluated: ${Object.keys(bySkill).length}/${Object.keys(SKILLS).length}`)
+reportLines.push(`- Runs with errors: ${results.filter(r => !r).length}`)
 
 const reportContent = reportLines.join('\n')
 
 await agent(
-  `Salve o seguinte conteúdo Markdown no arquivo ~/.claude/workflows/go-star-eval/reports/report.md (crie os diretórios se necessário usando Bash ou mcp__filesystem__create_directory). Use a ferramenta Write para escrever o arquivo.
+  `Save the following Markdown content to the file ~/.claude/workflows/go-star-eval/reports/report.md (create directories if needed using Bash or mcp__filesystem__create_directory). Use the Write tool to write the file.
 
-CONTEÚDO:
+CONTENT:
 ${reportContent}`,
   {
     label: 'save-report',
@@ -737,7 +736,7 @@ ${reportContent}`,
   }
 )
 
-log('Report salvo em ~/.claude/workflows/go-star-eval/reports/report.md')
+log('Report saved to ~/.claude/workflows/go-star-eval/reports/report.md')
 
 return {
   totalRuns: RUNS.length,

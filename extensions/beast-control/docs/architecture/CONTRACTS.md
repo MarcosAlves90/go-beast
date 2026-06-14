@@ -3,12 +3,12 @@
 
 ---
 
-## 1. Contrato: Claude Code → MCP Server (stdio / JSON-RPC 2.0)
+## 1. Contract: Claude Code → MCP Server (stdio / JSON-RPC 2.0)
 
-**Protocolo:** MCP sobre stdio (JSON-RPC 2.0)
-**Auth:** nenhuma (processo local spawned pelo Claude Code)
+**Protocol:** MCP over stdio (JSON-RPC 2.0)
+**Auth:** none (local process spawned by Claude Code)
 
-### Tools expostas
+### Exposed tools
 
 #### `browser_ping`
 ```jsonc
@@ -32,7 +32,7 @@
 { "selector": "#submit-btn" }
 // output
 { "ok": true }
-// erro
+// error
 { "ok": false, "error": "Element not found: #submit-btn" }
 ```
 
@@ -49,8 +49,8 @@
 // input
 {
   "fields": [
-    { "selector": "#name", "value": "João" },
-    { "selector": "#email", "value": "joao@example.com" }
+    { "selector": "#name", "value": "John" },
+    { "selector": "#email", "value": "john@example.com" }
   ]
 }
 // output
@@ -82,14 +82,14 @@
 #### `browser_get_dom`
 ```jsonc
 // input
-{ "selector": "body" }   // opcional; omitir = documento inteiro
+{ "selector": "body" }   // optional; omit = entire document
 // output
 {
   "ok": true,
   "html": "<html>...</html>",
   "redacted": true
 }
-// texto de campos sensíveis substituído por [REDACTED] quando bypass=false
+// sensitive field text replaced by [REDACTED] when bypass=false
 ```
 
 #### `browser_get_text`
@@ -106,49 +106,49 @@
 { "expression": "document.title" }
 // output
 { "ok": true, "result": "Home - Example" }
-// erro de execução
+// execution error
 { "ok": false, "error": "ReferenceError: foo is not defined" }
 ```
 
-### Modelo de erro (todas as tools)
+### Error model (all tools)
 ```jsonc
 {
   "ok": false,
-  "error": "<mensagem legível>",
+  "error": "<human-readable message>",
   "code": "ELEMENT_NOT_FOUND" | "TIMEOUT" | "WS_DISCONNECTED" | "EXECUTION_ERROR"
 }
 ```
 
 ---
 
-## 2. Contrato: MCP Server → Background Service Worker (WebSocket)
+## 2. Contract: MCP Server → Background Service Worker (WebSocket)
 
-**Protocolo:** WebSocket — `ws://127.0.0.1:7331`
-**Serialização:** JSON
-**Auth:** nenhuma (localhost-only)
-**Timeout por comando:** 30s
+**Protocol:** WebSocket — `ws://127.0.0.1:7331`
+**Serialization:** JSON
+**Auth:** none (localhost-only)
+**Timeout per command:** 30s
 
-### Envelope de comando (MCP Server → Extensão)
+### Command envelope (MCP Server → Extension)
 ```jsonc
 {
   "requestId": "550e8400-e29b-41d4-a716-446655440000",  // UUID v4
   "type": "click" | "type" | "navigate" | "scroll" | "screenshot" |
           "get_dom" | "eval_js" | "get_text" | "fill_form" | "ping",
-  "payload": { /* específico por tipo — ver abaixo */ }
+  "payload": { /* type-specific — see below */ }
 }
 ```
 
-### Envelope de resposta (Extensão → MCP Server)
+### Response envelope (Extension → MCP Server)
 ```jsonc
 {
-  "requestId": "550e8400-e29b-41d4-a716-446655440000",  // eco do comando
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",  // echoed from command
   "ok": true | false,
-  "result": { /* específico por tipo */ },
-  "error": "<string ou null>"
+  "result": { /* type-specific */ },
+  "error": "<string or null>"
 }
 ```
 
-### Payloads por tipo de comando
+### Payloads by command type
 
 | type | payload |
 |------|---------|
@@ -163,7 +163,7 @@
 | `get_text` | `{ "selector": string }` |
 | `eval_js` | `{ "expression": string }` |
 
-### Resultado por tipo
+### Result by type
 
 | type | result |
 |------|--------|
@@ -180,75 +180,75 @@
 
 ---
 
-## 3. Contrato: Background SW → Content Script (chrome.tabs.sendMessage)
+## 3. Contract: Background SW → Content Script (chrome.tabs.sendMessage)
 
-**Protocolo:** `chrome.tabs.sendMessage` (intra-processo, síncrono via callback)
+**Protocol:** `chrome.tabs.sendMessage` (in-process, synchronous via callback)
 
-### Mensagens Background → Content Script
+### Messages Background → Content Script
 
 ```jsonc
-// executar ação
+// execute action
 { "action": "click" | "type" | "navigate" | "scroll" | "fill_form" | "get_dom" | "get_text" | "eval_js", "payload": {} }
 
-// obter rects de campos sensíveis (para screenshot)
+// get sensitive field rects (for screenshot)
 { "action": "get_sensitive_rects" }
 
-// verificar estado de bypass
+// check bypass state
 { "action": "get_bypass_state" }
 ```
 
-### Resposta Content Script → Background
+### Response Content Script → Background
 ```jsonc
 { "ok": boolean, "result": any, "error": string | null }
 ```
 
 ---
 
-## 4. Contrato: Popup UI → Background SW (chrome.runtime.sendMessage)
+## 4. Contract: Popup UI → Background SW (chrome.runtime.sendMessage)
 
-**Protocolo:** `chrome.runtime.sendMessage`
+**Protocol:** `chrome.runtime.sendMessage`
 
 ```jsonc
-// popup → background: ler estado atual
+// popup → background: read current state
 { "action": "get_state" }
-// background → popup: resposta
+// background → popup: response
 {
   "connected": boolean,
   "port": number,
   "bypassActive": boolean,
   "recentCommands": [
     { "type": string, "ok": boolean, "ts": number }
-  ]   // últimos 5
+  ]   // last 5
 }
 
-// popup → background: alterar porta
+// popup → background: change port
 { "action": "set_port", "port": 7331 }
 
-// popup → background: alternar bypass
+// popup → background: toggle bypass
 { "action": "toggle_bypass" }
-// background → popup: resposta
+// background → popup: response
 { "bypassActive": boolean }
 ```
 
 ---
 
-## 5. Regras de redação
+## 5. Redaction rules
 
-Campos que **sempre** disparam redação (salvo bypass ativo):
+Fields that **always** trigger redaction (unless bypass is active):
 
-| Seletor CSS | Motivo |
+| CSS Selector | Reason |
 |-------------|--------|
-| `[type="password"]` | Senha |
-| `[type="tel"]` | Telefone / dados pessoais |
-| `[autocomplete~="cc-number"]` | Número de cartão |
+| `[type="password"]` | Password |
+| `[type="tel"]` | Phone / personal data |
+| `[autocomplete~="cc-number"]` | Card number |
 | `[autocomplete~="cc-csc"]` | CVV |
-| `[name*="card" i]` | Campo de cartão genérico |
-| `[name*="cvv" i]` | CVV genérico |
+| `[name*="card" i]` | Generic card field |
+| `[name*="cvv" i]` | Generic CVV |
 | `[name*="ssn" i]` | Social Security Number |
-| `[name*="cpf" i]` | CPF brasileiro |
-| `[name*="password" i]` | Senha genérica |
+| `[name*="cpf" i]` | Brazilian tax ID (CPF) |
+| `[name*="password" i]` | Generic password |
 
-**Comportamento de redação:**
-- `get_text` / `get_dom`: valor substituído por `[REDACTED]`
-- `screenshot`: bounding box do elemento pintado de preto (`#000`) sobre o canvas antes de exportar base64
-- `fill_form` / `type` enviados **ao** browser: sem redação (Claude está enviando dados, não recebendo)
+**Redaction behavior:**
+- `get_text` / `get_dom`: value replaced with `[REDACTED]`
+- `screenshot`: element bounding box painted black (`#000`) on the canvas before exporting base64
+- `fill_form` / `type` sent **to** the browser: no redaction (Claude is sending data, not receiving it)

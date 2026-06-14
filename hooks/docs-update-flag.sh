@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Marca projeto para lembrete de docs quando Claude modifica arquivos de código-fonte.
+# Flags the project for a docs reminder when Claude modifies source code files.
 # Event: PostToolUse (Edit, Write, MultiEdit)
 
 set -uo pipefail
@@ -20,12 +20,12 @@ esac
 
 [[ -z "$file_path" ]] && exit 0
 
-# Ignora arquivos de documentação — não lembrar sobre docs ao editar docs
+# Ignore documentation files — do not remind about docs when editing docs
 if echo "$file_path" | grep -qE '\.(md|rst|txt|adoc)$|README|CHANGELOG|CONTRIBUTING|/docs/'; then
   exit 0
 fi
 
-# Marca apenas arquivos de código-fonte
+# Flag only source code files
 if echo "$file_path" | grep -qE '\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|cs|rb|php|swift|c|cpp|h|hpp)$'; then
   printf '%s' "$(pwd)" > "$HOME/.claude/.docs-update-pending"
 fi
