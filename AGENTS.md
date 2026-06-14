@@ -2,15 +2,11 @@
 
 > **Scope:** This file is the context for the AI agent that **maintains this repository** (adds skills, edits docs, runs evals). It is not the context for agents that *use* the skills — users load individual `SKILL.md` files via their agent's skill system.
 
-This is the go-beast skill pack repository. It contains skills, workflows, and hooks for the go-* family. The pack is agent-agnostic — skills are plain Markdown and work with any agent. The Claude Code sync hook (`hooks/sync-go-beast-skills.sh`), `go-swift`, and `go-wren` are the only Claude Code-specific components.
-
----
+This is the go-beast skill pack repository. It contains skills, workflows, hooks, and a cross-platform installer for the go-* family. The pack is agent-agnostic — skills are plain Markdown and work with any agent. The Claude Code sync hook (`hooks/sync-go-beast-skills.sh`), `go-swift`, and `go-wren` are the only Claude Code-specific components.
 
 ## What this repo is
 
-A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.), one workflow (`go-skill-eval`), and one hook (`sync-go-beast-skills.sh`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
-
----
+A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.), two eval workflows (`go-skill-eval`, `go-hook-eval`), a set of Claude Code hooks, a cross-platform Node.js installer (`scripts/install.mjs`), and an optional browser extension (`extensions/beast-control/`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
 
 ## Conventions
 
@@ -37,81 +33,87 @@ Always update `CHANGELOG.md` before bumping version in `PACKAGE.md` and `README.
 All content in this repository must be written in **English** — no exceptions:
 
 - Skill files (`SKILL.md`, `references/`)
-- Documentation (`README.md`, `AGENTS.md`, `AGENTS.global.md`, `CHANGELOG.md`, `PACKAGE.md`, `APPROACH.md`)
-- Commit messages
-- Pull request titles and descriptions
-- Code comments inside hooks and workflows
+- Documentation (`README.md`, `AGENTS.md`, `AGENTS.global.md`, `CHANGELOG.md`, `PACKAGE.md`)
+- Commit messages and pull request titles/descriptions
+- Code comments inside hooks, workflows, and scripts
 - Checklist terms in `go-skill-eval.js`
 
-This rule applies to the AI agent maintaining the repo and to any human contributor. If content arrives in another language, translate it to English before committing.
+If content arrives in another language, translate it to English before committing.
 
 ### Checklist quality (for go-skill-eval)
 
 Checklist terms in `go-skill-eval.js` must be:
-- **English** — avoid accented characters or Portuguese terms
-- **Specific** — prefer artifact names (`SECURITY_REVIEW`, `erDiagram`) over concepts (`recomendações`)
-- **Plural/singular tolerant** — the eval uses case-insensitive matching with variant acceptance
-- **Sourced from skill output sections** — match what the skill actually produces, not what it describes
+- **English** — no accented characters
+- **Specific** — prefer artifact names (`SECURITY_REVIEW`, `erDiagram`) over vague concepts
+- **Plural/singular tolerant** — the eval uses case-insensitive matching
+- **Sourced from skill output sections** — match what the skill actually produces
 
 ### Reference files
 
-If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file must exist and contain actionable content. Do not use `${CLAUDE_SKILL_DIR}` references for content the LLM needs at execution time — inline it in the step instead (see go-bear step 6, go-raven step 3, go-owl step 4 as examples of correctly inlined content).
-
----
+If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file must exist and contain actionable content. Do not use `${CLAUDE_SKILL_DIR}` references for content the LLM needs at execution time — inline it in the step instead.
 
 ## Adding a new beast
 
 1. Run go-smith to validate the gap is real and name the beast
 2. Create `go-<animal>/SKILL.md` following the structure above
-3. Add to skills table and dependency graph in `README.md`
+3. Add to the skills tables in `README.md`
 4. Add to directory tree in `PACKAGE.md`
 5. Add checklist entry in `go-skill-eval.js` under `SKILLS`
-6. Update `CHANGELOG.md` and bump version (minor)
-7. Run `go-skill-eval` with `args: { skills: ["go-<animal>"] }` to validate the new skill before a full run
-
-**Symlink note:** the skill becomes available in Claude Code when `sync-go-beast-skills.sh` runs (next SessionStart). To use it immediately after creation, run the hook manually:
-
-```bash
-bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
-```
-
----
-
-## Running the eval
+6. If the skill requires real files to function, add it to `FILESYSTEM_SKILLS` in `go-skill-eval.js`
+7. Add a `skillOverrides` entry in `go-skill-eval.js` with a concrete scenario for eval
+8. Update `CHANGELOG.md` and bump version (minor)
+9. Run `go-skill-eval` filtered to the new skill to validate before a full run:
 
 ```js
-// Full run (all skills)
-Workflow({ name: "go-skill-eval" })
-
-// Filtered run (one or more skills)
-Workflow({ name: "go-skill-eval", args: { skills: ["go-swift", "go-smith"] } })
+Workflow({ name: "go-skill-eval", args: { skills: ["go-<animal>"] } })
 ```
 
-Note: `/go-skill-eval` slash command does not support args — use the Workflow tool directly for filtered runs.
+**To activate in Claude Code immediately after creation** (instead of waiting for next SessionStart):
 
----
+```bash
+bash <repo-root>/hooks/sync-go-beast-skills.sh
+```
+
+## Running the evals
+
+```js
+// Full skill eval (all skills)
+Workflow({ name: "go-skill-eval" })
+
+// Filtered skill eval
+Workflow({ name: "go-skill-eval", args: { skills: ["go-swift", "go-smith"] } })
+
+// Full hook eval
+Workflow({ name: "go-hook-eval" })
+```
+
+Note: slash commands do not support args — use the Workflow tool directly for filtered runs.
 
 ## Repo layout
 
 ```
 go-beast/
-├── AGENTS.md              ← This file (project-level agent context)
-├── AGENTS.global.md       ← Global agent instructions — source of truth for ~/.claude/CLAUDE.md
+├── AGENTS.md              ← This file (context for the repo maintainer agent)
+├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
 ├── README.md              ← Pack index, pipeline map, install instructions
-├── PACKAGE.md             ← Manifest, directory tree, dependency graph, versioning policy
+├── PACKAGE.md             ← Manifest, directory tree, versioning policy
 ├── CHANGELOG.md           ← Version history
 ├── go-*/
-│   └── SKILL.md           ← One skill per beast
+│   ├── SKILL.md           ← One skill per beast
+│   └── references/        ← Optional: supporting content for the skill
+├── scripts/
+│   └── install.mjs        ← Cross-platform installer (Node.js 18+, no deps)
 ├── workflows/
-│   ├── go-skill-eval.js   ← Skill eval (A/B/C/D benchmark, args.skills filter)
-│   └── go-hook-eval.js    ← Hook eval (27 test cases, blockers + observers)
-└── hooks/
-    ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks + syncs AGENTS.global.md
-    ├── git-commit-guard.sh      ← PreToolUse(Bash): blocks commits of sensitive files
-    ├── code-dedup-check.sh      ← PreToolUse(Edit/Write): warns on duplicate declarations
-    ├── code-verify-flag.sh      ← PostToolUse(Edit/Write): flags project for verification
-    ├── code-verify-run.sh       ← Stop: runs tsc/mypy/go vet/cargo check + tests
-    ├── docs-update-flag.sh      ← PostToolUse(Edit/Write): flags project when source files are modified
-    ├── docs-update-remind.sh    ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
-    ├── git-strip-coauthored.sh  ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
-```
+│   ├── go-skill-eval.js   ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
+│   └── go-hook-eval.js    ← Hook eval: 27 test cases across all hooks
+├── hooks/
+│   ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks
+│   ├── git-commit-guard.sh      ← PreToolUse(Bash): blocks sensitive file commits
+│   ├── git-strip-coauthored.sh  ← PreToolUse(Bash): blocks Co-Authored-By commits
+│   ├── code-dedup-check.sh      ← PreToolUse(Edit/Write): warns on duplicate declarations
+│   ├── code-verify-flag.sh      ← PostToolUse(Edit/Write): flags project for verification
+│   ├── code-verify-run.sh       ← Stop: runs type checks + tests on flagged projects
+│   ├── docs-update-flag.sh      ← PostToolUse(Edit/Write): flags project when source modified
+│   └── docs-update-remind.sh    ← Stop: reminds to update docs/CHANGELOG after code changes
+└── extensions/
+    └── beast-control/     ← Optional Firefox/Zen Browser MCP bridge

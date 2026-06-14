@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.21.2] - 2026-06-14
+
+### Changed
+
+- **AGENTS.md**: updated to reflect current repo state — added `scripts/install.mjs` and `extensions/` to repo layout; fixed "one workflow" to "two eval workflows"; added steps 6 and 7 to "Adding a new beast" (FILESYSTEM_SKILLS and skillOverrides); removed hardcoded personal path from symlink note; removed `---` dividers.
+
+---
+
 ## [1.21.1] - 2026-06-14
 
 ### Changed
