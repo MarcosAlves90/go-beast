@@ -11,6 +11,18 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.20.0] - 2026-06-14
+
+### Added
+
+- **scripts/install.mjs** — cross-platform installer rewritten in Node.js (macOS, Linux, Windows). No external dependencies, requires Node.js 18+. Same UX as `install.sh` (`a/n/p` prompt, numbered list with range support, `--all` / `--uninstall` flags) but runs on all platforms. On Windows, creates directory symlinks for skill folders and file symlinks for hooks/workflows; skips `chmod` (Unix only). Colours disabled automatically on Windows unless Windows Terminal or ANSI is detected.
+
+### Changed
+
+- **README.md**: installation section updated to use `install.mjs` as the primary installer.
+
+---
+
 ## [1.19.1] - 2026-06-14
 
 ### Fixed

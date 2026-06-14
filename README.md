@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.19.1** — 2026-06-14
+**1.20.0** — 2026-06-14
 
 ---
 
@@ -114,26 +114,26 @@ go-kite                           (architecture audit before go-fox revisions)
 
 The skills are plain Markdown files — any agent that can read files can use them.
 
-### Interactive installer (any agent)
+### Interactive installer (macOS, Linux, Windows)
 
 Clone the repo and run the interactive installer:
 
 ```bash
 git clone <repo-url> ~/Documents/@cherry-c/go-beast
-bash ~/Documents/@cherry-c/go-beast/scripts/install.sh
+node ~/Documents/@cherry-c/go-beast/scripts/install.mjs
 ```
 
-The installer detects which agents are installed (Claude Code, Cursor, Gemini, Cline, Copilot, Codex), lets you select which skills, hooks (Claude Code only), and workflows (Claude Code only) to install, and creates symlinks. It also copies `AGENTS.global.md` to each agent's expected global instructions file.
+Requires Node.js 18+. No external dependencies.
+
+The installer detects which agents are installed (Claude Code, Cursor, Gemini, Cline, Copilot, Codex), lets you select which skills, hooks (Claude Code only), and workflows (Claude Code only) to install via a numbered menu, and creates symlinks. It also copies `AGENTS.global.md` to each agent's expected global instructions file.
 
 ```bash
 # Non-interactive: install everything into all detected agents
-bash scripts/install.sh --all
+node scripts/install.mjs --all
 
 # Remove all repo symlinks from all agents
-bash scripts/install.sh --uninstall
+node scripts/install.mjs --uninstall
 ```
-
-Requires `fzf` for the multi-select UI (`brew install fzf`); falls back to a numbered menu without it.
 
 ---
 
