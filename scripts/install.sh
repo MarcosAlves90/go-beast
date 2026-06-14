@@ -21,13 +21,13 @@ header() { echo -e "\n${BOLD}$*${RESET}"; }
 # format: "display_name:skills_dir:hooks_dir:workflows_dir:global_md_dest"
 # hooks_dir and workflows_dir are empty for agents that don't support them.
 declare -A AGENT_SKILLS_DIR=(
-  [claude-code]="$HOME/.claude/skills"
-  [cursor]="$HOME/.cursor/skills"
-  [gemini]="$HOME/.gemini/skills"
-  [cline]="$HOME/.cline/skills"
-  [copilot]="$HOME/.github/copilot/skills"
-  [codex]="$HOME/.codex/skills"
-  [agents]="$HOME/.agents/skills"
+  ["claude-code"]="$HOME/.claude/skills"
+  ["cursor"]="$HOME/.cursor/skills"
+  ["gemini"]="$HOME/.gemini/skills"
+  ["cline"]="$HOME/.cline/skills"
+  ["copilot"]="$HOME/.github/copilot/skills"
+  ["codex"]="$HOME/.codex/skills"
+  ["agents"]="$HOME/.agents/skills"
 )
 
 # Only Claude Code supports hooks and workflows
@@ -37,13 +37,13 @@ CLAUDE_WORKFLOWS_DIR="$HOME/.claude/workflows"
 # Global instructions file per agent (where AGENTS.global.md is copied to)
 # Each agent reads a different filename for global AI instructions.
 declare -A AGENT_GLOBAL_MD=(
-  [claude-code]="$HOME/.claude/CLAUDE.md"
-  [cursor]="$HOME/.cursor/rules"           # Cursor uses .cursor/rules (plain text)
-  [gemini]="$HOME/.gemini/GEMINI.md"
-  [cline]="$HOME/.cline/AGENTS.md"
-  [copilot]="$HOME/.github/copilot-instructions.md"
-  [codex]="$HOME/.codex/AGENTS.md"
-  [agents]="$HOME/.agents/AGENTS.md"
+  ["claude-code"]="$HOME/.claude/CLAUDE.md"
+  ["cursor"]="$HOME/.cursor/rules"
+  ["gemini"]="$HOME/.gemini/GEMINI.md"
+  ["cline"]="$HOME/.cline/AGENTS.md"
+  ["copilot"]="$HOME/.github/copilot-instructions.md"
+  ["codex"]="$HOME/.codex/AGENTS.md"
+  ["agents"]="$HOME/.agents/AGENTS.md"
 )
 
 # ── Detect installed agents ───────────────────────────────────────────────────
