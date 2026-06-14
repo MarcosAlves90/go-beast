@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.20.2] - 2026-06-14
+
+### Changed
+
+- **scripts/install.mjs**: polished ANSI UI — header and prompt sections rendered as Unicode boxes (`╭╮╰╯`), pick list shown in two columns, install results grouped (new items listed individually, already-linked items collapsed to a single count line), summary box at the end with counters for new/linked/warnings.
+
+---
+
 ## [1.20.1] - 2026-06-14
 
 ### Removed
