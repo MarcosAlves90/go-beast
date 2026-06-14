@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.23.5] - 2026-06-14
+
+### Fixed
+
+- **workflows/go-hook-eval.js**: resolved all 15 test failures caused by Claude Code auto-mode safety classifier blocking `~/.claude/` flag file operations as "audit tampering / prompt injection". Solution: each test now runs in its own isolated temp home (`/tmp/hook-eval-<test-id>/`). Hooks write flags to `$testHome/.claude/` (via `HOME=$testHome`) so no `~/.claude/` path is ever touched during tests. `EVAL_HOME` is the canonical placeholder in `TESTS` definitions; runner remaps it to `testHome` at execution time via `replaceAll`. Parallel-run flag contamination eliminated. Result: 31/31 pass.
+- Fixed `ReferenceError: Cannot access 'testHome' before initialization` — moved `testId`/`testHome` declarations before the `rawSetup` line that references them.
+
+---
+
 ## [1.23.4] - 2026-06-14
 
 ### Fixed

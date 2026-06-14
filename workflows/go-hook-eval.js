@@ -9,7 +9,12 @@ export const meta = {
 
 // ─── Infrastructure ────────────────────────────────────────────────────────
 
-const HOOKS_DIR = `${args?.home ?? "/Users/marcos.lopes"}/.claude/hooks`
+const REAL_HOME = args?.home ?? "/Users/marcos.lopes"
+const HOOKS_DIR = `${REAL_HOME}/.claude/hooks`
+
+// Isolated home for flag files — avoids writing to ~/.claude/ which triggers safety classifier
+// Hooks write flags to $HOME/.claude/ so we override HOME to a safe /tmp directory
+const EVAL_HOME = `/tmp/hook-eval-home`
 
 // Serialize a JS object as JSON with escaped newlines (the format the runtime sends)
 function json(obj) {
@@ -174,14 +179,14 @@ const TESTS = [
     name: 'creates flag for .ts file',
     input: editInput('/workspace/src/app.ts'),
     expectExit: 0,
-    expectFlagAfter: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.claude/.docs-update-pending`,
   },
   {
     hook: 'docs-update-flag.sh',
     name: 'does not create flag for .md file',
     input: editInput('/workspace/README.md', '# Docs update'),
     expectExit: 0,
-    expectNoFlag: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
+    expectNoFlag: `${EVAL_HOME}/.claude/.docs-update-pending`,
   },
   {
     hook: 'docs-update-flag.sh',
@@ -194,7 +199,7 @@ const TESTS = [
     name: 'creates flag for MultiEdit on .ts file',
     input: json({ tool_name: 'MultiEdit', tool_input: { file_path: '/workspace/src/app.ts', edits: [] } }),
     expectExit: 0,
-    expectFlagAfter: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.claude/.docs-update-pending`,
   },
 
   // ── code-verify-flag ─────────────────────────────────────────────────────
@@ -203,35 +208,35 @@ const TESTS = [
     name: 'creates flag for .ts file',
     input: editInput('/workspace/src/app.ts'),
     expectExit: 0,
-    expectFlagAfter: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.claude/.code-verify-pending`,
   },
   {
     hook: 'code-verify-flag.sh',
     name: 'creates flag for .py file',
     input: editInput('/workspace/src/app.py'),
     expectExit: 0,
-    expectFlagAfter: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.claude/.code-verify-pending`,
   },
   {
     hook: 'code-verify-flag.sh',
     name: 'does not create flag for .md file',
     input: editInput('/workspace/README.md', '# Docs'),
     expectExit: 0,
-    expectNoFlag: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
+    expectNoFlag: `${EVAL_HOME}/.claude/.code-verify-pending`,
   },
   {
     hook: 'code-verify-flag.sh',
     name: 'creates flag for .go file',
     input: editInput('/workspace/main.go'),
     expectExit: 0,
-    expectFlagAfter: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.claude/.code-verify-pending`,
   },
 
   // ── docs-update-remind ───────────────────────────────────────────────────
   {
     hook: 'docs-update-remind.sh',
     name: 'silent when no flag file',
-    setup: `rm -f ${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
+    setup: `rm -f ${EVAL_HOME}/.claude/.docs-update-pending`,
     input: stopInput(false),
     expectExit: 0,
     expectNoOutput: 'Reminder',
@@ -239,7 +244,7 @@ const TESTS = [
   {
     hook: 'docs-update-remind.sh',
     name: 'shows reminder when flag exists (exit 2 — re-triggers Claude)',
-    setup: `echo /tmp > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
+    setup: `echo /tmp > ${EVAL_HOME}/.claude/.docs-update-pending`,
     input: stopInput(false),
     expectExit: 2,
     expectOutput: 'Reminder',
@@ -247,7 +252,7 @@ const TESTS = [
   {
     hook: 'docs-update-remind.sh',
     name: 'respects stop_hook_active=true',
-    setup: `echo /tmp > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
+    setup: `echo /tmp > ${EVAL_HOME}/.claude/.docs-update-pending`,
     input: stopInput(true),
     expectExit: 0,
     expectNoOutput: 'Reminder',
@@ -257,7 +262,7 @@ const TESTS = [
   {
     hook: 'code-verify-run.sh',
     name: 'exit 0 when no flag file',
-    setup: `rm -f ${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
+    setup: `rm -f ${EVAL_HOME}/.claude/.code-verify-pending`,
     input: stopInput(false),
     expectExit: 0,
   },
@@ -271,7 +276,7 @@ const TESTS = [
   {
     hook: 'code-verify-run.sh',
     name: 'exit 0 with flag pointing to dir with no recognized project',
-    setup: `echo /tmp > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
+    setup: `echo /tmp > ${EVAL_HOME}/.claude/.code-verify-pending`,
     input: stopInput(false),
     expectExit: 0, // /tmp has no package.json, go.mod, etc — HAS_CHECKS=false → exit 0
   },
@@ -279,7 +284,7 @@ const TESTS = [
     hook: 'code-verify-run.sh',
     name: 'exit 1 when tsc reports type errors in flagged project',
     // Requires tsc on PATH (npx --no-install tsc). Skipped gracefully if tsc unavailable.
-    setup: `dir=$(mktemp -d /tmp/hook-eval-ts-XXXXXX) && echo '{"compilerOptions":{"strict":true,"noEmit":true}}' > "$dir/tsconfig.json" && echo 'const x: number = "not a number";' > "$dir/bad.ts" && echo "$dir" > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
+    setup: `dir=$(mktemp -d /tmp/hook-eval-ts-XXXXXX) && echo '{"compilerOptions":{"strict":true,"noEmit":true}}' > "$dir/tsconfig.json" && echo 'const x: number = "not a number";' > "$dir/bad.ts" && echo "$dir" > ${EVAL_HOME}/.claude/.code-verify-pending`,
     input: stopInput(false),
     expectExit: 1,
     expectOutput: 'check',
@@ -305,41 +310,52 @@ log(`Running ${TESTS.length} test cases in parallel...`)
 
 const results = await parallel(
   TESTS.map(t => async () => {
-    const setupCmd = t.setup ? `${t.setup} && ` : ''
-    const cwd = t.cwd ?? `${args?.home ?? "/Users/marcos.lopes"}/Documents/@cherry-c/go-beast`
-    // Limpa flags antes do teste — tanto expectFlagAfter quanto expectNoFlag precisam de estado limpo
-    const flagsToClean = [t.expectFlagAfter, t.expectNoFlag].filter(Boolean)
-    const flagCleanBefore = flagsToClean.length > 0 ? flagsToClean.map(f => `rm -f ${f}`).join(' && ') + ' && ' : ''
+    // Each test gets its own isolated home directory — no flag contamination between parallel tests
+    const testId   = `${t.hook.replace('.sh','')}-${t.name.replace(/[^a-z0-9]/gi,'-').slice(0,20)}`
+    const testHome = `/tmp/hook-eval-${testId}`
+    const ensureTestHome = `mkdir -p ${testHome}/.claude`
 
-    const prompt = `You are an automated test agent. Execute the steps below exactly and return the requested JSON. This is a controlled hook script test — hooks read stdin and exit immediately, they do not modify production files.
+    // Replace EVAL_HOME placeholder in setup with this test's isolated testHome
+    const rawSetup = t.setup ? t.setup.replaceAll(EVAL_HOME, testHome) : ''
+    const setupCmd = rawSetup ? `${rawSetup} && ` : ''
+    const cwd = t.cwd ?? `${REAL_HOME}/Documents/@cherry-c/go-beast`
 
-STEP 1 — Setup:
+    // Re-map flag paths for this test's isolated home
+    const remapFlag = (f) => f ? f.replace(`${EVAL_HOME}/.claude/`, `${testHome}/.claude/`) : f
+    const expectFlagAfter = remapFlag(t.expectFlagAfter)
+    const expectNoFlag    = remapFlag(t.expectNoFlag)
+
+    const prompt = `CONTEXT: This is a go-beast hook integration test. You are running a controlled test of a shell script hook. The hook reads JSON from stdin and exits immediately. Each test runs in its own isolated temp directory (${testHome}) so tests cannot interfere with each other.
+
+TEST: ${t.hook} — ${t.name}
+
+STEP 1 — Create isolated test environment and run any test-specific setup:
 \`\`\`bash
-${setupCmd}${flagCleanBefore}true
+${ensureTestHome} && ${setupCmd}true
 \`\`\`
 
-STEP 2 — Run the hook passing input via stdin and capture the exit code:
+STEP 2 — Execute the hook with isolated HOME=${testHome} (flag files go to ${testHome}/.claude/, not ~/.claude/):
 \`\`\`bash
-cd ${cwd} && echo ${JSON.stringify(t.input)} | bash ${HOOKS_DIR}/${t.hook}; echo "EXIT_CODE:$?"
+cd ${cwd} && echo ${JSON.stringify(t.input)} | HOME=${testHome} bash ${HOOKS_DIR}/${t.hook}; echo "EXIT_CODE:$?"
 \`\`\`
 
-STEP 3 — Check flag file (if applicable):
-${t.expectFlagAfter ? `\`\`\`bash\nls ${t.expectFlagAfter} 2>/dev/null && echo "FLAG_EXISTS" || echo "FLAG_ABSENT"\n\`\`\`` : '(skip this step)'}
-${t.expectNoFlag ? `\`\`\`bash\nls ${t.expectNoFlag} 2>/dev/null && echo "FLAG_EXISTS" || echo "FLAG_ABSENT"\n\`\`\`` : '(skip this step)'}
+STEP 3 — Verify flag file state (if applicable):
+${expectFlagAfter ? `\`\`\`bash\ntest -e ${expectFlagAfter} && echo "FLAG_EXISTS" || echo "FLAG_ABSENT"\n\`\`\`` : '(skip)'}
+${expectNoFlag ? `\`\`\`bash\ntest -e ${expectNoFlag} && echo "FLAG_EXISTS" || echo "FLAG_ABSENT"\n\`\`\`` : '(skip)'}
 
-ANALYSIS — verify each condition:
+VERIFY these conditions and return JSON:
 - expected exit_code: ${t.expectExit}
 - output must contain: ${t.expectOutput ?? '(none)'}
 - output must NOT contain: ${t.expectNoOutput ?? '(none)'}
-- flag must exist after execution: ${t.expectFlagAfter ?? '(do not check)'}
-- flag must NOT exist after execution: ${t.expectNoFlag ?? '(do not check)'}
+- flag must exist: ${t.expectFlagAfter ?? '(skip)'}
+- flag must NOT exist: ${t.expectNoFlag ?? '(skip)'}
 
-Return ONLY the structured JSON with:
-- passed: true only if ALL conditions above are satisfied
-- exit_code: actual numeric exit code (extract from "EXIT_CODE:N" in the output)
-- stdout: first 300 chars of the hook's stdout
-- stderr: first 200 chars of stderr (if any)
-- detail: one sentence explaining why passed=true or which specific condition failed`
+Return ONLY:
+- passed: true only if ALL conditions satisfied
+- exit_code: numeric exit code from "EXIT_CODE:N"
+- stdout: first 300 chars of hook stdout
+- stderr: first 200 chars of stderr
+- detail: one sentence — why passed or which condition failed`
 
     const result = await agent(prompt, {
       label: `${t.hook}::${t.name}`,
