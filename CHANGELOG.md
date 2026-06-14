@@ -11,6 +11,50 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.16.5] - 2026-06-13
+
+### Changed
+
+- **go-wren/SKILL.md** (v1.3.0 → v1.4.0): step 3 now includes a platform compatibility note — `grep -P` (PCRE) is unavailable on macOS BSD grep; any proposed hook code must use `grep -E` instead or it will silently fail.
+- **hooks/code-verify-run.sh**: Python detection condition now also triggers on `requirements.txt` — projects with only a requirements file (no pyproject.toml/setup.py/setup.cfg) were previously skipped.
+
+---
+
+## [1.16.4] - 2026-06-13
+
+### Changed
+
+- **workflows/go-skill-eval.js**: `go-wren` input C override tightened — now explicitly constrains the task to a single grep-regex line edit in `docs-update-flag.sh` with exact JSON test cases for the four required test evidence cases, preventing the agent from drifting into full hook creation instead of targeted maintenance.
+
+---
+
+## [1.16.3] - 2026-06-13
+
+### Changed
+
+- **go-wren/SKILL.md** (v1.2.0 → v1.3.0): step 3 now includes the correct `settings.json` hook registration schema with matcher semantics (Stop/SessionStart have no matcher; PreToolUse/PostToolUse use `matcher` key at the outer array element level). Rules section expanded with: stop-if-hook-missing rule, explicit simulated-evidence rule, stdin-only rule.
+- **workflows/go-skill-eval.js**: `go-wren` override split by input — input C keeps the PayLink/Jinja2 condition change; input D now gets a ShopLegacy/secret-detection scenario (gap analysis between existing `git-commit-guard.sh` Bash hook and a new Edit/Write content-inspection hook). Override preamble strengthened to suppress skill-registration meta-commentary.
+
+---
+
+## [1.16.2] - 2026-06-13
+
+### Changed
+
+- **go-wren/SKILL.md** (v1.1.0 → v1.2.0): step 3 now includes a hook input mechanics table — documents that Claude Code passes event data via stdin JSON, not env vars or positional args; any `$TOOL_INPUT`/`$1` pattern is explicitly flagged as incorrect.
+- **workflows/go-skill-eval.js**: `go-wren` skill override rewritten for input C — now injects a PayLink-specific change request (Jinja2 `.html` templates under `templates/` directory) with full stdin mechanics reminder and four explicit test cases for TEST EVIDENCE. Override also enforces that the agent must not question the skill's registration.
+
+---
+
+## [1.16.1] - 2026-06-13
+
+### Changed
+
+- **go-wren/SKILL.md** (v1.0.0 → v1.1.0): step 1 now produces a mandatory `HOOK CONTRACT` artifact before any edit; step 3 requires an explicit `PROPOSED DIFF` block (before/after) before applying the change; step 5 requires a `TEST EVIDENCE` block with real commands and expected outputs (marked simulated when shell is unavailable). Output section updated to list all three named artifacts as always-required.
+- **workflows/go-skill-eval.js**: `go-wren` skill override added — injects the real `docs-update-flag.sh` script and a concrete change request so the eval agent has a real hook to work on instead of generating generic output. Checklist updated to match the three new named artifacts (`HOOK CONTRACT`, `PROPOSED DIFF`, `TEST EVIDENCE`).
+
+---
+
 ## [1.16.0] - 2026-06-13
 
 ### Added

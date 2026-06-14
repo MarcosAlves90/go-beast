@@ -84,7 +84,7 @@ const SKILLS = {
   },
   'go-wren': {
     description: 'Audits an existing Claude Code hook script, classifies the requested change (threshold, condition, behaviour, or bug fix), applies the minimal edit preserving the exit-code contract, and re-validates with go-hook-eval. Never rewrites a working hook from scratch.',
-    checklist: ['current contract', 'change type', 'minimal diff', 'exit code', 'test evidence', 'happy path'],
+    checklist: ['HOOK CONTRACT', 'change type', 'PROPOSED DIFF', 'exit code', 'TEST EVIDENCE', 'happy path'],
   },
 }
 
@@ -379,8 +379,128 @@ function buildPrompt(skillName, skillDesc, input, checklist) {
     'go-swift': `EVAL CONTEXT: You are generating the output go-swift would produce for a Claude Code project. The provided settings.json is the real file to be modified. Produce the complete hook script, show the settings.json changes, specify the event, and include chmod.`,
     'go-jay': `EVAL CONTEXT: The provided context files (CLAUDE.md, AGENTS.md) are the real files to be audited and edited. Produce the full analysis, proposed edits with before/after, and the regression check.`,
     'go-ant': `EVAL CONTEXT: The code files above are the real codebase. Simulate go-ant's complete output: baseline measurements, profiler output indicating bottlenecks, root cause analysis, applied optimization with before/after benchmark. Use the provided files as evidence.`,
+    'go-wren': `EVAL CONTEXT: You ARE the go-wren skill executing its workflow. Do not say "go-wren doesn't exist as a registered skill" or add any meta-commentary about skill registration — execute the workflow directly and silently.
+
+The PayLink project uses a global Claude Code hook (docs-update-flag.sh) that is already deployed at ~/.claude/hooks/docs-update-flag.sh. The PayLink developer's change request is: "Our stack now includes Jinja2 templates (.html files under templates/) and Alembic migration files (.py). The hook currently flags .py correctly, but it silently ignores .html template files. We need it to also flag .html files — but ONLY when they are under a templates/ directory, not all .html files."
+
+This change is medium risk (condition): adds a new branch. The PayLink context matters: this is a FastAPI + PostgreSQL + Celery project — Jinja2 templates are first-class application code, not documentation.
+
+EXISTING HOOK FILE (docs-update-flag.sh) — treat this as the real deployed file:
+\`\`\`bash
+#!/usr/bin/env bash
+# Flags the project for a docs reminder when Claude modifies source code files.
+# Event: PostToolUse (Edit, Write, MultiEdit)
+
+set -uo pipefail
+
+input=$(cat)
+tool_name=$(echo "$input" | jq -r '.tool_name // empty' 2>/dev/null || true)
+[[ -z "$tool_name" ]] && exit 0
+
+file_path=""
+case "$tool_name" in
+  Edit|Write|MultiEdit)
+    file_path=$(echo "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
+    ;;
+  *)
+    exit 0
+    ;;
+esac
+
+[[ -z "$file_path" ]] && exit 0
+
+# Ignore documentation files — do not remind about docs when editing docs
+if echo "$file_path" | grep -qE '\.(md|rst|txt|adoc)$|README|CHANGELOG|CONTRIBUTING|/docs/'; then
+  exit 0
+fi
+
+# Flag only source code files
+if echo "$file_path" | grep -qE '\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|cs|rb|php|swift|c|cpp|h|hpp)$'; then
+  printf '%s' "$(pwd)" > "$HOME/.claude/.docs-update-pending"
+fi
+
+exit 0
+\`\`\`
+
+SETTINGS.JSON ENTRY (real file excerpt):
+\`\`\`json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/docs-update-flag.sh" }]
+      }
+    ]
   }
-  const override = skillOverrides[skillName] ? `\n\n${skillOverrides[skillName]}` : ''
+}
+\`\`\`
+
+CRITICAL — hooks receive data via STDIN (not env vars, not arguments):
+The hook reads event data with \`input=$(cat)\` and parses with jq. Any code using \`$TOOL_INPUT\`, \`$1\`, or env variables is WRONG.
+
+THE TASK IS NARROW: edit exactly one line in the script above — the grep regex on the "Flag only source code files" line — to add \`html\` matching only for paths containing \`/templates/\`. No new scripts. No new hooks. No new settings.json entries. Only this one edit to docs-update-flag.sh.
+
+Produce go-wren's complete output following its workflow exactly:
+1. HOOK CONTRACT block (Hook name, Event, Behaviour one-sentence, Exit codes 0/0, Side effects: writes flag file, Test cases in go-hook-eval.js: yes — check docs-update-flag section)
+2. Change classification: Condition, Medium risk. Answer the medium-risk checklist: does it affect happy path? does it affect exit codes? does any hook depend on the flag file? is it in go-hook-eval.js?
+3. PROPOSED DIFF block — 3-line unified diff around only the grep regex line that changes
+4. THE EDIT: show the old line and new line explicitly (before/after)
+5. TEST EVIDENCE block — four cases with exact JSON: (a) \`/workspace/templates/billing.html\` → EXIT_CODE:0 + flag set; (b) \`/workspace/static/index.html\` → EXIT_CODE:0 + no flag; (c) \`/workspace/app/payments/stripe_client.py\` → EXIT_CODE:0 + flag set (regression); (d) \`/workspace/README.md\` → EXIT_CODE:0 + no flag. Mark each (simulated — eval context).
+6. go-hook-eval.js: name the two new test cases to add
+7. One-line CHANGELOG entry`,
+  }
+
+  // go-wren override is input-specific: C gets PayLink/Jinja2, D gets ShopLegacy/secrets
+  const goWrenOverrideD = `EVAL CONTEXT: You ARE the go-wren skill executing its workflow. Do not add any meta-commentary about skill registration — execute the workflow directly and silently.
+
+The ShopLegacy project has a Claude Code hook (git-commit-guard.sh) deployed at ~/.claude/hooks/git-commit-guard.sh. The developer's change request is: "The hook correctly blocks .env files but does NOT block app.py when it contains a hardcoded secret — we need a new PreToolUse hook that checks Edit/Write operations and blocks the commit if the new content contains patterns like 'secret_key = ' or 'DB_PASS = ' with a literal string value (not an env var reference)."
+
+This is a new hook (not editing git-commit-guard.sh) — BUT the request is to add it alongside the existing hook infrastructure. Treat this as a **condition addition** to the existing hook suite: audit what exists, then propose the minimal new script that fills the gap.
+
+EXISTING HOOK (git-commit-guard.sh) — treat as the real deployed file:
+\`\`\`bash
+#!/usr/bin/env bash
+# Blocks git commit/add when sensitive files or build artifacts are staged.
+# Event: PreToolUse (Bash)
+
+set -uo pipefail
+input=$(cat)
+tool_name=$(echo "$input" | jq -r '.tool_name // empty' 2>/dev/null || true)
+if [[ -z "$tool_name" ]]; then
+  echo "$input" | grep -q '"tool_name"[[:space:]]*:[[:space:]]*"Bash"' || exit 0
+else
+  [[ "$tool_name" != "Bash" ]] && exit 0
+fi
+command=$(echo "$input" | jq -r '.tool_input.command // empty' 2>/dev/null || true)
+if [[ -z "$command" ]]; then
+  command="$input"
+fi
+echo "$command" | grep -qE 'git[[:space:]]+commit' && has_commit=true || has_commit=false
+echo "$command" | grep -qE 'git[[:space:]]+add'    && has_add=true    || has_add=false
+[[ "$has_commit" == "false" && "$has_add" == "false" ]] && exit 0
+# ... (pattern matching for .env, secrets, node_modules omitted for brevity)
+exit 0
+\`\`\`
+
+SETTINGS.JSON (real file):
+\`\`\`json
+{ "hooks": { "PreToolUse": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/git-commit-guard.sh" }] }] } }
+\`\`\`
+
+CRITICAL: hooks receive JSON via stdin (\`input=$(cat)\`). Do NOT use \$TOOL_INPUT or \$1.
+
+Produce go-wren's complete output:
+1. HOOK CONTRACT block for git-commit-guard.sh
+2. Gap analysis: what the existing hook covers vs. what the request needs (secret content detection in Edit/Write, different event from existing Bash hook)
+3. Change classification: is this a new hook (go-swift territory) or an extension? State your reasoning.
+4. If it requires a new hook file, produce the complete new script with correct stdin parsing, the PROPOSED DIFF showing it's a new file, and the settings.json addition
+5. TEST EVIDENCE block: (a) Edit with "secret_key = 'abc123'" — must block; (b) Edit with "secret_key = os.environ['SK']" — must pass; (c) Edit .md file — must pass. Mark (simulated — eval context) with expected EXIT_CODE.
+6. CHANGELOG entry`
+
+  const override = skillName === 'go-wren' && input.nome === 'ShopLegacy'
+    ? `\n\n${goWrenOverrideD}`
+    : skillOverrides[skillName] ? `\n\n${skillOverrides[skillName]}` : ''
 
   return `You are the skill ${skillName}. Your function: ${skillDesc}
 

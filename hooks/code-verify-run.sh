@@ -71,7 +71,7 @@ if [[ -f "package.json" ]]; then
 fi
 
 # ── Python ──────────────────────────────────────────────────────────────────
-if [[ -f "pyproject.toml" || -f "setup.py" || -f "setup.cfg" ]]; then
+if [[ -f "pyproject.toml" || -f "setup.py" || -f "setup.cfg" || -f "requirements.txt" ]]; then
   if command -v mypy &>/dev/null; then
     HAS_CHECKS=true
     append "--- Python: mypy ---"

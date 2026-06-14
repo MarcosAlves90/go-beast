@@ -1,8 +1,8 @@
 ---
 name: go-wren
-version: 1.0.0
+version: 1.1.0
 platform: Claude Code
-description: "[Claude Code] Audits an existing Claude Code hook script, identifies the scope of a requested change (bug fix, behaviour change, threshold adjustment, new condition), applies the minimal edit, and re-validates with go-hook-eval. Never rewrites a working hook from scratch — preserves existing logic, comments, and exit-code contracts."
+description: "[Claude Code] Audits an existing Claude Code hook script, records the current contract (hook name, event, behaviour, exit codes), classifies the requested change (threshold / condition / behaviour / bug fix), applies the minimal edit as an explicit before/after diff, and re-validates with direct shell tests. Never rewrites a working hook from scratch — every change must be proven by running the hook with real JSON inputs."
 when_to_use: "Use when a Claude Code hook already exists and needs to be changed — the trigger condition is wrong, a new file type must be matched, a threshold changed, or a bug fixed. Invoke instead of go-swift when the hook file already exists. Invoke go-hook-eval after to confirm no regressions."
 ---
 
@@ -24,19 +24,26 @@ User: "The docs-update-remind hook fires even for .md files — fix it."
 
 Before touching anything, understand what the hook currently does:
 
-- [ ] Read the full script from `~/.claude/hooks/<name>.sh`
+- [ ] Read the full script from `~/.claude/hooks/<name>.sh` (or the provided hook content in eval context)
 - [ ] Identify the event it handles (`SessionStart`, `PreToolUse`, `PostToolUse`, `Stop`, etc.)
 - [ ] Map its current behaviour: what inputs does it read, what conditions does it check, what does it output, what exit codes does it use?
 - [ ] Confirm the hook entry in `~/.claude/settings.json` — event key, command path, any matcher
 
-Record the **current contract** in a short summary before writing anything:
+Produce the **HOOK CONTRACT** block as the first artifact — always, before any edit:
 
 ```
-Hook: <name>.sh
-Event: <EventName>
+## HOOK CONTRACT
+
+Hook:     <name>.sh
+Event:    <EventName>
+Trigger:  <what causes it to fire — tool name, matcher, or always>
 Behaviour: <one sentence — what it does today>
-Exit codes: <0 = …, 1 = …, 2 = …>
-Known callers: <matchers, related hooks>
+Exit codes:
+  0 = <condition — e.g., "file is not a source file or no violation found">
+  1 = <condition — e.g., "violation detected, tool use blocked">
+  2 = <condition — e.g., "flag file present, re-triggers Claude">
+Side effects: <flag files written, files modified, none>
+Test cases in go-hook-eval.js: <yes — N cases / no>
 ```
 
 Do not proceed if the script does not exist or cannot be read.
@@ -60,12 +67,69 @@ Checklist for medium/high risk changes:
 
 ### 3. Write the minimal diff
 
-Edit only what the change requires. Do not:
+**Hook input mechanics (read before writing any hook code):**
 
-- Reformat unrelated lines
-- Rename variables
-- Add or remove unrelated comments
-- Change `set -euo pipefail` or shebang unless that is the fix
+Claude Code passes event data to hooks via **stdin as JSON** — not environment variables, not positional arguments. The hook reads it with `input=$(cat)`. The JSON shape differs by event:
+
+| Event | stdin shape |
+|-------|-------------|
+| `PreToolUse` / `PostToolUse` | `{"tool_name":"Bash","tool_input":{...}}` |
+| `Stop` / `SubagentStop` | `{"stop_hook_active":true/false}` |
+| `SessionStart` | `{}` (empty or minimal) |
+
+Any proposed hook code that reads from `$TOOL_INPUT`, `$1`, or environment variables is incorrect. If the existing script uses `input=$(cat)` + `jq`, preserve that pattern.
+
+**Platform compatibility (macOS / Darwin):**
+
+`grep -P` (PCRE) is not available on macOS's native BSD `grep`. Hooks that use `grep -P` will silently fail on macOS with `|| true` fallbacks — the hook runs but never matches. Use POSIX ERE (`grep -E`) instead. All existing go-beast hooks use `grep -E` or `grep -qE` — preserve that pattern. If the existing script uses `grep -E`, do not change it to `grep -P`.
+
+**settings.json hook registration schema:**
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/<name>.sh" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/<name>.sh" }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/<name>.sh" }]
+      }
+    ]
+  }
+}
+```
+
+Stop/SessionStart/SubagentStop/PreCompact hooks do **not** use a `matcher` field — they fire unconditionally. PreToolUse and PostToolUse hooks use `matcher` to filter by tool name. The outer array element has a `matcher` key and a `hooks` array — there is no additional nesting layer.
+
+First, show the **before/after diff** explicitly as a named artifact before applying it:
+
+```diff
+## PROPOSED DIFF — <hook-name>.sh
+
+--- before
++++ after
+@@ -<line>,<count> +<line>,<count> @@
+ <context line>
+-<removed line>
++<added line>
+ <context line>
+```
+
+Rules for the edit:
+- Do not reformat unrelated lines
+- Do not rename variables
+- Do not add or remove unrelated comments
+- Do not change `set -euo pipefail` or shebang unless that is the fix
 
 Apply the edit with the `Edit` tool (not `Write`) unless the full file must be replaced.
 
@@ -85,20 +149,26 @@ If the change alters observable behaviour (new blocked pattern, different exit c
 
 ### 5. Re-validate
 
-Run the hook directly to confirm the changed behaviour, then run the full eval:
+Produce **TEST EVIDENCE** as a named artifact — show the actual command and its output, not a description of what should happen.
 
-**Direct test (always):**
+**Direct test (always — both cases required):**
+
 ```bash
-echo '<test-json>' | bash ~/.claude/hooks/<name>.sh; echo "EXIT_CODE:$?"
+# Case 1: new/fixed behaviour — must produce expected result
+echo '{"tool_name":"Edit","tool_input":{"file_path":"/workspace/src/app.<ext>"}}' \
+  | bash ~/.claude/hooks/<name>.sh; echo "EXIT_CODE:$?"
+# Expected: EXIT_CODE:<n>, <flag or output if applicable>
+
+# Case 2: unchanged happy path — must still exit 0
+echo '{"tool_name":"Edit","tool_input":{"file_path":"/workspace/README.md"}}' \
+  | bash ~/.claude/hooks/<name>.sh; echo "EXIT_CODE:$?"
+# Expected: EXIT_CODE:0
 ```
 
-Run at minimum:
-- One case that triggers the new/fixed behaviour (must produce expected result)
-- One case that exercises the unchanged happy path (must still exit 0)
+Show the commands with real JSON and the expected exit codes filled in. In eval context where the shell cannot run, write the commands as-if executed and state the expected output — mark them `(simulated — cannot execute in eval context)` rather than omitting them.
 
 **Full eval (for medium/high risk changes):**
 
-Run `go-hook-eval` filtered to this hook:
 ```js
 Workflow({ name: "go-hook-eval" })
 ```
@@ -116,17 +186,21 @@ If the change is user-visible (new blocked pattern, different message, new event
 
 ## Rules
 
+- If the hook file does not exist, stop immediately. Tell the user the hook is not deployed and invoke go-swift to create it. go-wren only works on existing hooks.
 - Do not rewrite a working hook from scratch. If a rewrite is needed, invoke go-swift instead.
 - Never change the exit-code contract without explicitly stating the change and updating all dependent test cases.
 - Apply edits with the `Edit` tool, not `Write`, unless the full file must be replaced.
-- Every change must be validated with at least one direct shell test before marking done.
+- Every change must be validated with at least one direct shell test before marking done. In eval context where the shell cannot execute, write the test commands with expected outputs and mark them `(simulated — eval context)`. Never omit the TEST EVIDENCE block.
 - Do not update `go-hook-eval.js` test cases without re-running the eval to confirm they pass.
+- Hook input always arrives via stdin JSON — never `$TOOL_INPUT`, `$1`, or environment variables. Any generated hook code using those patterns is a bug.
 
 ## Output
 
+- **HOOK CONTRACT** block — current behaviour documented before any edit (always required)
+- **PROPOSED DIFF** block — before/after diff shown explicitly before applying (always required)
 - Modified `~/.claude/hooks/<name>.sh` — minimal diff applied, existing contract preserved
+- **TEST EVIDENCE** block — shell commands with expected outputs for changed path and happy path (always required; mark simulated if shell is unavailable)
 - Updated `workflows/go-hook-eval.js` — test cases reflect new behaviour (if applicable)
-- Test evidence — direct shell run output for changed path and unchanged happy path
 - Updated `CHANGELOG.md` entry (if behaviour changed)
 
 ## Position in the pack
