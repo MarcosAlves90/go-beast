@@ -328,9 +328,22 @@ async function main() {
   ])
 
   if (cc && selHooks.length) {
-    ln()
-    ln(`  ${icon.warn} ${yellow('Hooks linked but not yet wired.')}`)
-    ln(`  ${dim('Add entries to')} ${cyan('~/.claude/settings.json')} ${dim('or run')} ${cyan('go-swift')}${dim('.')}`)
+    // Check if any of the installed hooks are already wired in settings.json
+    const settingsPath = j(HOME, '.claude', 'settings.json')
+    let unwired = []
+    try {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
+      const wiredCmds = JSON.stringify(settings.hooks ?? '')
+      unwired = selHooks.filter(h => !wiredCmds.includes(h))
+    } catch {
+      unwired = selHooks
+    }
+    if (unwired.length > 0) {
+      ln()
+      ln(`  ${icon.warn} ${yellow('Some hooks are not yet wired:')}`)
+      for (const h of unwired) ln(`  ${dim('  –')} ${h}`)
+      ln(`  ${dim('Add entries to')} ${cyan('~/.claude/settings.json')} ${dim('or run')} ${cyan('go-swift')}${dim('.')}`)
+    }
   }
   ln()
 }
