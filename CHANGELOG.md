@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.20.3] - 2026-06-14
+
+### Fixed
+
+- **scripts/install.mjs**: hooks warning now reads `~/.claude/settings.json` and only shows hooks that are not already wired — previously always warned even when all hooks were registered.
+
+---
+
 ## [1.20.2] - 2026-06-14
 
 ### Changed
