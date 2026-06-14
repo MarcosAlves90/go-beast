@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.20.1] - 2026-06-14
+
+### Removed
+
+- **scripts/install.sh** — replaced by `scripts/install.mjs`. The bash installer is no longer maintained.
+
+---
+
 ## [1.20.0] - 2026-06-14
 
 ### Added
