@@ -125,7 +125,8 @@ select_items() {
       | fzf --multi \
             --prompt="$prompt > " \
             --header="TAB=select  ENTER=confirm  Ctrl-A=all" \
-            --height=40% --layout=reverse --border
+            --height=40% --layout=reverse --border \
+            < /dev/tty
   else
     echo -e "\n  ${CYAN}${prompt}${RESET}" >&2
     local i=1
@@ -158,9 +159,10 @@ link_item() {
   if [[ -L "$target" ]]; then
     local existing; existing="$(readlink "$target")"
     if [[ "$existing" == "$src" ]]; then
-      return 0  # already correct
+      echo -e "  ${CYAN}~${RESET} $name (already linked)"
+      return 0
     else
-      warn "$name already linked elsewhere, skipping"
+      warn "$name already linked elsewhere ($existing), skipping"
       return 0
     fi
   fi
@@ -256,9 +258,10 @@ main() {
   fi
 
   if [[ ${#selected_agents[@]} -eq 0 ]]; then
-    warn "No agents selected."
+    warn "No agents selected. (Did you press ENTER without selecting anything?)"
     exit 0
   fi
+  info "Agents: ${selected_agents[*]}"
 
   # ── Step 3: Select skills ─────────────────────────────────────────────────
   header "3. Select skills"
@@ -276,6 +279,8 @@ main() {
       [[ -n "$s" ]] && selected_skills+=("$s")
     done < <(select_items "Skills" "${all_skills[@]}")
   fi
+
+  info "Skills: ${#selected_skills[@]} selected"
 
   # ── Step 4: Claude Code extras ────────────────────────────────────────────
   local install_hooks=false install_workflows=false
