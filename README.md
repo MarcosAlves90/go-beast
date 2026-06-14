@@ -1,152 +1,127 @@
 # go-beast
 
-A versioned skill pack for full-stack software development, from discovery to deployment.
+> A versioned skill pack for AI-assisted full-stack software development — from discovery to deployment.
 
-Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle. Together they form a complete, opinionated pipeline that can be invoked in sequence or individually.
+Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more.
+
+**Version 1.20.3** · [Changelog](CHANGELOG.md)
 
 ---
 
-## Version
+## Pipeline
 
-**1.20.3** — 2026-06-14
+```
+go-hawk → [go-lark] → go-fox → go-otter → go-beaver
+  → go-wolf + go-lynx → go-eagle → go-bear → go-raven → [go-crane] → go-owl
+```
+
+> `[brackets]` = optional. go-bear can interrupt any beast. go-owl can run at any phase.
 
 ---
 
 ## Skills
 
-| Skill | Animal | Phase | Unique responsibility |
-|---|---|---|---|
-| [go-hawk](go-hawk/SKILL.md) | Hawk | Discovery | Requirements elicitation, scope definition, handoff plan |
-| [go-lark](go-lark/SKILL.md) | Lark | Solution Exploration | Generate 3–5 approaches, evaluate trade-offs, select one with rationale |
-| [go-fox](go-fox/SKILL.md) | Fox | Architecture | Stack selection, ADRs, component diagrams, interface contracts |
-| [go-beaver](go-beaver/SKILL.md) | Beaver | Scaffolding | Monorepo setup, tooling config, dev environment bootstrap |
-| [go-wolf](go-wolf/SKILL.md) | Wolf | Backend | REST/GraphQL API, auth, business logic, server-side validation |
-| [go-lynx](go-lynx/SKILL.md) | Lynx | Frontend | Component architecture, state management, API integration, a11y |
-| [go-otter](go-otter/SKILL.md) | Otter | Database | Schema design, migrations, indexing, query review |
-| [go-eagle](go-eagle/SKILL.md) | Eagle | Testing | Test pyramid, unit/integration/E2E strategy, CI gates |
-| [go-bear](go-bear/SKILL.md) | Bear | Security | OWASP Top 10, secrets, dependency audit, threat model |
-| [go-raven](go-raven/SKILL.md) | Raven | CI/CD | Pipeline design, environment strategy, release automation |
-| [go-owl](go-owl/SKILL.md) | Owl | Documentation | README, API reference, ADRs, runbooks, changelog |
-| [go-jay](go-jay/SKILL.md) | Jay | AI Context | Agent context file authoring and synchronization (CLAUDE.md, AGENTS.md, GEMINI.md, COPILOT.md) |
-| [go-mole](go-mole/SKILL.md) | Mole | Briefing | Documentation scan, project briefing for downstream skills |
-| [go-smith](go-smith/SKILL.md) | Smith | Skill Authoring | Gap analysis, SKILL.md creation, pack integration (meta-skill) |
-| [go-finch](go-finch/SKILL.md) | Finch | Skill Maintenance | Audit, refine, and re-validate existing go-* skills without rewriting them |
-| [go-swift](go-swift/SKILL.md) `[Claude Code]` | Swift | Hook Authoring | Claude Code hook scripts, settings.json wiring, lifecycle automation |
-| [go-wren](go-wren/SKILL.md) `[Claude Code]` | Wren | Hook Maintenance | Audit, patch, and re-validate existing Claude Code hooks without rewriting them |
-| [go-kite](go-kite/SKILL.md) | Kite | Architecture Audit | Health audit of existing systems: 5 dimensions, capability gaps, HTML report |
-| [go-crane](go-crane/SKILL.md) | Crane | Observability | Structured logging, metrics, distributed tracing, health endpoints, alerting |
-| [go-ant](go-ant/SKILL.md) | Ant | Performance | Profiling, bottleneck diagnosis, targeted optimization, before/after benchmarks |
-| [go-vole](go-vole/SKILL.md) | Vole | Obsidian / PKM | Vault structure, naming conventions, plugin config, MOC architecture, templates |
+### Pipeline skills
 
----
-
-## Workflows
-
-| Workflow | File | Purpose |
+| Skill | Phase | Produces |
 |---|---|---|
-| [go-skill-eval](workflows/go-skill-eval.js) | `workflows/go-skill-eval.js` | Skill eval: tests all go-* skills, structural checklist + LLM-as-judge, adversarial A/B/C/D inputs. Supports `args.skills` filter. |
-| [go-hook-eval](workflows/go-hook-eval.js) | `workflows/go-hook-eval.js` | Hook eval: 27 test cases across all go-beast hooks — blockers, observers, jq fallback, flag files, stop_hook_active. |
+| [go-hawk](go-hawk/SKILL.md) | Discovery | `REQUIREMENTS.md`, scope, handoff plan |
+| [go-lark](go-lark/SKILL.md) | Solution Exploration | `APPROACH.md` — 3–5 options evaluated, one selected |
+| [go-fox](go-fox/SKILL.md) | Architecture | `ADR.md`, `STACK.md`, `DIAGRAM.md`, `CONTRACTS.md` |
+| [go-otter](go-otter/SKILL.md) | Database | ER diagram, migrations, index strategy |
+| [go-beaver](go-beaver/SKILL.md) | Scaffolding | Working repo skeleton, tooling, `.env.example`, `SETUP.md` |
+| [go-wolf](go-wolf/SKILL.md) | Backend | REST/GraphQL API, auth, middleware, validation |
+| [go-lynx](go-lynx/SKILL.md) | Frontend | Components, state, API integration, a11y |
+| [go-eagle](go-eagle/SKILL.md) | Testing | Test pyramid, unit/integration/E2E, CI gates, `TESTING.md` |
+| [go-bear](go-bear/SKILL.md) | Security | OWASP review, `THREAT_MODEL.md`, `SECURITY_REVIEW.md` |
+| [go-raven](go-raven/SKILL.md) | CI/CD | Pipeline, environments, release automation |
+| [go-crane](go-crane/SKILL.md) | Observability | Logging, metrics, tracing, health endpoints, `OBSERVABILITY.md` |
+| [go-owl](go-owl/SKILL.md) | Documentation | README, API reference, runbooks, changelog |
+
+### Meta-skills
+
+Invoked on demand — not bound to a phase.
+
+| Skill | Invoke when |
+|---|---|
+| [go-mole](go-mole/SKILL.md) | Starting work on an unfamiliar project — before other beasts |
+| [go-kite](go-kite/SKILL.md) | Strategic audit of an existing system before go-fox revisions |
+| [go-ant](go-ant/SKILL.md) | A performance problem has a numeric baseline and needs a fix |
+| [go-jay](go-jay/SKILL.md) | Authoring or syncing AI context files (CLAUDE.md, AGENTS.md, GEMINI.md…) |
+| [go-swift](go-swift/SKILL.md) `[Claude Code]` | Creating new Claude Code hook scripts |
+| [go-wren](go-wren/SKILL.md) `[Claude Code]` | Patching an existing Claude Code hook |
+| [go-smith](go-smith/SKILL.md) | A gap in the pack is identified and a new beast is needed |
+| [go-finch](go-finch/SKILL.md) | An existing skill needs improvement after eval feedback |
+| [go-vole](go-vole/SKILL.md) | Designing or restructuring an Obsidian vault / PKM system |
 
 ---
 
-## Hooks
+## Hooks `[Claude Code]`
 
-| Hook | File | Trigger | Purpose |
-|---|---|---|---|
-| sync-go-beast-skills | `hooks/sync-go-beast-skills.sh` | `SessionStart` | Symlinks skills/workflows/hooks + copies `AGENTS.global.md` → `~/.claude/CLAUDE.md` |
-| git-commit-guard | `hooks/git-commit-guard.sh` | `PreToolUse (Bash)` | Blocks commits/staging of sensitive files and build artifacts |
-| code-dedup-check | `hooks/code-dedup-check.sh` | `PreToolUse (Edit/Write)` | Warns before creating functions/classes that already exist in the project |
-| code-verify-flag | `hooks/code-verify-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project for post-session type/test verification |
-| code-verify-run | `hooks/code-verify-run.sh` | `Stop` | Runs tsc/mypy/go vet/cargo check + tests when source files were modified |
-| docs-update-flag | `hooks/docs-update-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project when source code files are modified (ignores .md/.rst/docs/) |
-| docs-update-remind | `hooks/docs-update-remind.sh` | `Stop` | Reminds to update README, docstrings, and CHANGELOG after code modifications |
-| git-strip-coauthored | `hooks/git-strip-coauthored.sh` | `PreToolUse (Bash)` | Blocks commits whose message contains a `Co-Authored-By` tag |
+Automated guards that run on Claude Code lifecycle events. All hooks use symlinks — edits to the repo take effect immediately.
+
+| Hook | Event | What it does |
+|---|---|---|
+| `sync-go-beast-skills.sh` | `SessionStart` | Symlinks skills, workflows, hooks; copies `AGENTS.global.md` → `CLAUDE.md` |
+| `git-commit-guard.sh` | `PreToolUse (Bash)` | Blocks commits of `.env`, credentials, build artifacts |
+| `git-strip-coauthored.sh` | `PreToolUse (Bash)` | Blocks commits with `Co-Authored-By` tag |
+| `code-dedup-check.sh` | `PreToolUse (Edit/Write)` | Warns when a new function/class already exists in the project |
+| `code-verify-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project for post-session type-check and test run |
+| `code-verify-run.sh` | `Stop` | Runs tsc / mypy / go vet / cargo check + tests when source was modified |
+| `docs-update-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project when source code files are modified |
+| `docs-update-remind.sh` | `Stop` | Blocks session close until README, docstrings, and CHANGELOG are reviewed |
+
+---
+
+## Workflows `[Claude Code]`
+
+| Workflow | Purpose |
+|---|---|
+| [go-skill-eval](workflows/go-skill-eval.js) | Evaluates all go-* skills: structural checklist + LLM-as-judge + A/B/C/D adversarial inputs |
+| [go-hook-eval](workflows/go-hook-eval.js) | Tests all hooks: 27 cases covering blockers, observers, jq fallback, flag files |
 
 ---
 
 ## Extensions
 
-Optional tools that augment the pack's capabilities. Not phases — not required by any beast — but available to beasts when installed.
+| Extension | What it adds |
+|---|---|
+| [beast-control](extensions/beast-control/README.md) | Firefox/Zen Browser MCP bridge — `browser_*` tools for go-lynx, go-eagle, go-bear. Falls back to Playwright when not installed. |
 
-| Extension | Directory | What it adds |
-|---|---|---|
-| [beast-control](extensions/beast-control/README.md) | `extensions/beast-control/` | Firefox/Zen Browser MCP bridge — exposes `browser_*` tools so beasts can interact with the user's real browser (authenticated sessions, real DOM, screenshots). go-lynx, go-eagle, and go-bear use it when available; fall back to Playwright otherwise. |
-
-**Installing beast-control:** see `extensions/beast-control/docs/SETUP.md`.
-
----
-
-## Standard pipeline
-
-```
-go-hawk → [go-lark] → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle → go-bear → go-raven → [go-crane] → go-owl
-```
-
-go-bear can be invoked earlier — and should be — whenever a feature involves auth, payments, PII, or file uploads.
-go-crane can be invoked after go-wolf when observability must be added before go-bear's pre-release review.
-go-lark is optional when requirements already constrain the solution to a single approach.
-go-ant is invoked only when a performance problem is proven with a numeric baseline — never speculatively.
-go-owl can be invoked at any phase.
-
-**Meta-skills** (invoked on demand, not bound to a phase):
-
-```
-go-jay  → go-swift → go-raven    (AI context + hooks + CI/CD onboarding)
-go-smith                          (new skill creation, pack gap analysis)
-go-mole                           (session briefing before any other beast)
-go-kite                           (architecture audit before go-fox revisions)
-```
-
----
-
-## Design principles
-
-1. **One beast, one responsibility.** No skill duplicates the work of another.
-2. **Prerequisites are explicit.** Each skill states what it needs from previous beasts.
-3. **Output is concrete.** Every skill produces named files. Nothing ends with "think about it."
-4. **Security is not a phase.** go-bear can interrupt any beast at any time.
-5. **Do not skip steps.** Each beast reduces the cost of every beast that follows.
-6. **English only.** All content in this repo — skills, docs, commits, and PRs — must be written in English. See `AGENTS.md` for the full policy.
+See `extensions/beast-control/docs/SETUP.md` to install.
 
 ---
 
 ## Installation
 
-The skills are plain Markdown files — any agent that can read files can use them.
+Skills are plain Markdown files — any agent that can read files can use them.
 
-### Interactive installer (macOS, Linux, Windows)
+### Interactive installer (macOS · Linux · Windows)
 
-Clone the repo and run the interactive installer:
+Requires Node.js 18+. No external dependencies.
 
 ```bash
 git clone <repo-url> ~/Documents/@cherry-c/go-beast
 node ~/Documents/@cherry-c/go-beast/scripts/install.mjs
 ```
 
-Requires Node.js 18+. No external dependencies.
-
-The installer detects which agents are installed (Claude Code, Cursor, Gemini, Cline, Copilot, Codex), lets you select which skills, hooks (Claude Code only), and workflows (Claude Code only) to install via a numbered menu, and creates symlinks. It also copies `AGENTS.global.md` to each agent's expected global instructions file.
+The installer detects which agents are installed, lets you choose which skills, hooks (Claude Code only), and workflows (Claude Code only) to install, and creates symlinks. It also copies `AGENTS.global.md` to the correct global instructions file for each agent.
 
 ```bash
-# Non-interactive: install everything into all detected agents
-node scripts/install.mjs --all
-
-# Remove all repo symlinks from all agents
-node scripts/install.mjs --uninstall
+node scripts/install.mjs --all       # install everything, no prompts
+node scripts/install.mjs --uninstall # remove all repo symlinks
 ```
 
----
+### Claude Code — session-start auto-sync
 
-### Claude Code (manual / session-start sync)
-
-Clone the repo and run the sync hook once to wire everything up:
+The sync hook re-runs every session start and keeps everything up to date automatically.
 
 ```bash
-git clone <repo-url> ~/Documents/@cherry-c/go-beast
+# One-time setup
 bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
 ```
 
-Then add the hook to `~/.claude/settings.json` so it runs on every session start:
+Add to `~/.claude/settings.json`:
 
 ```json
 {
@@ -158,47 +133,21 @@ Then add the hook to `~/.claude/settings.json` so it runs on every session start
 }
 ```
 
-After setup, all skills and workflows are available automatically. Skills load with `/go-hawk`, `/go-fox`, etc. Workflows run via the Workflow tool or `/workflows`.
+After setup, skills are available as `/go-hawk`, `/go-fox`, etc. Workflows run via the Workflow tool or `/workflows`.
 
-### Gemini CLI / Copilot CLI / other agents
+### Other agents (Gemini CLI, Copilot CLI, Cursor…)
 
-Clone the repo:
+Clone the repo and point your agent at the skill directory. Each skill is a self-contained `SKILL.md` — no dependencies, no platform-specific syntax.
 
-```bash
-git clone <repo-url> ~/Documents/@cherry-c/go-beast
-```
-
-Point your agent at the skill directory. Each skill is a self-contained `SKILL.md` — no dependencies, no platform-specific syntax. Reference the skill file path in your agent's context or session start configuration according to that agent's documentation.
-
-> Note: `go-swift` `[Claude Code only]` requires Claude Code's hook system and is not applicable to other agents.
-
-### How the Claude Code sync works
-
-The hook uses **symlinks**, not copies. Each skill directory, workflow file, and hook script is linked into `~/.claude/` — so edits to the repo are reflected immediately without re-running the hook.
-
-| What | Source | Target | Mechanism |
-|------|--------|--------|-----------|
-| Skills (`go-*/`) | `go-beast/go-*/` | `~/.claude/skills/go-*/` | `ln -s` |
-| Workflows (`*.js`) | `go-beast/workflows/` | `~/.claude/workflows/` | `ln -s` |
-| Hooks (`*.sh`) | `go-beast/hooks/` | `~/.claude/hooks/` | `ln -s` |
-| Global instructions | `go-beast/AGENTS.global.md` | `~/.claude/CLAUDE.md` | `cp` (overwrite) |
-
-`AGENTS.global.md` is the only file that is **copied**, not linked — because Claude Code reads `~/.claude/CLAUDE.md` directly and the source must stay in the repo for version control.
-
-**Adding a new beast after initial setup:** the symlink is created on the next session start. To activate immediately:
-
-```bash
-bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
-```
-
-**Removing a beast:** deleting the directory from the repo leaves a dangling symlink. Remove it manually:
-
-```bash
-rm ~/.claude/skills/go-<animal>
-```
+> `go-swift` and `go-wren` require Claude Code's hook system and are not applicable to other agents.
 
 ---
 
-## Changelog
+## Design principles
 
-See [CHANGELOG.md](CHANGELOG.md).
+1. **One beast, one responsibility.** No skill duplicates another's work.
+2. **Prerequisites are explicit.** Each skill states what it needs from previous beasts.
+3. **Output is concrete.** Every skill produces named files. Nothing ends with "think about it."
+4. **Security is not a phase.** go-bear can interrupt any beast at any time.
+5. **Do not skip steps.** Each beast reduces the cost of every beast that follows.
+6. **English only.** All content in this repo — skills, docs, commits, PRs — must be in English. See [AGENTS.md](AGENTS.md) for the full policy.

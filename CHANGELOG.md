@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.20.4] - 2026-06-14
+
+### Changed
+
+- **README.md**: full rewrite — cleaner structure, pipeline diagram at the top, skills split into pipeline vs meta-skills tables with "Produces" column, hooks and workflows in concise tables, installation section streamlined with three clear paths (interactive installer, Claude Code auto-sync, other agents).
+
+---
+
 ## [1.20.3] - 2026-06-14
 
 ### Fixed
