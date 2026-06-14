@@ -1,6 +1,6 @@
 ---
 name: go-bear
-version: 1.1.0
+version: 1.1.1
 description: Runs a security review covering OWASP Top 10, authentication hardening, secrets management, dependency auditing, HTTP headers, and threat modeling for a software project.
 when_to_use: Use when a feature handles auth, payments, PII, file uploads, or admin access — or when preparing for a security review, pen test, or compliance audit. Can be invoked at any phase; invoke early when compliance scope is detected.
 ---
@@ -110,4 +110,4 @@ Document findings in `docs/security/SECURITY_REVIEW.md` using the same severity/
 
 - `docs/security/THREAT_MODEL.md`
 - `docs/security/SECURITY_REVIEW.md` — findings, severity, status (open/resolved/accepted)
-- Dependency audit report
+- `docs/security/DEPENDENCY_AUDIT.md` — output of `npm audit` / `pip-audit` / `cargo audit` saved as Markdown; each entry includes: package name, CVE ID, severity (Critical/High/Medium/Low), affected version, fixed version, and resolution status (open/resolved/accepted-exception). High and Critical entries with status `open` are release blockers. go-raven consumes this file to gate the CI `security-audit` step.

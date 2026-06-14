@@ -86,6 +86,10 @@ const SKILLS = {
     description: 'Audits an existing Claude Code hook script, classifies the requested change (threshold, condition, behaviour, or bug fix), applies the minimal edit preserving the exit-code contract, and re-validates with go-hook-eval. Never rewrites a working hook from scratch.',
     checklist: ['HOOK CONTRACT', 'change type', 'PROPOSED DIFF', 'exit code', 'TEST EVIDENCE', 'happy path'],
   },
+  'go-finch': {
+    description: 'Audits an existing go-* SKILL.md, identifies the specific weakness (vague step, missing rule, incomplete output, eval-driven gap), applies the minimal edit, bumps the version, and verifies internal consistency. Never rewrites a working skill from scratch.',
+    checklist: ['SKILL AUDIT', 'change type', 'PROPOSED EDIT', 'version bump', 'consistency check', 'CHECKLIST ASSESSMENT', 'CHANGELOG'],
+  },
 }
 
 // Input A: simple project without real code — tests planning skills (go-hawk, go-lark, go-fox)
@@ -379,6 +383,77 @@ function buildPrompt(skillName, skillDesc, input, checklist) {
     'go-swift': `EVAL CONTEXT: You are generating the output go-swift would produce for a Claude Code project. The provided settings.json is the real file to be modified. Produce the complete hook script, show the settings.json changes, specify the event, and include chmod.`,
     'go-jay': `EVAL CONTEXT: The provided context files (CLAUDE.md, AGENTS.md) are the real files to be audited and edited. Produce the full analysis, proposed edits with before/after, and the regression check.`,
     'go-ant': `EVAL CONTEXT: The code files above are the real codebase. Simulate go-ant's complete output: baseline measurements, profiler output indicating bottlenecks, root cause analysis, applied optimization with before/after benchmark. Use the provided files as evidence.`,
+    'go-finch': `EVAL CONTEXT: You ARE the go-finch skill executing its workflow. Do not question skill registration — execute directly and silently.
+
+The go-eagle skill needs improvement. A go-skill-eval run flagged it: its Rules section contains "Try to" language (guidelines, not hard constraints), and its Output section lists "test results" without naming the artifact file or format. These are two distinct weaknesses — fix ONLY the Rules section in this pass (one weakness per invocation).
+
+EXISTING SKILL FILE (go-eagle/SKILL.md) — treat as the real file:
+
+\`\`\`markdown
+---
+name: go-eagle
+version: 1.2.0
+description: "Designs the test pyramid, writes unit, integration, and end-to-end tests, establishes CI gates, and sets coverage policy for a software project."
+when_to_use: "Use when the backend and frontend are implemented and need a test strategy. Invoke after go-wolf and go-lynx. Invoke before go-bear."
+---
+
+# go-eagle — Testing Strategy & QA
+
+go-eagle hunts for gaps in test coverage. It designs the pyramid, writes the tests, and gates the CI pipeline.
+
+## Quick start
+
+\`\`\`
+User: "We need a test strategy for the PayLink API."
+→ invoke go-eagle
+→ map pyramid → write tests → set CI gates → define coverage policy
+\`\`\`
+
+## Workflow
+
+### 1. Map the test pyramid
+Identify which layers apply to this project and which test frameworks to use.
+
+### 2. Write unit tests
+Cover pure functions and business logic in isolation.
+
+### 3. Write integration tests
+Cover service boundaries, DB queries, and external API calls with real infrastructure.
+
+### 4. Write E2E tests
+Cover critical user flows end-to-end with a browser or API client.
+
+### 5. Set CI gates
+Define which test suites block merge and which are informational.
+
+### 6. Define coverage policy
+Set minimum coverage thresholds per layer.
+
+## Rules
+
+- Try to keep unit tests fast — avoid I/O in unit test files where possible.
+- Integration tests should use real databases, not mocks, when the project's CI supports it.
+- Try to cover the happy path and at least one error path per endpoint.
+- Do not merge with failing tests.
+
+## Output
+
+- Test files for each pyramid layer
+- CI configuration with gate definitions
+- Coverage thresholds documented in the project
+\`\`\`
+
+THE TASK IS NARROW: fix ONLY the Rules section — remove all "Try to" language and replace with hard constraints. Do not touch any other section.
+
+Produce go-finch's complete output:
+1. SKILL AUDIT block (Skill, File, Weakness, Type: Sharpening, Risk: Low, Scope: ## Rules)
+2. Change classification with checklist
+3. PROPOSED EDIT block — show exact BEFORE (full Rules section) and exact AFTER (rewritten Rules section)
+4. Apply the edit (describe using Edit tool)
+5. Version bump: patch (1.2.0 → 1.2.1) — show the frontmatter before/after
+6. Consistency check: does the Quick start still match? Do the rules conflict with any step?
+7. Does the go-skill-eval checklist need updating? (No — the checklist checks for named output artifacts, not rules wording)
+8. CHANGELOG entry`,
     'go-wren': `EVAL CONTEXT: You ARE the go-wren skill executing its workflow. Do not say "go-wren doesn't exist as a registered skill" or add any meta-commentary about skill registration — execute the workflow directly and silently.
 
 The PayLink project uses a global Claude Code hook (docs-update-flag.sh) that is already deployed at ~/.claude/hooks/docs-update-flag.sh. The PayLink developer's change request is: "Our stack now includes Jinja2 templates (.html files under templates/) and Alembic migration files (.py). The hook currently flags .py correctly, but it silently ignores .html template files. We need it to also flag .html files — but ONLY when they are under a templates/ directory, not all .html files."
@@ -498,8 +573,38 @@ Produce go-wren's complete output:
 5. TEST EVIDENCE block: (a) Edit with "secret_key = 'abc123'" — must block; (b) Edit with "secret_key = os.environ['SK']" — must pass; (c) Edit .md file — must pass. Mark (simulated — eval context) with expected EXIT_CODE.
 6. CHANGELOG entry`
 
+  // go-finch input D: different skill weakness scenario for ShopLegacy context
+  const goFinchOverrideD = `EVAL CONTEXT: You ARE the go-finch skill executing its workflow. Do not question skill registration — execute directly and silently.
+
+The go-bear skill needs improvement. A go-skill-eval run on ShopLegacy (adversarial Flask/MySQL project) revealed that go-bear's Output section lists "THREAT_MODEL" and "SECURITY_REVIEW.md" as artifacts but the Output section does not specify what format THREAT_MODEL should be (Markdown table? STRIDE matrix? free prose?) or where it lives. The eval agent skipped it because the format was ambiguous.
+
+EXISTING OUTPUT SECTION (go-bear/SKILL.md) — the rest of the file is fine, fix only this section:
+
+\`\`\`markdown
+## Output
+
+- THREAT_MODEL — threat model for the project
+- SECURITY_REVIEW.md — findings with severity ratings
+- Dependency audit results
+- HTTP headers checklist
+\`\`\`
+
+THE TASK IS NARROW: fix ONLY the Output section — add format, location, and actionability to each artifact. Do not touch any other section.
+
+Produce go-finch's complete output:
+1. SKILL AUDIT block (Skill: go-bear v<current>, File: go-bear/SKILL.md, Weakness: Output artifacts lack format/location spec, Type: Sharpening, Risk: Low, Scope: ## Output)
+2. Change classification with checklist
+3. PROPOSED EDIT block — BEFORE (exact current Output section) and AFTER (rewritten with format/location/actionability for each artifact)
+4. Apply the edit (describe using Edit tool)
+5. Version bump: patch — show frontmatter before/after
+6. Consistency check: does any workflow step reference these artifacts? If yes, do the step descriptions now match the output spec?
+7. Does the go-skill-eval checklist need updating? Check whether the checklist term "THREAT_MODEL" now needs clarification.
+8. CHANGELOG entry`
+
   const override = skillName === 'go-wren' && input.nome === 'ShopLegacy'
     ? `\n\n${goWrenOverrideD}`
+    : skillName === 'go-finch' && input.nome === 'ShopLegacy'
+    ? `\n\n${goFinchOverrideD}`
     : skillOverrides[skillName] ? `\n\n${skillOverrides[skillName]}` : ''
 
   return `You are the skill ${skillName}. Your function: ${skillDesc}
@@ -526,7 +631,8 @@ ${importanteNote}${override}`
 // go-swift: Claude Code-specific; B inputs without hook context collapse (eval 2026-06-13).
 // go-jay: without real context files, completeness/adherence collapse on A (eval 2026-06-13).
 // go-wren: requires an existing hook script; meaningless without real files.
-const FILESYSTEM_SKILLS = new Set(['go-kite', 'go-ant', 'go-crane', 'go-owl', 'go-beaver', 'go-mole', 'go-swift', 'go-jay', 'go-wren'])
+// go-finch: requires an existing SKILL.md to audit; meaningless without real files.
+const FILESYSTEM_SKILLS = new Set(['go-kite', 'go-ant', 'go-crane', 'go-owl', 'go-beaver', 'go-mole', 'go-swift', 'go-jay', 'go-wren', 'go-finch'])
 
 const skillFilter = args?.skills ?? null
 const RUNS = Object.entries(SKILLS)

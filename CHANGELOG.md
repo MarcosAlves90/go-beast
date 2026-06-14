@@ -11,6 +11,51 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.17.4] - 2026-06-13
+
+### Changed
+
+- **go-eagle/SKILL.md** (v1.1.0 → v1.1.1): Output section — "CI workflow with test gates configured" expanded with platform-neutral path examples (GitHub Actions, GitLab CI, Jenkins).
+- **go-bear/SKILL.md** (v1.1.0 → v1.1.1): Output section — "Dependency audit report" expanded to `docs/security/DEPENDENCY_AUDIT.md` with per-entry format (package, CVE, severity, versions, resolution status), release-blocker rule for open High/Critical entries, and go-raven CI gate handoff note.
+
+---
+
+## [1.17.3] - 2026-06-13
+
+### Changed
+
+- **go-finch/SKILL.md** (v1.2.0 → v1.3.0): step 3 now specifies that "verbatim" includes all markdown formatting (backtick fences, bold, list prefixes, indentation) and requires marking Edit tool calls as `(simulated — eval context)` rather than omitting them. Platform-agnostic note strengthened: acknowledging a platform assumption and proceeding is explicitly flagged as a harder violation than missing it. Step 7 CHANGELOG format made mandatory: `**go-<animal>/SKILL.md** (vX → vY): <sentence>.`
+
+---
+
+## [1.17.2] - 2026-06-13
+
+### Changed
+
+- **go-finch/SKILL.md** (v1.1.0 → v1.2.0): step 5 now includes a platform-agnostic note — when adding file paths that are platform-specific (e.g., `.github/workflows/ci.yml`), use a placeholder unless the skill explicitly scopes to one platform. CHECKLIST ASSESSMENT format updated to require quoting the actual current terms from `go-skill-eval.js` and naming the specific term affected.
+
+---
+
+## [1.17.1] - 2026-06-13
+
+### Changed
+
+- **go-finch/SKILL.md** (v1.0.0 → v1.1.0): step 6 rewritten — now produces a mandatory `CHECKLIST ASSESSMENT` named artifact (always required, even when no update is needed) with structured fields: current terms, change type, update needed, reason, action. Output section updated to include `CHECKLIST ASSESSMENT` as a named always-required artifact.
+- **workflows/go-skill-eval.js**: `go-finch` checklist updated — added `CHECKLIST ASSESSMENT` term to match new named artifact.
+
+---
+
+## [1.17.0] - 2026-06-13
+
+### Added
+
+- **go-finch** — new meta-skill for go-* skill maintenance. Covers: SKILL AUDIT (current state before any edit), change classification (Wording / Sharpening / Addition / Structural / Contract with risk levels), PROPOSED EDIT block (before/after for the specific change), version bump policy, internal consistency check, go-skill-eval checklist update, and CHANGELOG entry. Never rewrites a working skill — one weakness per invocation. Position: `go-smith → (skill in production) → go-finch → go-skill-eval`.
+- **go-skill-eval**: `go-finch` added to `SKILLS` and `FILESYSTEM_SKILLS` (C/D only). Checklist: `SKILL AUDIT`, `change type`, `PROPOSED EDIT`, `version bump`, `consistency check`, `CHANGELOG`. Per-input overrides: C = go-eagle Rules sharpening; D = go-bear Output section spec.
+- **AGENTS.global.md** + **AGENTS.md**: `go-finch` added to meta-skills table.
+- **PACKAGE.md**: `go-finch` added to directory tree and dependency graph.
+
+---
+
 ## [1.16.5] - 2026-06-13
 
 ### Changed

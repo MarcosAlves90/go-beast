@@ -1,6 +1,6 @@
 ---
 name: go-eagle
-version: 1.1.0
+version: 1.1.1
 description: Designs the test pyramid, writes unit, integration, and end-to-end tests, establishes CI gates, and sets coverage policy for a software project.
 when_to_use: Use when establishing a testing strategy for a new project, adding missing test coverage, auditing test quality, or planning a QA phase before release. Invoke after go-wolf and/or go-lynx have produced a working implementation.
 ---
@@ -69,4 +69,4 @@ Flaky tests must be fixed or deleted — never skipped indefinitely. A test that
 
 - `docs/TESTING.md` — test strategy (pyramid decisions, tooling, CI policy)
 - Test files alongside implementation
-- CI workflow with test gates configured
+- CI pipeline file (e.g., .github/workflows/ci.yml for GitHub Actions, .gitlab-ci.yml for GitLab CI, Jenkinsfile for Jenkins) — test gates configured
