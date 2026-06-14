@@ -132,6 +132,11 @@ Add to `~/.claude/settings.json`:
 
 After setup, skills are available as `/go-hawk`, `/go-fox`, etc. Workflows run via the Workflow tool or `/workflows`.
 
+> **New skill created mid-session?** The sync only runs at session start. To activate a new beast immediately without waiting for the next session:
+> ```bash
+> bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
+> ```
+
 ### Other agents (Gemini CLI, Copilot CLI, Cursor…)
 
 Clone the repo and point your agent at the skill directory. Each skill is a self-contained `SKILL.md` — no dependencies, no platform-specific syntax.
