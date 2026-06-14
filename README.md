@@ -6,7 +6,6 @@ Each skill is named `go-<animal>`. Each beast owns exactly one phase of the proj
 
 **Version 1.20.3** · [Changelog](CHANGELOG.md)
 
----
 
 ## Pipeline
 
@@ -17,7 +16,6 @@ go-hawk → [go-lark] → go-fox → go-otter → go-beaver
 
 > `[brackets]` = optional. go-bear can interrupt any beast. go-owl can run at any phase.
 
----
 
 ## Skills
 
@@ -54,7 +52,6 @@ Invoked on demand — not bound to a phase.
 | [go-finch](go-finch/SKILL.md) | An existing skill needs improvement after eval feedback |
 | [go-vole](go-vole/SKILL.md) | Designing or restructuring an Obsidian vault / PKM system |
 
----
 
 ## Hooks `[Claude Code]`
 
@@ -71,7 +68,6 @@ Automated guards that run on Claude Code lifecycle events. All hooks use symlink
 | `docs-update-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project when source code files are modified |
 | `docs-update-remind.sh` | `Stop` | Blocks session close until README, docstrings, and CHANGELOG are reviewed |
 
----
 
 ## Workflows `[Claude Code]`
 
@@ -80,7 +76,6 @@ Automated guards that run on Claude Code lifecycle events. All hooks use symlink
 | [go-skill-eval](workflows/go-skill-eval.js) | Evaluates all go-* skills: structural checklist + LLM-as-judge + A/B/C/D adversarial inputs |
 | [go-hook-eval](workflows/go-hook-eval.js) | Tests all hooks: 27 cases covering blockers, observers, jq fallback, flag files |
 
----
 
 ## Extensions
 
@@ -90,7 +85,6 @@ Automated guards that run on Claude Code lifecycle events. All hooks use symlink
 
 See `extensions/beast-control/docs/SETUP.md` to install.
 
----
 
 ## Installation
 
@@ -141,7 +135,6 @@ Clone the repo and point your agent at the skill directory. Each skill is a self
 
 > `go-swift` and `go-wren` require Claude Code's hook system and are not applicable to other agents.
 
----
 
 ## Design principles
 
