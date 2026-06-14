@@ -11,6 +11,15 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.23.2] - 2026-06-14
+
+### Fixed
+
+- **workflows/go-workflow-eval.js**: read stage no longer uses schema (which forced JSON wrapping of large strings and caused agent stalls on go-skill-eval's 1010 lines). Now reads in two 600-line chunks via mcp__filesystem__read_text_file and returns raw text.
+- **workflows/go-hook-eval.js**: added `.ts` file test for code-verify-flag (previously only .py and .go were tested); added MultiEdit tool path test for docs-update-flag; simplified code-verify-run exit-1 setup into a single chained command (previous multiline heredoc was fragile).
+
+---
+
 ## [1.23.1] - 2026-06-14
 
 ### Fixed

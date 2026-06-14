@@ -189,8 +189,22 @@ const TESTS = [
     input: otherToolInput(),
     expectExit: 0,
   },
+  {
+    hook: 'docs-update-flag.sh',
+    name: 'creates flag for MultiEdit on .ts file',
+    input: json({ tool_name: 'MultiEdit', tool_input: { file_path: '/workspace/src/app.ts', edits: [] } }),
+    expectExit: 0,
+    expectFlagAfter: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.docs-update-pending`,
+  },
 
   // ── code-verify-flag ─────────────────────────────────────────────────────
+  {
+    hook: 'code-verify-flag.sh',
+    name: 'creates flag for .ts file',
+    input: editInput('/workspace/src/app.ts'),
+    expectExit: 0,
+    expectFlagAfter: `${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
+  },
   {
     hook: 'code-verify-flag.sh',
     name: 'creates flag for .py file',
@@ -264,14 +278,8 @@ const TESTS = [
   {
     hook: 'code-verify-run.sh',
     name: 'exit 1 when tsc reports type errors in flagged project',
-    // Setup: create a minimal TS project with a type error and flag it
-    setup: `
-      dir=$(mktemp -d /tmp/hook-eval-ts-XXXXXX)
-      echo '{"compilerOptions":{"strict":true}}' > "$dir/tsconfig.json"
-      echo 'const x: number = "not a number";' > "$dir/bad.ts"
-      echo "$dir" > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending
-      echo "$dir"
-    `.trim().replace(/\n\s*/g, ' && ').replace('      ', ''),
+    // Requires tsc on PATH (npx --no-install tsc). Skipped gracefully if tsc unavailable.
+    setup: `dir=$(mktemp -d /tmp/hook-eval-ts-XXXXXX) && echo '{"compilerOptions":{"strict":true,"noEmit":true}}' > "$dir/tsconfig.json" && echo 'const x: number = "not a number";' > "$dir/bad.ts" && echo "$dir" > ${args?.home ?? "/Users/marcos.lopes"}/.claude/.code-verify-pending`,
     input: stopInput(false),
     expectExit: 1,
     expectOutput: 'check',

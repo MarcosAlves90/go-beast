@@ -56,12 +56,6 @@ const JUDGE_SCHEMA = {
   },
 }
 
-const SRC_SCHEMA = {
-  type: 'object',
-  required: ['source'],
-  properties: { source: { type: 'string' } },
-}
-
 const wfFilter = args?.workflows ?? null
 const RUNS = Object.entries(WORKFLOWS)
   .filter(([name]) => !wfFilter || wfFilter.includes(name))
@@ -86,21 +80,20 @@ const results = await pipeline(
   RUNS,
 
   // ── Stage 1: Read source ────────────────────────────────────────────────────
+  // No schema — large files stall when schema forces JSON wrapping of huge strings.
+  // Agent returns the raw source text directly.
   async ([name, wf]) => {
-    // Large files (>500 lines) stall read agents. Use mcp__filesystem__read_text_file
-    // directly via agent with explicit tool instruction and head/tail split for large files.
-    const result = await agent(
-      `Use the mcp__filesystem__read_text_file tool to read the file at path: ${REPO}/workflows/${name}.js
-Read it in two calls if needed: first with offset=0, then offset=500 to cover files over 500 lines.
-Combine both parts and return the complete source.
-Do NOT use Bash cat. Do NOT summarize. Return the raw source code.`,
-      { label: `read:${name}`, phase: 'Source Collection', schema: SRC_SCHEMA }
+    const src = await agent(
+      `Use mcp__filesystem__read_text_file to read ${REPO}/workflows/${name}.js with limit=600.
+Then read again with offset=600, limit=600.
+Concatenate both results and return the raw source text — no JSON wrapping, no explanation, just the source code.`,
+      { label: `read:${name}`, phase: 'Source Collection' }
     )
-    if (!result?.source) {
-      log(`WARNING: could not read ${name}.js`)
+    if (!src || src.length < 100) {
+      log(`WARNING: could not read ${name}.js (got: ${src?.length ?? 0} chars)`)
       return null
     }
-    return { name, wf, src: result.source }
+    return { name, wf, src }
   },
 
   // ── Stage 2: Structural eval ────────────────────────────────────────────────
