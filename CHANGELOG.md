@@ -11,6 +11,22 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.22.2] - 2026-06-14
+
+### Changed
+
+- **go-bee/SKILL.md** (v1.1.0 → v1.2.0): two critical correctness fixes from eval iteration 3 — (1) discovery agents that return arrays MUST use a schema; an agent() without schema returns a string, and iterating over it in the next pipeline stage silently iterates characters instead of items; (2) save-report agent still requires label and phase even though it omits schema — all agent() calls without exception.
+
+---
+
+## [1.22.1] - 2026-06-14
+
+### Changed
+
+- **go-bee/SKILL.md** (v1.0.0 → v1.1.0): four technical accuracy fixes from eval iteration 1 — (1) save-report agent must never use schema (prose-driven, Write tool); (2) labels for per-item agents must use index or basename, not full paths; (3) prompts must be built lazily inside stage functions, never at script top level; (4) a single pipeline() must cover all sequential stages of the same item set, not split into two calls. Added step 4b with null-guard pattern before accessing pipeline results. Added meta pure-literal rule clarification: array defaults belong in comments below meta, not inside it.
+
+---
+
 ## [1.22.0] - 2026-06-14
 
 ### Added

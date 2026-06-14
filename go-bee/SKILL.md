@@ -1,6 +1,6 @@
 ---
 name: go-bee
-version: 1.0.0
+version: 1.2.0
 description: "Designs and implements Workflow scripts (.js files that use agent(), pipeline(), parallel(), phase(), log(), and schema) for multi-agent orchestration. Covers: decomposing a task into phases, choosing pipeline vs parallel vs loop patterns, defining JSON schemas for structured agent output, writing the meta block, and registering the workflow in the pack."
 when_to_use: "Use when a task requires fan-out to multiple agents, parallel execution, multi-phase pipelines, or automated evaluation harnesses. Invoke after the task is well-understood (go-hawk or user description) and before the workflow is needed. Workflows live in the go-beast workflows/ directory and are invoked via the Workflow tool."
 ---
@@ -88,8 +88,11 @@ const result = await agent('prompt here', { schema: MY_SCHEMA, label: 'my-agent'
 Rules for schemas:
 - [ ] Always declare `required` — omitting it means no field is guaranteed
 - [ ] Never use `schema` when the agent needs to produce free-form Markdown or prose — only use it when you need to process the output programmatically
-- [ ] Each `agent()` call must have a `label` — it appears in the progress UI
+- [ ] The save-report agent **never** uses `schema` — it is prose-driven (Write tool call). Omit schema from the save-report call. It still requires `label` and `phase`.
+- [ ] **Discovery agents that return arrays MUST use a schema.** An agent() without a schema returns a string. If the next pipeline stage iterates over the result, it will silently iterate over characters instead of items. Always define an array schema for discovery agents: `{ type: 'object', required: ['items'], properties: { items: { type: 'array', items: { type: 'object' } } } }`
+- [ ] Each `agent()` call must have a `label` and `phase` — both appear in the progress UI and the progress tree. No exceptions, including the save-report agent.
 - [ ] Each `agent()` call inside a `pipeline()` or `parallel()` must have `phase: 'Phase Name'` matching a `meta.phases` entry
+- [ ] Labels for per-item agents must be short and stable — prefer `audit-${i}` (index) or `audit-${path.basename(file)}` (filename only) over full file paths, which produce unreadably long labels
 
 ### 4. Write the script body
 
@@ -109,6 +112,23 @@ Key rules:
 - `workflow('name', args)` runs a child workflow inline — one level of nesting only
 - `budget.spent()` and `budget.remaining()` are available — check `budget.total` before using (it is `null` when no target is set)
 - Never hardcode absolute paths — use `args?.home ?? '/default'` for user-specific paths
+- **Build agent prompts lazily, inside the stage function.** Never construct a prompt string at the top of the script using variables that will only be populated later. Prompts that reference pipeline state (e.g., `${items}`) must be inside the `async (item) =>` callback, not outside the pipeline call.
+- **Use a single `pipeline()` for all sequential stages of the same item set.** Do not split one logical pipeline into two separate `pipeline()` calls — this breaks the intended data flow and is harder to read.
+- **`meta` must be a pure literal.** No array values with computed defaults, no template strings, no function calls. If args have defaults, document them in a comment below `meta`, not inside it: `// args.labels defaults to ['security']`
+
+### 4b. Guard against null results
+
+`pipeline()` and `parallel()` may return `null` for items where an agent failed. Always filter before accessing results:
+
+```js
+const valid = results.filter(Boolean)
+if (valid.length === 0) {
+  log('No results — skipping report.')
+  return { total: 0, findings: [] }
+}
+```
+
+Do not access `results[0].someField` without first checking `results[0]` is not null.
 
 ### 5. Write the save-report agent (if the workflow produces a report)
 
