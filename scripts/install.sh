@@ -128,8 +128,9 @@ select_items() {
     local selected
     selected="$(fzf --multi \
         --prompt="$prompt > " \
-        --header="SPACE=toggle  ENTER=confirm" \
+        --header="TAB=toggle  ENTER=confirm" \
         --height=40% --layout=reverse --border \
+        --bind "tab:toggle" \
         < "$tmpfile")"
     rm -f "$tmpfile"
 
