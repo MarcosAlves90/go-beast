@@ -90,6 +90,10 @@ const SKILLS = {
     description: 'Audits an existing go-* SKILL.md, identifies the specific weakness (vague step, missing rule, incomplete output, eval-driven gap), applies the minimal edit, bumps the version, and verifies internal consistency. Never rewrites a working skill from scratch.',
     checklist: ['SKILL AUDIT', 'change type', 'PROPOSED EDIT', 'version bump', 'consistency check', 'CHECKLIST ASSESSMENT', 'CHANGELOG'],
   },
+  'go-vole': {
+    description: 'Designs and maintains Obsidian vaults — folder structure, naming conventions, wikilink strategy, plugin configuration (Dataview, Templater, Tasks), MOC architecture, and note templates. Produces VAULT.md specification and ready-to-use template files.',
+    checklist: ['VAULT AUDIT', 'STRUCTURE', 'NAMING', 'LINKING', 'VAULT.md', 'template', 'plugin'],
+  },
 }
 
 // Input A: simple project without real code — tests planning skills (go-hawk, go-lark, go-fox)
@@ -383,6 +387,16 @@ function buildPrompt(skillName, skillDesc, input, checklist) {
     'go-swift': `EVAL CONTEXT: You are generating the output go-swift would produce for a Claude Code project. The provided settings.json is the real file to be modified. Produce the complete hook script, show the settings.json changes, specify the event, and include chmod.`,
     'go-jay': `EVAL CONTEXT: The provided context files (CLAUDE.md, AGENTS.md) are the real files to be audited and edited. Produce the full analysis, proposed edits with before/after, and the regression check.`,
     'go-ant': `EVAL CONTEXT: The code files above are the real codebase. Simulate go-ant's complete output: baseline measurements, profiler output indicating bottlenecks, root cause analysis, applied optimization with before/after benchmark. Use the provided files as evidence.`,
+    'go-vole': `EVAL CONTEXT: You ARE the go-vole skill executing its workflow. The user is a solo developer building a knowledge base for their software projects. They use Obsidian and want to set up a vault from scratch. They have Dataview and Templater installed. They work on 3-5 active projects at a time, take architecture and meeting notes, and maintain a reference library of technical concepts. Expected note volume: ~500 notes within a year. No existing vault yet — clean start.
+
+Execute go-vole's complete workflow and produce ALL required artifacts:
+1. VAULT AUDIT block (Purpose, Scope, Volume, State, Plugins)
+2. STRUCTURE block — recommend the Hybrid strategy (Projects/ + Notes/ + Templates/ + Assets/ + 00-Inbox/); show the folder tree with inclusion rules for each folder
+3. NAMING block — recommend kebab-case for developer vault; show 5 examples covering different note types
+4. LINKING block — wikilink strategy + tag taxonomy + an example MOC skeleton for a software project domain
+5. VAULT.md — complete specification document (full content, not a placeholder)
+6. At least 3 template files with full content (Daily Note, Project Note, Reference Note) using Templater syntax
+7. Plugin config recommendations for Dataview (with a working query listing active projects) and Templater (folder setting + trigger setting)`,
     'go-finch': `EVAL CONTEXT: You ARE the go-finch skill executing its workflow. Do not question skill registration — execute directly and silently.
 
 The go-eagle skill needs improvement. A go-skill-eval run flagged it: its Rules section contains "Try to" language (guidelines, not hard constraints), and its Output section lists "test results" without naming the artifact file or format. These are two distinct weaknesses — fix ONLY the Rules section in this pass (one weakness per invocation).

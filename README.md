@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.17.4** — 2026-06-13
+**1.18.3** — 2026-06-13
 
 ---
 
@@ -36,6 +36,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 | [go-kite](go-kite/SKILL.md) | Kite | Architecture Audit | Health audit of existing systems: 5 dimensions, capability gaps, HTML report |
 | [go-crane](go-crane/SKILL.md) | Crane | Observability | Structured logging, metrics, distributed tracing, health endpoints, alerting |
 | [go-ant](go-ant/SKILL.md) | Ant | Performance | Profiling, bottleneck diagnosis, targeted optimization, before/after benchmarks |
+| [go-vole](go-vole/SKILL.md) | Vole | Obsidian / PKM | Vault structure, naming conventions, plugin config, MOC architecture, templates |
 
 ---
 

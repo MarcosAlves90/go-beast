@@ -11,6 +11,40 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.18.3] - 2026-06-13
+
+### Changed
+
+- **go-vole/SKILL.md** (v1.2.0 → v1.3.0): two final fixes from eval iteration 3 — (1) Templater note expanded: frontmatter vs body duplication rule added (don't repeat frontmatter fields as markdown prose; use Dataview to query frontmatter); (2) new Rule: team vaults must include a git/versioning strategy in VAULT.md, with `.gitignore` recommendations for `.obsidian/workspace.json` and plugin config files.
+
+---
+
+## [1.18.2] - 2026-06-13
+
+### Changed
+
+- **go-vole/SKILL.md** (v1.1.0 → v1.2.0): three technical accuracy fixes — (1) VAULT.md step now specifies writing as a plain Markdown document, not wrapped in a fenced code block, to avoid nested fence conflicts; (2) Obsidian Publish section added clarifying that `published: false` frontmatter does not control publication state — Publish uses internal UI state, not frontmatter; (3) migration note added for existing vaults: move files inside Obsidian to trigger auto-link-update, not via OS file manager. Also: Templater variable capture pattern added — prompt once, reuse via JS variable instead of calling `tp.system.prompt()` multiple times.
+
+---
+
+## [1.18.1] - 2026-06-13
+
+### Changed
+
+- **go-vole/SKILL.md** (v1.0.0 → v1.1.0): step 6 expanded — added correct Templater variable reference (`tp.system.prompt()` for user input, `tp.file.title` for note name, explicit warning never to use `tp.file.cursor()` as a variable); added context-based additional templates (ADR, Meeting Note, Incident Post-Mortem, Literature Note, Person Note) beyond the 3 minimum.
+
+---
+
+## [1.18.0] - 2026-06-13
+
+### Added
+
+- **go-vole** — new meta-skill for Obsidian vault design and PKM. Covers: VAULT AUDIT (purpose, scope, volume, state, plugins), folder structure strategy (PARA / Zettelkasten / Flat+MOCs / Hybrid), naming conventions, wikilink + MOC strategy, plugin configuration (Dataview, Templater, Tasks), note templates, and VAULT.md specification document. Invoked on demand — not bound to a pipeline phase.
+- **go-skill-eval**: `go-vole` added to `SKILLS` (runs on all inputs A/B/C/D). Checklist: `VAULT AUDIT`, `STRUCTURE`, `NAMING`, `LINKING`, `VAULT.md`, `template`, `plugin`. Override injects a solo developer scenario with Dataview + Templater.
+- **AGENTS.global.md** + **PACKAGE.md**: `go-vole` registered as meta-skill.
+
+---
+
 ## [1.17.4] - 2026-06-13
 
 ### Changed

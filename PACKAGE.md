@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.17.4
+version: 1.18.3
 date:    2026-06-13
 author:  @cherry-c
 type:    skill-pack
@@ -62,6 +62,8 @@ go-beast/
 │   └── SKILL.md           ← Claude Code Hook Maintenance (meta-skill)
 ├── go-finch/
 │   └── SKILL.md           ← go-* Skill Maintenance (meta-skill)
+├── go-vole/
+│   └── SKILL.md           ← Obsidian Vault Design & PKM (meta-skill)
 ├── extensions/
 │   └── beast-control/          ← Firefox/Zen Browser MCP bridge (optional — install separately)
 │       ├── README.md
@@ -117,6 +119,7 @@ go-jay     ← AI context files; invoke when instructions cannot express the nee
 go-smith   ← skill authoring; invoke when a pack gap is identified
 go-finch   ← skill maintenance; invoke when an existing skill needs improvement (not replacement)
 go-wren    ← hook maintenance; invoke when an existing hook needs to be changed (not created)
+go-vole    ← Obsidian vault design and PKM; invoke on demand for vault setup, restructuring, or plugin config
 ```
 
 ---
