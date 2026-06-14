@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.23.3] - 2026-06-14
+
+### Changed
+
+- **workflows/go-workflow-eval.js**: redesigned evaluation pipeline to handle large files correctly. Stage 1 now reads the file in 3 chunks of 400 lines each and extracts structural elements (meta block, schemas, phases called, agent labels, patterns found, has_return, total_lines) into a JSON object. Stages 2 and 3 operate on this extract instead of truncated raw source — eliminates false penalties for elements that exist beyond the 10k char cutoff. Judge prompt updated to explicitly instruct against penalizing elements present in the extract.
+
+---
+
 ## [1.23.2] - 2026-06-14
 
 ### Fixed

@@ -26,6 +26,21 @@ const WORKFLOWS = {
   },
 }
 
+// Extracted key elements from the workflow source — avoids passing truncated raw source to judge
+const EXTRACT_SCHEMA = {
+  type: 'object',
+  required: ['meta_block', 'schemas', 'phases_called', 'agent_calls_sample', 'has_return', 'total_lines', 'patterns_found'],
+  properties: {
+    meta_block:         { type: 'string' },
+    schemas:            { type: 'array', items: { type: 'string' } },
+    phases_called:      { type: 'array', items: { type: 'string' } },
+    agent_calls_sample: { type: 'array', items: { type: 'string' } },
+    has_return:         { type: 'boolean' },
+    total_lines:        { type: 'number' },
+    patterns_found:     { type: 'array', items: { type: 'string' } },
+  },
+}
+
 const STRUCT_SCHEMA = {
   type: 'object',
   required: ['pass', 'missing', 'issues'],
@@ -79,107 +94,121 @@ log(`Reading ${RUNS.length} workflow source file(s)...`)
 const results = await pipeline(
   RUNS,
 
-  // ── Stage 1: Read source ────────────────────────────────────────────────────
-  // No schema — large files stall when schema forces JSON wrapping of huge strings.
-  // Agent returns the raw source text directly.
+  // ── Stage 1: Read and extract key elements ──────────────────────────────────
+  // Large files (go-skill-eval = 1010 lines) cannot be passed raw to a judge.
+  // Instead: read in 3 chunks of 400 lines each, then extract structural elements.
   async ([name, wf]) => {
-    const src = await agent(
-      `Use mcp__filesystem__read_text_file to read ${REPO}/workflows/${name}.js with limit=600.
-Then read again with offset=600, limit=600.
-Concatenate both results and return the raw source text — no JSON wrapping, no explanation, just the source code.`,
-      { label: `read:${name}`, phase: 'Source Collection' }
+    const extracted = await agent(
+      `The file ${REPO}/workflows/${name}.js is a Workflow script. Read it fully using mcp__filesystem__read_text_file:
+1. Read offset=0, limit=400
+2. Read offset=400, limit=400
+3. Read offset=800, limit=400
+
+Then extract and return a structured summary of the ENTIRE file. Do NOT read in a single call.
+
+Extract:
+- meta_block: the full export const meta = { ... } literal as a string
+- schemas: names of all const *_SCHEMA = { ... } declarations
+- phases_called: all phase('...') call arguments
+- agent_calls_sample: first label from each distinct agent() call (up to 15)
+- has_return: does the file end with a return statement?
+- total_lines: approximate line count
+- patterns_found: which of these appear anywhere: ['pipeline', 'parallel', 'filter(Boolean)', 'skillOverrides', 'FILESYSTEM_SKILLS', 'TESTS', 'expectExit', 'stop_hook_active', 'setup']`,
+      { label: `extract:${name}`, phase: 'Source Collection', schema: EXTRACT_SCHEMA }
     )
-    if (!src || src.length < 100) {
-      log(`WARNING: could not read ${name}.js (got: ${src?.length ?? 0} chars)`)
+    if (!extracted) {
+      log(`WARNING: extraction failed for ${name}.js`)
       return null
     }
-    return { name, wf, src }
+    return { name, wf, extracted }
   },
 
   // ── Stage 2: Structural eval ────────────────────────────────────────────────
   async (prev) => {
     if (!prev) return null
-    const { name, wf, src } = prev
+    const { name, wf, extracted } = prev
     const items = wf.checklist.join(', ')
 
     const structResult = await agent(
       `You are a rigorous code reviewer analyzing a Workflow script.
 
-Verify the source below contains ALL of: ${items}
+The following is a structural EXTRACT of ${name}.js (not the raw source — the full file was read and key elements extracted):
+
+${JSON.stringify(extracted, null, 2)}
+
+Verify this contains ALL of: ${items}
 
 Also flag these issues if present:
 - meta block uses computed values (variables, function calls, template strings) — it must be a pure literal
-- agent() calls that lack a label parameter
-- Missing return statement at the end
-- No null guard (filter(Boolean)) before accessing pipeline results
-- Discovery agents that return arrays but have no schema (agent without schema returns a string, not a parsed object)
+- agent() calls that lack a label (check agent_calls_sample)
+- Missing return statement (check has_return)
+- No filter(Boolean) null guard (check patterns_found)
+- Discovery agents without schema (pipeline with no SCHEMA entries)
 
 Search case-insensitive. Accept plural/singular variants.
-
-SOURCE:
----
-${src.slice(0, 10000)}
----
-
 Return ONLY the structured JSON.`,
       { label: `struct:${name}`, phase: 'Structural Eval', schema: STRUCT_SCHEMA }
     )
-    return { name, wf, src, structResult }
+    return { name, wf, extracted, structResult }
   },
 
   // ── Stage 3: LLM Judge ──────────────────────────────────────────────────────
   async (prev) => {
     if (!prev) return null
-    const { name, wf, src, structResult } = prev
+    const { name, wf, extracted, structResult } = prev
 
     const typeGuide = wf.type === 'skill-eval'
-      ? `This is a SKILL EVALUATION HARNESS. Also judge:
-- Are all go-* skills registered in SKILLS with specific, artifact-named checklists (not vague concepts)?
-- Do skillOverrides exist for every skill in FILESYSTEM_SKILLS so the eval agent gets real content to work with?
-- Are the 4 input profiles (A/B/C/D) meaningfully different — simple, infra-heavy, mid-complexity with real files, adversarial code?
-- Does the LLM judge prompt have per-level anchors that calibrate scores (not just labels)?
-- Is the aggregation report complete — results table, comparison, top/bottom 3, cost benchmark?`
-      : `This is a HOOK TEST HARNESS. Also judge:
-- Does TESTS cover BOTH expectExit:1 (blocking) and expectExit:0 (passing) cases for EACH hook?
-- Are edge cases present: literal newlines in JSON (jq fallback bug), stop_hook_active=true preventing loops, flag file creation and absence?
-- Do test case names clearly describe the scenario (e.g. "blocks git add .env" not "test 1")?
-- Does the aggregation show per-hook pass/fail summary AND a coverage section by case type?
-- Is cleanup (removing flag files before each test) handled to prevent cross-test contamination?`
+      ? `This is a SKILL EVALUATION HARNESS. Judge based on the extract:
+- Are skillOverrides present in patterns_found? (essential for filesystem-dependent skills to get real file content)
+- Is FILESYSTEM_SKILLS present in patterns_found? (controls which skills get real-file inputs)
+- Are there 4+ phases in phases_called (Skill Execution, Structural Eval, LLM Judge, Aggregation)?
+- Are STRUCT_SCHEMA and JUDGE_SCHEMA both declared (check schemas)?
+- Does agent_calls_sample include exec:, struct:, judge:, and save-report labels?`
+      : `This is a HOOK TEST HARNESS. Judge based on the extract:
+- Is TESTS present in patterns_found? (the test cases array)
+- Are both expectExit patterns present (blocking exit:1 AND passing exit:0)?
+- Is stop_hook_active present (prevents infinite loops)?
+- Is setup present (for test isolation — creating/removing files before test)?
+- Are parallel and filter(Boolean) present (parallel execution, null guard)?
+- Does agent_calls_sample show labels for both test execution and save-report?`
 
     const judgeResult = await agent(
       `You are an adversarial code reviewer evaluating the Workflow script "${name}".
 
 Purpose: ${wf.description}
 
+You have a structural EXTRACT of the full file (all ${extracted.total_lines} lines were read):
+${JSON.stringify(extracted, null, 2)}
+
+Structural check result: ${JSON.stringify(structResult)}
+
 Score calibration:
-- 3.5 = functional but has meaningful gaps in coverage or correctness
+- 3.5 = functional but meaningful gaps in coverage or correctness
 - 4.0 = solid and production-ready, minor issues only
-- 4.5 = comprehensive, well-designed, covers edge cases
-- 5.0 = exemplary — passes code review without changes, no gaps
+- 4.5 = comprehensive, covers edge cases well
+- 5.0 = exemplary, no gaps
 
 Automatic penalties (-0.5 per occurrence, max -1.5 total):
-- meta block is not a pure literal (contains variables, function calls, or template strings)
-- agent() call has no label parameter
-- No return statement
-- Discovery agent returns an array but has no schema (would silently return a string)
+- meta is not a pure literal (contains variables or function calls in meta_block)
+- agent() calls lack labels (agent_calls_sample shows unnamed calls)
+- has_return is false
+- No schema declared for a pipeline that fans out to agents (schemas array is empty)
+
+IMPORTANT: Do NOT penalize for elements that are present in patterns_found or extracted fields.
+Only penalize for elements that are genuinely absent from the extract.
 
 Rubric dimensions:
-- correctness: Are primitives used correctly? (pipeline vs parallel barrier, schema on array-returning agents, labels on all agent() calls, no Date.now()/Math.random())
-- completeness: All structural elements present — meta, phases, schemas, labels, null guards, return?
+- correctness: pipeline vs parallel used correctly? labels on agents? return present? schemas for array agents?
+- completeness: meta, schemas, phases, labels, null guard, return — all present per extract?
 - coverage: ${typeGuide}
-- clarity: Descriptive phase/label names, readable code, pattern choices commented where non-obvious?
+- clarity: phase/label names descriptive (from phases_called and agent_calls_sample)?
 
 score = mean of 4 dimensions minus penalties, rounded to 1 decimal.
-
-SOURCE (up to 10k chars):
----
-${src.slice(0, 10000)}
----
 
 Return ONLY the structured JSON.`,
       { label: `judge:${name}`, phase: 'LLM Judge', schema: JUDGE_SCHEMA }
     )
-    return { name, wf, src, structResult, judgeResult }
+    return { name, wf, extracted, structResult, judgeResult }
   }
 )
 
@@ -198,8 +227,8 @@ reportLines.push(`**Workflows evaluated:** ${valid.length}  |  **Average score:*
 reportLines.push(`---\n`)
 
 reportLines.push(`## Results\n`)
-reportLines.push(`| Workflow | Type | Struct | Missing | Score | Co/Cm/Cv/Cl |`)
-reportLines.push(`|---|---|---|---|---|---|`)
+reportLines.push(`| Workflow | Type | Struct | Missing | Score | Co/Cm/Cv/Cl | Lines |`)
+reportLines.push(`|---|---|---|---|---|---|---|`)
 
 for (const r of valid) {
   const sp    = r.structResult?.pass ? '✓' : '✗'
@@ -207,15 +236,20 @@ for (const r of valid) {
   const score = r.judgeResult?.score?.toFixed(1) ?? 'n/a'
   const d     = r.judgeResult?.dimensions
   const dims  = d ? `${d.correctness}/${d.completeness}/${d.coverage}/${d.clarity}` : '—'
-  reportLines.push(`| ${r.name} | ${r.wf.type} | ${sp} | ${miss} | ${score} | ${dims} |`)
+  const lines = r.extracted?.total_lines ?? '?'
+  reportLines.push(`| ${r.name} | ${r.wf.type} | ${sp} | ${miss} | ${score} | ${dims} | ${lines} lines |`)
 }
 
-if (valid.some(r => r.structResult?.issues?.length)) {
+if (valid.some(r => r.structResult?.issues?.length || !r.structResult?.pass)) {
   reportLines.push(`\n## Structural Issues\n`)
   for (const r of valid) {
-    if (!r.structResult?.issues?.length) continue
-    reportLines.push(`### ${r.name}`)
-    for (const i of r.structResult.issues) reportLines.push(`- ${i}`)
+    const issues = r.structResult?.issues ?? []
+    if (!issues.length && r.structResult?.pass) continue
+    reportLines.push(`### ${r.name}  (pass: ${r.structResult?.pass ?? '?'})`)
+    for (const i of issues) reportLines.push(`- ${i}`)
+    if (r.structResult?.missing?.length) {
+      reportLines.push(`Missing: ${r.structResult.missing.join(', ')}`)
+    }
   }
 }
 
