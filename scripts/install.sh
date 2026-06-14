@@ -115,48 +115,50 @@ collect_workflows() {
   done
 }
 
-# ── fzf multi-select (falls back to numbered menu) ───────────────────────────
+# ── select_items: all / pick / skip ──────────────────────────────────────────
 select_items() {
   local prompt="$1"; shift
   local items=("$@")
+  local count=${#items[@]}
 
+  echo -e "\n  ${BOLD}${prompt}${RESET} (${count} available)" >&2
+  echo -e "  [a] all   [p] pick individually   [s] skip" >&2
+  local choice
+  while true; do
+    printf "  > " >&2
+    read -r choice </dev/tty
+    case "$choice" in
+      a|A) printf '%s\n' "${items[@]}"; return ;;
+      p|P) break ;;
+      s|S) return ;;
+      *)   echo -e "  ${YELLOW}Type a, p, or s${RESET}" >&2 ;;
+    esac
+  done
+
+  # Pick mode — fzf if available, numbered list otherwise
   if command -v fzf &>/dev/null; then
-    local sentinel="(select all)"
     local tmpfile; tmpfile="$(mktemp)"
-    printf '%s\n' "$sentinel" "${items[@]}" > "$tmpfile"
-
-    local selected
-    selected="$(fzf --multi \
+    printf '%s\n' "${items[@]}" > "$tmpfile"
+    fzf --multi \
         --prompt="$prompt > " \
         --header="TAB=toggle  ENTER=confirm" \
-        --height=40% --layout=reverse --border \
+        --height=60% --layout=reverse --border \
         --bind "tab:toggle" \
-        < "$tmpfile")"
+        < "$tmpfile"
     rm -f "$tmpfile"
-
-    # If sentinel was selected → return all real items
-    if echo "$selected" | grep -qxF "$sentinel"; then
-      printf '%s\n' "${items[@]}"
-    else
-      echo "$selected"
-    fi
   else
-    echo -e "\n  ${CYAN}${prompt}${RESET}" >&2
     local i=1
     for item in "${items[@]}"; do
       echo "  $i) $item" >&2
       ((i++)) || true
     done
-    echo -e "  Numbers (e.g. 1 3 5) or 'a' for all: " >&2
-    read -r choices
-    if [[ "$choices" == "a" || "$choices" == "A" ]]; then
-      printf '%s\n' "${items[@]}"
-    else
-      for n in $choices; do
-        local idx=$(( n - 1 ))
-        [[ $idx -ge 0 && $idx -lt ${#items[@]} ]] && echo "${items[$idx]}"
-      done
-    fi
+    echo -e "  Numbers separated by spaces (e.g. 1 3 5): " >&2
+    local choices
+    read -r choices </dev/tty
+    for n in $choices; do
+      local idx=$(( n - 1 ))
+      [[ $idx -ge 0 && $idx -lt $count ]] && echo "${items[$idx]}"
+    done
   fi
 }
 
