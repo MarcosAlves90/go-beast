@@ -2,7 +2,7 @@
 
 > **Scope:** This file is the context for the AI agent that **maintains this repository** (adds skills, edits docs, runs evals). It is not the context for agents that *use* the skills — users load individual `SKILL.md` files via their agent's skill system.
 
-This is the go-beast skill pack repository. It contains skills, workflows, and hooks for the go-* family. The pack is agent-agnostic — skills are plain Markdown and work with any agent. The Claude Code sync hook (`hooks/sync-go-beast-skills.sh`) and `go-swift` are the only Claude Code-specific components.
+This is the go-beast skill pack repository. It contains skills, workflows, and hooks for the go-* family. The pack is agent-agnostic — skills are plain Markdown and work with any agent. The Claude Code sync hook (`hooks/sync-go-beast-skills.sh`), `go-swift`, and `go-wren` are the only Claude Code-specific components.
 
 ---
 

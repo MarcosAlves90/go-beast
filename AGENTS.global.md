@@ -107,6 +107,7 @@ go-hawk → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle
 | go-kite | Strategic architecture health audit of an existing system — before go-fox revisions |
 | go-jay | AI context file authoring when instructions alone can't express the behavior |
 | go-swift | Hook automation needed after go-jay (shell-level Claude Code lifecycle events) |
+| go-wren | An existing Claude Code hook needs to be changed — bug fix, new condition, or threshold update |
 | go-smith | A gap in the pack is identified and a new beast is needed |
 
 **Rule:** before implementing any non-trivial software task manually, check if a go-* skill covers it. If a skill matches even partially, invoke it — skills encode validated harnesses that produce better results than ad-hoc implementation.

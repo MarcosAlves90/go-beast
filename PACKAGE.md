@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.15.2
+version: 1.16.0
 date:    2026-06-13
 author:  @cherry-c
 type:    skill-pack
@@ -58,6 +58,8 @@ go-beast/
 │   └── SKILL.md           ← Observability & Monitoring
 ├── go-ant/
 │   └── SKILL.md           ← Performance Profiling & Optimization
+├── go-wren/
+│   └── SKILL.md           ← Claude Code Hook Maintenance (meta-skill)
 ├── extensions/
 │   └── beast-control/          ← Firefox/Zen Browser MCP bridge (optional — install separately)
 │       ├── README.md
@@ -111,6 +113,7 @@ go-jay     ← AI context files; invoke when instructions cannot express the nee
   └─► go-swift   ← hook automation; invoke after go-jay when shell-level automation is needed
         └─► go-raven  ← includes hooks in CI/CD and onboarding scripts
 go-smith   ← skill authoring; invoke when a pack gap is identified
+go-wren    ← hook maintenance; invoke when an existing hook needs to be changed (not created)
 ```
 
 ---

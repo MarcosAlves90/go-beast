@@ -82,6 +82,10 @@ const SKILLS = {
     description: 'Profiles a running system to find real performance bottlenecks, establishes baseline measurements, applies targeted optimizations (query tuning, cache strategy, bundle reduction, async patterns), and validates improvement with before/after benchmarks. Produces PERF.md with evidence-backed findings and applied changes.',
     checklist: ['PERF.md', 'baseline', 'profiler output', 'bottleneck', 'root cause', 'benchmark results', 'before/after', 'optimization'],
   },
+  'go-wren': {
+    description: 'Audits an existing Claude Code hook script, classifies the requested change (threshold, condition, behaviour, or bug fix), applies the minimal edit preserving the exit-code contract, and re-validates with go-hook-eval. Never rewrites a working hook from scratch.',
+    checklist: ['current contract', 'change type', 'minimal diff', 'exit code', 'test evidence', 'happy path'],
+  },
 }
 
 // Input A: simple project without real code — tests planning skills (go-hawk, go-lark, go-fox)
@@ -401,7 +405,8 @@ ${importanteNote}${override}`
 // go-owl, go-beaver, go-mole: confirmed collapse on A/B without a concrete project (eval 2026-06-13).
 // go-swift: Claude Code-specific; B inputs without hook context collapse (eval 2026-06-13).
 // go-jay: without real context files, completeness/adherence collapse on A (eval 2026-06-13).
-const FILESYSTEM_SKILLS = new Set(['go-kite', 'go-ant', 'go-crane', 'go-owl', 'go-beaver', 'go-mole', 'go-swift', 'go-jay'])
+// go-wren: requires an existing hook script; meaningless without real files.
+const FILESYSTEM_SKILLS = new Set(['go-kite', 'go-ant', 'go-crane', 'go-owl', 'go-beaver', 'go-mole', 'go-swift', 'go-jay', 'go-wren'])
 
 const skillFilter = args?.skills ?? null
 const RUNS = Object.entries(SKILLS)

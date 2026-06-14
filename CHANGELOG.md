@@ -11,6 +11,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.16.0] - 2026-06-13
+
+### Added
+
+- **go-wren** `[Claude Code only]` — new meta-skill for Claude Code hook maintenance. Covers: reading the current hook contract, classifying the change scope (threshold / condition / behaviour / bug fix), applying the minimal diff with the `Edit` tool, updating `go-hook-eval.js` test cases when needed, and re-validating with a direct shell test + full eval run. Never rewrites a working hook from scratch — that remains go-swift's domain. Position: `go-swift → (hook in production) → go-wren → go-hook-eval`.
+- **go-skill-eval**: `go-wren` added to `SKILLS` and `FILESYSTEM_SKILLS` — runs only with inputs C and D (requires real hook files). Checklist: `current contract`, `change type`, `minimal diff`, `exit code`, `test evidence`, `happy path`.
+- **AGENTS.global.md**: `go-wren` added to meta-skills table.
+
+---
+
 ## [1.15.2] - 2026-06-13
 
 ### Changed

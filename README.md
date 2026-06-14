@@ -8,7 +8,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 
 ## Version
 
-**1.15.2** — 2026-06-13
+**1.16.0** — 2026-06-13
 
 ---
 
@@ -31,6 +31,7 @@ Each skill in the pack is named `go-<animal>`. Each beast owns exactly one phase
 | [go-mole](go-mole/SKILL.md) | Mole | Briefing | Documentation scan, project briefing for downstream skills |
 | [go-smith](go-smith/SKILL.md) | Smith | Skill Authoring | Gap analysis, SKILL.md creation, pack integration (meta-skill) |
 | [go-swift](go-swift/SKILL.md) `[Claude Code]` | Swift | Hook Authoring | Claude Code hook scripts, settings.json wiring, lifecycle automation |
+| [go-wren](go-wren/SKILL.md) `[Claude Code]` | Wren | Hook Maintenance | Audit, patch, and re-validate existing Claude Code hooks without rewriting them |
 | [go-kite](go-kite/SKILL.md) | Kite | Architecture Audit | Health audit of existing systems: 5 dimensions, capability gaps, HTML report |
 | [go-crane](go-crane/SKILL.md) | Crane | Observability | Structured logging, metrics, distributed tracing, health endpoints, alerting |
 | [go-ant](go-ant/SKILL.md) | Ant | Performance | Profiling, bottleneck diagnosis, targeted optimization, before/after benchmarks |
