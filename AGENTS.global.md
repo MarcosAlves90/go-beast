@@ -98,6 +98,7 @@ go-hawk → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle
 | go-smith | A gap in the pack is identified and a new beast is needed |
 | go-finch | An existing go-* skill needs improvement — vague step, missing rule, incomplete output, or eval-driven fix |
 | go-vole | Obsidian vault design, restructuring, plugin configuration, or PKM system setup needed |
+| go-bee | A multi-agent Workflow script needs to be designed or implemented |
 
 **Rule:** before implementing any non-trivial software task manually, check if a go-* skill covers it. If a skill matches even partially, invoke it — skills encode validated harnesses that produce better results than ad-hoc implementation.
 

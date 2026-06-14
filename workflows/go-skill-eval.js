@@ -94,6 +94,10 @@ const SKILLS = {
     description: 'Designs and maintains Obsidian vaults — folder structure, naming conventions, wikilink strategy, plugin configuration (Dataview, Templater, Tasks), MOC architecture, and note templates. Produces VAULT.md specification and ready-to-use template files.',
     checklist: ['VAULT AUDIT', 'STRUCTURE', 'NAMING', 'LINKING', 'VAULT.md', 'template', 'plugin'],
   },
+  'go-bee': {
+    description: 'Designs and implements Workflow scripts (.js files that use agent(), pipeline(), parallel(), phase(), log(), and schema) for multi-agent orchestration. Covers decomposing tasks into phases, choosing the correct orchestration primitive, defining JSON schemas, writing the meta block, and registering the workflow.',
+    checklist: ['meta', 'phase', 'pipeline', 'schema', 'label', 'return'],
+  },
 }
 
 // Input A: simple project without real code — tests planning skills (go-hawk, go-lark, go-fox)
@@ -387,6 +391,17 @@ function buildPrompt(skillName, skillDesc, input, checklist) {
     'go-swift': `EVAL CONTEXT: You are generating the output go-swift would produce for a Claude Code project. The provided settings.json is the real file to be modified. Produce the complete hook script, show the settings.json changes, specify the event, and include chmod.`,
     'go-jay': `EVAL CONTEXT: The provided context files (CLAUDE.md, AGENTS.md) are the real files to be audited and edited. Produce the full analysis, proposed edits with before/after, and the regression check.`,
     'go-ant': `EVAL CONTEXT: The code files above are the real codebase. Simulate go-ant's complete output: baseline measurements, profiler output indicating bottlenecks, root cause analysis, applied optimization with before/after benchmark. Use the provided files as evidence.`,
+    'go-bee': `EVAL CONTEXT: You ARE the go-bee skill executing its workflow. Design and implement a complete Workflow script for the following task:
+
+"Write a workflow that audits all API endpoints in a codebase for missing authentication checks. It should: (1) discover all route files in parallel across common patterns (Express routes, FastAPI routes, Flask routes), (2) for each file found, run an agent to identify endpoints missing auth middleware, (3) aggregate findings and produce a Markdown security report saved to docs/security/AUTH_AUDIT.md."
+
+Produce go-bee's complete output:
+1. meta block (pure literal — name: 'auth-audit', description, phases array with one entry per phase() call)
+2. Explain your orchestration pattern choice: why pipeline() for this task, not parallel() barriers
+3. Define the JSON schema for the auth-audit agent output (endpoint findings per file)
+4. Write the complete workflow script body: phase() calls, pipeline() with 3 stages (discover → audit → aggregate), agent() calls with labels and phase assignments, log() calls, save-report agent, return statement
+5. Show the complete final script as a single code block starting with export const meta
+6. State which file it goes in (workflows/auth-audit.js) and the README Workflows table entry`,
     'go-vole': `EVAL CONTEXT: You ARE the go-vole skill executing its workflow. The user is a solo developer building a knowledge base for their software projects. They use Obsidian and want to set up a vault from scratch. They have Dataview and Templater installed. They work on 3-5 active projects at a time, take architecture and meeting notes, and maintain a reference library of technical concepts. Expected note volume: ~500 notes within a year. No existing vault yet — clean start.
 
 Execute go-vole's complete workflow and produce ALL required artifacts:

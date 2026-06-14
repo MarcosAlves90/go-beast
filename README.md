@@ -4,7 +4,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more.
 
-**Version 1.21.2** · [Changelog](CHANGELOG.md)
+**Version 1.22.0** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
@@ -51,6 +51,7 @@ Invoked on demand — not bound to a phase.
 | [go-smith](go-smith/SKILL.md) | A gap in the pack is identified and a new beast is needed |
 | [go-finch](go-finch/SKILL.md) | An existing skill needs improvement after eval feedback |
 | [go-vole](go-vole/SKILL.md) | Designing or restructuring an Obsidian vault / PKM system |
+| [go-bee](go-bee/SKILL.md) | Designing and implementing multi-agent Workflow scripts (pipeline, parallel, loop patterns) |
 
 
 ## Hooks `[Claude Code]`

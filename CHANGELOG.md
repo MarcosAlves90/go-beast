@@ -11,6 +11,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.22.0] - 2026-06-14
+
+### Added
+
+- **go-bee** — new meta-skill for Workflow script authoring. Covers: defining purpose and phases (meta block), choosing orchestration primitives (pipeline vs parallel vs loop), defining JSON schemas for structured agent output, labeling agents, writing the script body structure, saving reports, and registering in the pack. Position: on-demand meta-skill invoked whenever a multi-agent workflow needs to be built or extended.
+- **go-skill-eval**: `go-bee` added to `SKILLS` (runs on all inputs A/B/C/D). Checklist: `meta`, `phase`, `pipeline`, `schema`, `label`, `return`. Override injects a concrete auth-audit workflow task.
+- **AGENTS.global.md** + **PACKAGE.md**: `go-bee` registered as meta-skill.
+
+---
+
 ## [1.21.2] - 2026-06-14
 
 ### Changed

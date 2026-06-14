@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.21.2
+version: 1.22.0
 date:    2026-06-14
 author:  @cherry-c
 type:    skill-pack
@@ -64,6 +64,8 @@ go-beast/
 │   └── SKILL.md           ← go-* Skill Maintenance (meta-skill)
 ├── go-vole/
 │   └── SKILL.md           ← Obsidian Vault Design & PKM (meta-skill)
+├── go-bee/
+│   └── SKILL.md           ← Workflow Script Authoring (meta-skill)
 ├── extensions/
 │   └── beast-control/          ← Firefox/Zen Browser MCP bridge (optional — install separately)
 │       ├── README.md
@@ -120,6 +122,7 @@ go-smith   ← skill authoring; invoke when a pack gap is identified
 go-finch   ← skill maintenance; invoke when an existing skill needs improvement (not replacement)
 go-wren    ← hook maintenance; invoke when an existing hook needs to be changed (not created)
 go-vole    ← Obsidian vault design and PKM; invoke on demand for vault setup, restructuring, or plugin config
+go-bee     ← Workflow script authoring; invoke when a multi-agent orchestration script needs to be built
 ```
 
 ---
