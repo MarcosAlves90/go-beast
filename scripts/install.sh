@@ -128,9 +128,9 @@ select_items() {
     printf '%s\n' "${items[@]}" > "$tmpfile"
     fzf --multi \
         --prompt="$prompt > " \
-        --header="SPACE=toggle  ENTER=confirm  Ctrl-A=select all  Ctrl-D=deselect all" \
+        --header="SPACE=toggle  ENTER=confirm  Alt-A=select all  Alt-D=deselect all" \
         --height=40% --layout=reverse --border \
-        --bind "ctrl-a:select-all,ctrl-d:deselect-all,space:toggle" \
+        --bind "alt-a:select-all,alt-d:deselect-all,space:toggle" \
         < "$tmpfile"
     rm -f "$tmpfile"
   else
