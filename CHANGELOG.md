@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.23.0] - 2026-06-14
+
+### Added
+
+- **workflows/go-workflow-eval.js** — new eval workflow for Workflow scripts. Reads each workflow source via agent, runs a structural checklist (meta purity, labels, return statement, null guards, discovery schemas), then an LLM judge with four dimensions: correctness, completeness, coverage, and clarity. Coverage criteria are type-specific: skill-eval harnesses are judged on skill registration quality, input diversity, and judge calibration; hook-eval harnesses are judged on case coverage, edge cases, and cleanup. Supports `args.workflows` filter and `args.repoPath`.
+
+---
+
 ## [1.22.2] - 2026-06-14
 
 ### Changed
