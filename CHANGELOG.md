@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.21.1] - 2026-06-14
+
+### Changed
+
+- **AGENTS.global.md**: MCP install guidance made agent-agnostic — removed `claude mcp add` commands (Claude Code-specific), now provides package names only and refers users to their agent's documentation and the MCP quickstart guide.
+
+---
+
 ## [1.21.0] - 2026-06-14
 
 ### Changed

@@ -130,20 +130,18 @@ These hooks are active in `~/.claude/settings.json` for all projects:
 
 ## MCP Tools
 
-The following MCP servers are recommended. If a tool listed here is not available, tell the user which one is missing and how to install it — do not silently fall back to a worse alternative without noting the gap.
+The following MCP servers are recommended. If a tool listed here is not available, tell the user which one is missing and provide the package name so they can install it for their agent. Do not silently fall back to a worse alternative without noting the gap.
 
-If an MCP is missing, suggest the user install it:
-- For Claude Code: `claude mcp add <name>` — run `/mcp` to see installed servers.
-- Full setup guide: https://modelcontextprotocol.io/quickstart/user
+MCP servers are configured per-agent. The package names are standard across agents — consult your agent's documentation for the exact install command (e.g. Claude Code uses `claude mcp add`, Cursor uses its MCP settings panel, etc.). Reference: https://modelcontextprotocol.io/quickstart/user
 
-| MCP | When to use | If missing |
+| MCP | When to use | If missing — tell the user |
 |-----|-------------|------------|
-| **filesystem** | Read, list, and write files under the user's home directory. Prefer over Bash for file operations that do not require shell execution. | Use Bash `cat`/`ls`/`cp` as fallback; tell the user to install `@modelcontextprotocol/server-filesystem`. |
-| **git** | Inspect history, status, diffs, and branches. Use for read operations; use Bash for destructive git operations requiring confirmation. | Use Bash `git` commands directly. |
-| **repomix** | Pack and analyze entire codebases. Use when starting work on an unfamiliar repository or before large refactors. | Ask the user to run `npx repomix` manually and share the output, or skip codebase packing and work from file reads. |
-| **context7** | Fetch up-to-date library and framework documentation. Use before asserting external API behavior — training data may be outdated. | Warn the user that docs may be outdated and rely on training knowledge with explicit uncertainty. |
-| **sequential-thinking** | Decompose complex problems into chained steps. Use when a problem has multiple interdependent steps or high ambiguity. | Reason step-by-step inline without the MCP. |
-| **playwright** | Automate and test browser interactions. Use to verify UI changes in a real browser, run E2E tests, take screenshots, or validate frontend behavior. | Ask the user to install: `claude mcp add playwright -- npx @playwright/mcp@latest`. |
-| **duckduckgo-search** | Search the web for current information — security advisories, debugging, news, anything outside library docs. No API key required. | Ask the user to install: `claude mcp add duckduckgo-search`. |
-| **shell** | Run long-lived or streaming shell commands with persistent session state. Use when a process produces output over time (builds, test runners, servers). | Use Bash with `run_in_background` as fallback. |
+| **filesystem** | Read, list, and write files under the user's home directory. Prefer over Bash for file operations that do not require shell execution. | Install `@modelcontextprotocol/server-filesystem`. Fall back to Bash `cat`/`ls`/`cp`. |
+| **git** | Inspect history, status, diffs, and branches. Use for read operations; use Bash for destructive git operations requiring confirmation. | No install needed — use Bash `git` commands directly. |
+| **repomix** | Pack and analyze entire codebases. Use when starting work on an unfamiliar repository or before large refactors. | Install `repomix` MCP, or run `npx repomix` manually and share the output. |
+| **context7** | Fetch up-to-date library and framework documentation. Use before asserting external API behavior — training data may be outdated. | Install `@upstash/context7-mcp`. Without it, warn the user that docs may be outdated. |
+| **sequential-thinking** | Decompose complex problems into chained steps. Use when a problem has multiple interdependent steps or high ambiguity. | Install `@modelcontextprotocol/server-sequential-thinking`. Reason step-by-step inline as fallback. |
+| **playwright** | Automate and test browser interactions. Use to verify UI changes in a real browser, run E2E tests, take screenshots, or validate frontend behavior. | Install `@playwright/mcp`. |
+| **duckduckgo-search** | Search the web for current information — security advisories, debugging, news, anything outside library docs. No API key required. | Install `duckduckgo-mcp-server`. |
+| **shell** | Run long-lived or streaming shell commands with persistent session state. Use when a process produces output over time (builds, test runners, servers). | Use Bash with background execution as fallback. |
 | **docker** | Inspect and manage Docker containers and images. Use when debugging containerized services without manual CLI chains. | Use Bash `docker` commands directly. |
