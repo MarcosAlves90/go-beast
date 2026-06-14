@@ -40,13 +40,15 @@ collect_workflows() { for f in "$REPO_DIR"/workflows/*.js; do [[ -f "$f" ]] && b
 
 link_item() {
   local src="$1" dir="$2"
+  # Normalize: strip trailing slash so comparison with readlink works
+  src="${src%/}"
   local name; name="$(basename "$src")"
   local dst="$dir/$name"
   mkdir -p "$dir"
   if [[ -L "$dst" ]]; then
-    local cur; cur="$(readlink "$dst")"
+    local cur; cur="$(readlink "$dst")"; cur="${cur%/}"
     if [[ "$cur" == "$src" ]]; then skip "$name  (already linked)"; return; fi
-    warn "$name  (linked elsewhere — skipping)"
+    warn "$name  (linked elsewhere: $cur — skipping)"
     return
   fi
   [[ -e "$dst" ]] && { warn "$name  (file exists — skipping)"; return; }
