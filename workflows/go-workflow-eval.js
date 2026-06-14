@@ -24,6 +24,11 @@ const WORKFLOWS = {
     type: 'hook-eval',
     checklist: ['TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'parallel', 'return', 'setup'],
   },
+  'go-deep-analysis': {
+    description: 'Performs deep multi-dimensional analysis of a codebase and produces a complete Markdown document for each dimension: architecture, security, performance, testing, documentation gaps, and dependency health.',
+    type: 'analysis',
+    checklist: ['DIMENSIONS', 'parallel', 'DISCOVERY_SCHEMA', 'label', 'return', 'outputDir'],
+  },
 }
 
 // Extracted key elements from the workflow source — avoids passing truncated raw source to judge
@@ -157,7 +162,16 @@ Return ONLY the structured JSON.`,
     if (!prev) return null
     const { name, wf, extracted, structResult } = prev
 
-    const typeGuide = wf.type === 'skill-eval'
+    const typeGuide = wf.type === 'analysis'
+      ? `This is a CODEBASE ANALYSIS workflow. Judge based on the extract:
+- Is DIMENSIONS (the analysis dimensions array) present in patterns_found?
+- Is parallel() used for the analysis phase? (6 independent analyses — correct pattern)
+- Is DISCOVERY_SCHEMA declared for the structured discovery agent output?
+- Are all agent() calls labeled (check agent_calls_sample for discover, analyze-*, save-*, save-index)?
+- Is there a null guard (filter(Boolean)) after parallel() results?
+- Does the workflow handle the case where repoPath is missing?
+- Is the output directory configurable (outputDir in patterns_found or args)?`
+      : wf.type === 'skill-eval'
       ? `This is a SKILL EVALUATION HARNESS. Judge based on the extract:
 - Are skillOverrides present in patterns_found? (essential for filesystem-dependent skills to get real file content)
 - Is FILESYSTEM_SKILLS present in patterns_found? (controls which skills get real-file inputs)

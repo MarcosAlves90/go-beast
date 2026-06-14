@@ -11,6 +11,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.24.0] - 2026-06-14
+
+### Added
+
+- **workflows/go-deep-analysis.js** — deep multi-dimensional codebase analysis workflow. Discovery phase reads repo structure and tech stack. Analysis phase fans out 6 independent dimensions in parallel (architecture, security, performance, testing, documentation gaps, dependency health) using real file reads via MCP filesystem. Documentation phase saves one complete Markdown file per dimension. Aggregation phase writes an index.md linking all documents. Parameterized via `args.repoPath`, `args.outputDir`, and optional `args.dimensions` filter.
+
+---
+
 ## [1.23.5] - 2026-06-14
 
 ### Fixed
