@@ -124,8 +124,9 @@ select_items() {
     printf '%s\n' "${items[@]}" \
       | fzf --multi \
             --prompt="$prompt > " \
-            --header="TAB=select  ENTER=confirm  Ctrl-A=all" \
+            --header="SPACE=toggle  ENTER=confirm  Ctrl-A=select all  Ctrl-D=deselect all" \
             --height=40% --layout=reverse --border \
+            --bind "ctrl-a:select-all,ctrl-d:deselect-all,space:toggle" \
             < /dev/tty
   else
     echo -e "\n  ${CYAN}${prompt}${RESET}" >&2
