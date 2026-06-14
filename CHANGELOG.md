@@ -11,6 +11,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.19.1] - 2026-06-14
+
+### Fixed
+
+- **scripts/install.sh**: normalize trailing slash in `readlink` output before comparison — `go-smith` and `go-swift` were incorrectly reported as "linked elsewhere" because the existing symlinks had a trailing slash (created by the old sync hook using `$skill_dir/`) while the new installer passed paths without one.
+
+### Changed
+
+- **scripts/install.sh**: rewrote `select_items` — replaced fzf sentinel hack with a clean `[a] all / [n] none / [p] pick` prompt; pick mode uses a numbered list with range support (`1-5`) instead of fzf, which was unreliable in this context. fzf is still used for pick mode on large lists (skills).
+- **scripts/install.sh**: `link_item` now shows `–` for already-linked items and `⚠` with the current target for conflicts, so re-running the installer always produces visible output.
+
+---
+
 ## [1.19.0] - 2026-06-14
 
 ### Added
