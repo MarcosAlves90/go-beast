@@ -121,13 +121,18 @@ select_items() {
   local items=("$@")
 
   if command -v fzf &>/dev/null; then
-    printf '%s\n' "${items[@]}" \
-      | fzf --multi \
-            --prompt="$prompt > " \
-            --header="SPACE=toggle  ENTER=confirm  Ctrl-A=select all  Ctrl-D=deselect all" \
-            --height=40% --layout=reverse --border \
-            --bind "ctrl-a:select-all,ctrl-d:deselect-all,space:toggle" \
-            < /dev/tty
+    # stdin is consumed by process substitution in callers (mapfile < <(...)).
+    # fzf needs a real terminal for its UI — open /dev/tty explicitly as stdin
+    # after the pipe delivers items, using a temp file to bridge both.
+    local tmpfile; tmpfile="$(mktemp)"
+    printf '%s\n' "${items[@]}" > "$tmpfile"
+    fzf --multi \
+        --prompt="$prompt > " \
+        --header="SPACE=toggle  ENTER=confirm  Ctrl-A=select all  Ctrl-D=deselect all" \
+        --height=40% --layout=reverse --border \
+        --bind "ctrl-a:select-all,ctrl-d:deselect-all,space:toggle" \
+        < "$tmpfile"
+    rm -f "$tmpfile"
   else
     echo -e "\n  ${CYAN}${prompt}${RESET}" >&2
     local i=1
