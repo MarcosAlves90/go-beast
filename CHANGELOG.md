@@ -19,6 +19,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **scripts/install.mjs**: treats Codex as a hook-capable agent by symlinking selected hook scripts into `~/.codex/hooks/` and warning about Codex hook wiring via `~/.codex/hooks.json` or inline `[hooks]` in `~/.codex/config.toml`. Updated README, PACKAGE, AGENTS, and AGENTS.global wording so hooks are no longer described as Claude Code-only.
+- **go-swift/SKILL.md** (v1.1.0 → v1.2.0): expanded hook authoring from Claude Code-only to Claude Code and Codex, including Codex hook config paths and `/hooks` trust review.
+- **go-wren/SKILL.md** (v1.1.0 → v1.2.0): expanded hook maintenance from Claude Code-only to Claude Code and Codex, including Codex hook script locations, config schemas, and trust-review checks.
+- **workflows/go-skill-eval.js**: updated go-swift/go-wren descriptions and replaced the go-swift structural term `settings.json` with `hook configuration`.
 - **workflows/go-hook-eval.js**: replaced old `docs-update-flag` test cases (extension-based) with new git-aware cases (`.sh` in git repo, `.gitignore` exclusion, non-git project). Added 6 new test cases covering `git-commit-remind-flag` (Edit in git, Edit outside git, non-Edit tool) and `git-commit-remind` (no flag, stop_hook_active, repo with changes).
 - **go-wren/SKILL.md**: added "Common pitfalls in strict bash (`set -euo pipefail`)" table covering `|| var=$?` pattern, `git check-ignore` exit semantics, non-existent directory for `git -C`, `$(pwd)` in PostToolUse hooks, and `pipefail` with pipes.
 
