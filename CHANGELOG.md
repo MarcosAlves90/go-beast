@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **go-jay/SKILL.md** (v1.2.0 → v1.2.1): quoted the frontmatter `description` value so the internal `Agent-agnostic:` label parses as valid YAML.
+
 ## [1.28.0] - 2026-06-15
 
 ### Fixed
