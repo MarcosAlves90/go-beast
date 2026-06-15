@@ -130,6 +130,7 @@ These hooks are active in `~/.claude/settings.json` for all projects:
 | git-strip-coauthored | `PreToolUse (Bash)` | Blocks commits whose message contains a `Co-Authored-By` tag |
 | git-commit-remind-flag | `PostToolUse (Edit/Write/MultiEdit)` | Flags the git repo when files are modified |
 | git-commit-remind | `Stop` | Reminds Claude to ask the user about committing and pushing uncommitted changes |
+| version-bump-remind | `Stop` | Reminds Claude to bump version when CHANGELOG.md has `[Unreleased]` content |
 
 ## MCP Tools
 

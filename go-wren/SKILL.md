@@ -83,6 +83,19 @@ Any proposed hook code that reads from `$TOOL_INPUT`, `$1`, or environment varia
 
 `grep -P` (PCRE) is not available on macOS's native BSD `grep`. Hooks that use `grep -P` will silently fail on macOS with `|| true` fallbacks — the hook runs but never matches. Use POSIX ERE (`grep -E`) instead. All existing go-beast hooks use `grep -E` or `grep -qE` — preserve that pattern. If the existing script uses `grep -E`, do not change it to `grep -P`.
 
+**Common pitfalls in strict bash (`set -euo pipefail`):**
+
+These patterns cause silent failures or wrong behavior in hooks that use `set -euo pipefail`. Check for them before and after any edit.
+
+| Pitfall | Wrong | Correct |
+|---------|-------|---------|
+| Capturing exit code of a command that may fail | `cmd \|\| var=$?` — if `cmd` exits 0, `var` stays at its initial value (not 0 from the cmd), making the check wrong | `var=0; cmd \|\| var=$?` — initialize before, capture only on failure |
+| Using `||` to suppress failure in a pipeline | `cmd1 \| cmd2 \|\| true` — `pipefail` propagates the first failure even with `\|\| true` at the end | `cmd1 \| cmd2` with `set +o pipefail` around the block, or restructure to avoid the pipe |
+| Running `git check-ignore` on a non-existent path | Exit 128 (can't `cd` to a missing directory) — `if git -C "$dir" ...` silently skips the block when `$dir` doesn't exist | Walk up to the nearest existing ancestor: `while [[ ! -d "$dir" ]]; do dir=$(dirname "$dir"); done` |
+| `git check-ignore` exit code semantics | Exit 0 = **ignored**, exit 1 = **not ignored** — the opposite of what most boolean checks expect | `is_ignored=0; git check-ignore -q "$path" 2>/dev/null \|\| is_ignored=$?; [[ $is_ignored -eq 0 ]] && exit 0` |
+| Unbound variable with `set -u` | Using `${var}` before assignment when the variable might be empty causes immediate exit | Initialize all variables before use: `var=""` or `var=0` |
+| `$(pwd)` in PostToolUse hooks | Returns the hook process's working directory (usually `$HOME`), not the project directory | Derive from `file_path`: `$(dirname "$file_path")` or `git rev-parse --show-toplevel` |
+
 **settings.json hook registration schema:**
 
 ```json

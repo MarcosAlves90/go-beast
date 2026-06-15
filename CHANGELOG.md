@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **hooks/version-bump-remind.sh** — Stop hook: fires when `CHANGELOG.md` has a non-empty `[Unreleased]` section; via exit 2 instructs Claude to ask the user to bump the version in `PACKAGE.md`, `package.json`, and `README.md` before ending the session.
+
+### Changed
+
+- **workflows/go-hook-eval.js**: replaced old `docs-update-flag` test cases (extension-based) with new git-aware cases (`.sh` in git repo, `.gitignore` exclusion, non-git project). Added 6 new test cases covering `git-commit-remind-flag` (Edit in git, Edit outside git, non-Edit tool) and `git-commit-remind` (no flag, stop_hook_active, repo with changes).
+- **go-wren/SKILL.md**: added "Common pitfalls in strict bash (`set -euo pipefail`)" table covering `|| var=$?` pattern, `git check-ignore` exit semantics, non-existent directory for `git -C`, `$(pwd)` in PostToolUse hooks, and `pipefail` with pipes.
+
 ## [1.25.0] - 2026-06-15
 
 ### Changed

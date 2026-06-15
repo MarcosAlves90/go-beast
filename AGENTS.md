@@ -116,6 +116,7 @@ go-beast/
 │   ├── docs-update-flag.sh           ← PostToolUse(Edit/Write): flags project when source modified
 │   ├── docs-update-remind.sh         ← Stop: reminds to update docs/CHANGELOG after code changes
 │   ├── git-commit-remind-flag.sh     ← PostToolUse(Edit/Write/MultiEdit): flags git repo when files change
-│   └── git-commit-remind.sh          ← Stop: reminds Claude to ask user about commit/push if uncommitted changes exist
+│   ├── git-commit-remind.sh          ← Stop: reminds Claude to ask user about commit/push if uncommitted changes exist
+│   └── version-bump-remind.sh        ← Stop: reminds Claude to bump version when CHANGELOG.md has [Unreleased] content
 └── extensions/
     └── beast-control/     ← Optional Firefox/Zen Browser MCP bridge

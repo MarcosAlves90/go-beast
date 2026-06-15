@@ -70,6 +70,7 @@ Automated guards that run on Claude Code lifecycle events. All hooks use symlink
 | `docs-update-remind.sh` | `Stop` | Blocks session close until README, docstrings, and CHANGELOG are reviewed |
 | `git-commit-remind-flag.sh` | `PostToolUse (Edit/Write/MultiEdit)` | Flags the git repo when files are modified |
 | `git-commit-remind.sh` | `Stop` | Reminds Claude to ask the user about committing and pushing uncommitted changes |
+| `version-bump-remind.sh` | `Stop` | Reminds Claude to bump version when CHANGELOG.md has `[Unreleased]` content |
 
 
 ## Workflows `[Claude Code]`

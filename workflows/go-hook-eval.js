@@ -173,33 +173,79 @@ const TESTS = [
     cwd: '/tmp/hook-eval-dup',
   },
 
-  // ── docs-update-flag ─────────────────────────────────────────────────────
+  // ── docs-update-flag (git-aware logic) ──────────────────────────────────
   {
     hook: 'docs-update-flag.sh',
-    name: 'creates flag for .ts file',
-    input: editInput('/workspace/src/app.ts'),
+    name: 'creates flag for .sh file in git repo',
+    setup: `mkdir -p /tmp/hook-eval-gitrepo && git -C /tmp/hook-eval-gitrepo init -q 2>/dev/null || true && touch /tmp/hook-eval-gitrepo/script.sh && git -C /tmp/hook-eval-gitrepo add script.sh 2>/dev/null || true`,
+    input: editInput('/tmp/hook-eval-gitrepo/script.sh'),
     expectExit: 0,
     expectFlagAfter: `${EVAL_HOME}/.claude/.docs-update-pending`,
+    cwd: '/tmp/hook-eval-gitrepo',
   },
   {
     hook: 'docs-update-flag.sh',
-    name: 'does not create flag for .md file',
-    input: editInput('/workspace/README.md', '# Docs update'),
+    name: 'does not create flag for .gitignore',
+    input: editInput('/tmp/.gitignore', 'node_modules/'),
     expectExit: 0,
     expectNoFlag: `${EVAL_HOME}/.claude/.docs-update-pending`,
   },
   {
     hook: 'docs-update-flag.sh',
-    name: 'ignores tool != Edit|Write|MultiEdit',
-    input: otherToolInput(),
-    expectExit: 0,
-  },
-  {
-    hook: 'docs-update-flag.sh',
-    name: 'creates flag for MultiEdit on .ts file',
-    input: json({ tool_name: 'MultiEdit', tool_input: { file_path: '/workspace/src/app.ts', edits: [] } }),
+    name: 'creates flag for non-git project any extension',
+    input: editInput('/tmp/hook-eval-nongit-script.sh', '#!/bin/bash'),
     expectExit: 0,
     expectFlagAfter: `${EVAL_HOME}/.claude/.docs-update-pending`,
+    cwd: '/tmp',
+  },
+
+  // ── git-commit-remind-flag ───────────────────────────────────────────────
+  {
+    hook: 'git-commit-remind-flag.sh',
+    name: 'creates flag when Edit occurs in git repo',
+    input: editInput(`${REAL_HOME}/Documents/@cherry-c/go-beast/hooks/git-commit-remind.sh`),
+    expectExit: 0,
+    expectFlagAfter: `${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+  },
+  {
+    hook: 'git-commit-remind-flag.sh',
+    name: 'does not create flag when Edit is outside git repo',
+    input: editInput('/tmp/not-a-git-file.sh'),
+    expectExit: 0,
+    expectNoFlag: `${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+  },
+  {
+    hook: 'git-commit-remind-flag.sh',
+    name: 'ignores non-Edit tools',
+    input: otherToolInput(),
+    expectExit: 0,
+    expectNoFlag: `${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+  },
+
+  // ── git-commit-remind ────────────────────────────────────────────────────
+  {
+    hook: 'git-commit-remind.sh',
+    name: 'silent when no flag file',
+    setup: `rm -f ${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+    input: stopInput(false),
+    expectExit: 0,
+    expectNoOutput: 'uncommitted',
+  },
+  {
+    hook: 'git-commit-remind.sh',
+    name: 'respects stop_hook_active=true',
+    setup: `echo ${REAL_HOME}/Documents/@cherry-c/go-beast > ${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+    input: stopInput(true),
+    expectExit: 0,
+    expectNoOutput: 'uncommitted',
+  },
+  {
+    hook: 'git-commit-remind.sh',
+    name: 'shows reminder when flag exists and repo has changes (exit 2)',
+    setup: `echo ${REAL_HOME}/Documents/@cherry-c/go-beast > ${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+    input: stopInput(false),
+    expectExit: 2,
+    expectOutput: 'uncommitted',
   },
 
   // ── code-verify-flag ─────────────────────────────────────────────────────
