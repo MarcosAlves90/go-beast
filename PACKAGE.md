@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.26.0
+version: 1.27.0
 date:    2026-06-15
 author:  @cherry-c
 type:    skill-pack
@@ -74,17 +74,18 @@ go-beast/
 │   ├── go-workflow-eval.js    ← Workflow eval pipeline for Workflow scripts
 │   └── go-deep-analysis.js    ← Deep multi-dimensional codebase analysis workflow
 └── hooks/
-    ├── sync-go-beast-skills.sh  ← Claude Code SessionStart: symlinks skills/workflows/hooks + copies AGENTS.global.md
-    ├── git-commit-guard.sh      ← PreToolUse(Bash): blocks commits of sensitive files/build artifacts
-    ├── code-dedup-check.sh      ← PreToolUse(Edit/Write): warns on duplicate function/class names
-    ├── code-verify-flag.sh      ← PostToolUse(Edit/Write): flags project for post-session verification
-    ├── code-verify-run.sh       ← Stop: runs tsc/mypy/go vet/cargo check + tests on flagged projects
-    ├── docs-update-flag.sh      ← PostToolUse(Edit/Write): flags project when source files are modified
-    ├── docs-update-remind.sh    ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
-    ├── git-strip-coauthored.sh       ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
-    ├── git-commit-remind-flag.sh     ← PostToolUse(Edit/Write/MultiEdit): flags git repo when files change
-    ├── git-commit-remind.sh          ← Stop: reminds Claude to ask user about commit/push if uncommitted changes exist
-    └── version-bump-remind.sh        ← Stop: reminds Claude to bump version when CHANGELOG.md has [Unreleased] content
+    ├── manifest.json             ← Shared hook manifest for Claude Code and Codex
+    ├── sync-go-beast-skills.sh    ← SessionStart: syncs skills/workflows/hooks/global instructions
+    ├── git-commit-guard.sh        ← PreToolUse(Bash): blocks commits of sensitive files/build artifacts
+    ├── code-dedup-check.sh        ← PreToolUse(Edit/Write): warns on duplicate function/class names
+    ├── code-verify-flag.sh        ← PostToolUse(Edit/Write): flags project for post-session verification
+    ├── code-verify-run.sh         ← Stop: runs tsc/mypy/go vet/cargo check + tests on flagged projects
+    ├── docs-update-flag.sh        ← PostToolUse(Edit/Write): flags project when source files are modified
+    ├── docs-update-remind.sh       ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
+    ├── git-strip-coauthored.sh     ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
+    ├── git-commit-remind-flag.sh   ← PostToolUse(Edit/Write/MultiEdit): flags git repo when files change
+    ├── git-commit-remind.sh        ← Stop: reminds the agent to ask user about commit/push if uncommitted changes exist
+    └── version-bump-remind.sh      ← Stop: reminds the agent to bump version when CHANGELOG.md has [Unreleased] content
 ```
 
 ---
@@ -156,5 +157,6 @@ Always update `CHANGELOG.md` before bumping the version in this file.
 
 1. Create `hooks/<name>.sh` as a bash script.
 2. Make it idempotent — safe to run on every session start.
-3. Add the hook to the Hooks table in `README.md` and the tree in `PACKAGE.md`.
-4. Add a changelog entry under `[Unreleased]`.
+3. Add a manifest entry in `hooks/manifest.json`.
+4. Add the hook to the Hooks table in `README.md` and the tree in `PACKAGE.md`.
+5. Add a changelog entry under `[Unreleased]`.

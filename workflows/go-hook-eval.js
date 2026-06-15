@@ -12,8 +12,8 @@ export const meta = {
 const REAL_HOME = args?.home ?? "/Users/marcos.lopes"
 const HOOKS_DIR = `${REAL_HOME}/.claude/hooks`
 
-// Isolated home for flag files — avoids writing to ~/.claude/ which triggers safety classifier
-// Hooks write flags to $HOME/.claude/ so we override HOME to a safe /tmp directory
+// Isolated home for flag files — avoids writing to ~/.go-beast/ which triggers safety classifier
+// Hooks write flags to $HOME/.go-beast/ so we override HOME to a safe /tmp directory
 const EVAL_HOME = `/tmp/hook-eval-home`
 
 // Serialize a JS object as JSON with escaped newlines (the format the runtime sends)
@@ -180,7 +180,7 @@ const TESTS = [
     setup: `mkdir -p /tmp/hook-eval-gitrepo && git -C /tmp/hook-eval-gitrepo init -q 2>/dev/null || true && touch /tmp/hook-eval-gitrepo/script.sh && git -C /tmp/hook-eval-gitrepo add script.sh 2>/dev/null || true`,
     input: editInput('/tmp/hook-eval-gitrepo/script.sh'),
     expectExit: 0,
-    expectFlagAfter: `${EVAL_HOME}/.claude/.docs-update-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.go-beast/docs-update.pending`,
     cwd: '/tmp/hook-eval-gitrepo',
   },
   {
@@ -188,14 +188,14 @@ const TESTS = [
     name: 'does not create flag for .gitignore',
     input: editInput('/tmp/.gitignore', 'node_modules/'),
     expectExit: 0,
-    expectNoFlag: `${EVAL_HOME}/.claude/.docs-update-pending`,
+    expectNoFlag: `${EVAL_HOME}/.go-beast/docs-update.pending`,
   },
   {
     hook: 'docs-update-flag.sh',
     name: 'creates flag for non-git project any extension',
     input: editInput('/tmp/hook-eval-nongit-script.sh', '#!/bin/bash'),
     expectExit: 0,
-    expectFlagAfter: `${EVAL_HOME}/.claude/.docs-update-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.go-beast/docs-update.pending`,
     cwd: '/tmp',
   },
 
@@ -205,28 +205,28 @@ const TESTS = [
     name: 'creates flag when Edit occurs in git repo',
     input: editInput(`${REAL_HOME}/Documents/@cherry-c/go-beast/hooks/git-commit-remind.sh`),
     expectExit: 0,
-    expectFlagAfter: `${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
   },
   {
     hook: 'git-commit-remind-flag.sh',
     name: 'does not create flag when Edit is outside git repo',
     input: editInput('/tmp/not-a-git-file.sh'),
     expectExit: 0,
-    expectNoFlag: `${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+    expectNoFlag: `${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
   },
   {
     hook: 'git-commit-remind-flag.sh',
     name: 'ignores non-Edit tools',
     input: otherToolInput(),
     expectExit: 0,
-    expectNoFlag: `${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+    expectNoFlag: `${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
   },
 
   // ── git-commit-remind ────────────────────────────────────────────────────
   {
     hook: 'git-commit-remind.sh',
     name: 'silent when no flag file',
-    setup: `rm -f ${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+    setup: `rm -f ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
     input: stopInput(false),
     expectExit: 0,
     expectNoOutput: 'uncommitted',
@@ -234,7 +234,7 @@ const TESTS = [
   {
     hook: 'git-commit-remind.sh',
     name: 'respects stop_hook_active=true',
-    setup: `echo ${REAL_HOME}/Documents/@cherry-c/go-beast > ${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+    setup: `echo ${REAL_HOME}/Documents/@cherry-c/go-beast > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
     input: stopInput(true),
     expectExit: 0,
     expectNoOutput: 'uncommitted',
@@ -242,7 +242,7 @@ const TESTS = [
   {
     hook: 'git-commit-remind.sh',
     name: 'shows reminder when flag exists and repo has changes (exit 2)',
-    setup: `echo ${REAL_HOME}/Documents/@cherry-c/go-beast > ${EVAL_HOME}/.claude/.git-commit-remind-pending`,
+    setup: `echo ${REAL_HOME}/Documents/@cherry-c/go-beast > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
     input: stopInput(false),
     expectExit: 2,
     expectOutput: 'uncommitted',
@@ -254,35 +254,35 @@ const TESTS = [
     name: 'creates flag for .ts file',
     input: editInput('/workspace/src/app.ts'),
     expectExit: 0,
-    expectFlagAfter: `${EVAL_HOME}/.claude/.code-verify-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.go-beast/code-verify.pending`,
   },
   {
     hook: 'code-verify-flag.sh',
     name: 'creates flag for .py file',
     input: editInput('/workspace/src/app.py'),
     expectExit: 0,
-    expectFlagAfter: `${EVAL_HOME}/.claude/.code-verify-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.go-beast/code-verify.pending`,
   },
   {
     hook: 'code-verify-flag.sh',
     name: 'does not create flag for .md file',
     input: editInput('/workspace/README.md', '# Docs'),
     expectExit: 0,
-    expectNoFlag: `${EVAL_HOME}/.claude/.code-verify-pending`,
+    expectNoFlag: `${EVAL_HOME}/.go-beast/code-verify.pending`,
   },
   {
     hook: 'code-verify-flag.sh',
     name: 'creates flag for .go file',
     input: editInput('/workspace/main.go'),
     expectExit: 0,
-    expectFlagAfter: `${EVAL_HOME}/.claude/.code-verify-pending`,
+    expectFlagAfter: `${EVAL_HOME}/.go-beast/code-verify.pending`,
   },
 
   // ── docs-update-remind ───────────────────────────────────────────────────
   {
     hook: 'docs-update-remind.sh',
     name: 'silent when no flag file',
-    setup: `rm -f ${EVAL_HOME}/.claude/.docs-update-pending`,
+    setup: `rm -f ${EVAL_HOME}/.go-beast/docs-update.pending`,
     input: stopInput(false),
     expectExit: 0,
     expectNoOutput: 'Reminder',
@@ -290,7 +290,7 @@ const TESTS = [
   {
     hook: 'docs-update-remind.sh',
     name: 'shows reminder when flag exists (exit 2 — re-triggers Claude)',
-    setup: `echo /tmp > ${EVAL_HOME}/.claude/.docs-update-pending`,
+    setup: `echo /tmp > ${EVAL_HOME}/.go-beast/docs-update.pending`,
     input: stopInput(false),
     expectExit: 2,
     expectOutput: 'Reminder',
@@ -298,7 +298,7 @@ const TESTS = [
   {
     hook: 'docs-update-remind.sh',
     name: 'respects stop_hook_active=true',
-    setup: `echo /tmp > ${EVAL_HOME}/.claude/.docs-update-pending`,
+    setup: `echo /tmp > ${EVAL_HOME}/.go-beast/docs-update.pending`,
     input: stopInput(true),
     expectExit: 0,
     expectNoOutput: 'Reminder',
@@ -308,7 +308,7 @@ const TESTS = [
   {
     hook: 'code-verify-run.sh',
     name: 'exit 0 when no flag file',
-    setup: `rm -f ${EVAL_HOME}/.claude/.code-verify-pending`,
+    setup: `rm -f ${EVAL_HOME}/.go-beast/code-verify.pending`,
     input: stopInput(false),
     expectExit: 0,
   },
@@ -322,7 +322,7 @@ const TESTS = [
   {
     hook: 'code-verify-run.sh',
     name: 'exit 0 with flag pointing to dir with no recognized project',
-    setup: `echo /tmp > ${EVAL_HOME}/.claude/.code-verify-pending`,
+    setup: `echo /tmp > ${EVAL_HOME}/.go-beast/code-verify.pending`,
     input: stopInput(false),
     expectExit: 0, // /tmp has no package.json, go.mod, etc — HAS_CHECKS=false → exit 0
   },
@@ -330,7 +330,7 @@ const TESTS = [
     hook: 'code-verify-run.sh',
     name: 'exit 1 when tsc reports type errors in flagged project',
     // Requires tsc on PATH (npx --no-install tsc). Skipped gracefully if tsc unavailable.
-    setup: `dir=$(mktemp -d /tmp/hook-eval-ts-XXXXXX) && echo '{"compilerOptions":{"strict":true,"noEmit":true}}' > "$dir/tsconfig.json" && echo 'const x: number = "not a number";' > "$dir/bad.ts" && echo "$dir" > ${EVAL_HOME}/.claude/.code-verify-pending`,
+    setup: `dir=$(mktemp -d /tmp/hook-eval-ts-XXXXXX) && echo '{"compilerOptions":{"strict":true,"noEmit":true}}' > "$dir/tsconfig.json" && echo 'const x: number = "not a number";' > "$dir/bad.ts" && echo "$dir" > ${EVAL_HOME}/.go-beast/code-verify.pending`,
     input: stopInput(false),
     expectExit: 1,
     expectOutput: 'check',
@@ -359,7 +359,7 @@ const results = await parallel(
     // Each test gets its own isolated home directory — no flag contamination between parallel tests
     const testId   = `${t.hook.replace('.sh','')}-${t.name.replace(/[^a-z0-9]/gi,'-').slice(0,20)}`
     const testHome = `/tmp/hook-eval-${testId}`
-    const ensureTestHome = `mkdir -p ${testHome}/.claude`
+    const ensureTestHome = `mkdir -p ${testHome}/.go-beast ${testHome}/.claude`
 
     // Replace EVAL_HOME placeholder in setup with this test's isolated testHome
     const rawSetup = t.setup ? t.setup.replaceAll(EVAL_HOME, testHome) : ''
@@ -367,7 +367,7 @@ const results = await parallel(
     const cwd = t.cwd ?? `${REAL_HOME}/Documents/@cherry-c/go-beast`
 
     // Re-map flag paths for this test's isolated home
-    const remapFlag = (f) => f ? f.replace(`${EVAL_HOME}/.claude/`, `${testHome}/.claude/`) : f
+    const remapFlag = (f) => f ? f.replace(`${EVAL_HOME}/.go-beast/`, `${testHome}/.go-beast/`) : f
     const expectFlagAfter = remapFlag(t.expectFlagAfter)
     const expectNoFlag    = remapFlag(t.expectNoFlag)
 
@@ -380,7 +380,7 @@ STEP 1 — Create isolated test environment and run any test-specific setup:
 ${ensureTestHome} && ${setupCmd}true
 \`\`\`
 
-STEP 2 — Execute the hook with isolated HOME=${testHome} (flag files go to ${testHome}/.claude/, not ~/.claude/):
+STEP 2 — Execute the hook with isolated HOME=${testHome} (flag files go to ${testHome}/.go-beast/, not ~/.go-beast/):
 \`\`\`bash
 cd ${cwd} && echo ${JSON.stringify(t.input)} | HOME=${testHome} bash ${HOOKS_DIR}/${t.hook}; echo "EXIT_CODE:$?"
 \`\`\`

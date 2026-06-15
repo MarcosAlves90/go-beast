@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Flags the project for a docs reminder when Claude modifies any non-doc, non-ignored file.
+# Flags the project for a docs reminder when a supported agent modifies any non-doc, non-ignored file.
 # Event: PostToolUse (Edit, Write, MultiEdit)
 
 set -uo pipefail
@@ -48,7 +48,10 @@ if git -C "$ancestor_dir" rev-parse --show-toplevel &>/dev/null; then
   [[ "$is_ignored" -eq 0 ]] && exit 0
 fi
 
+STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
+mkdir -p "$STATE_DIR"
+
 # Flag the project for a docs reminder
-printf '%s' "$project_dir" > "$HOME/.claude/.docs-update-pending"
+printf '%s' "$project_dir" > "$STATE_DIR/docs-update.pending"
 
 exit 0

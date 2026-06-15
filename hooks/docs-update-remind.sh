@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Forces documentation and versioning update after code modifications.
-# Event: Stop — exit 2 re-triggers Claude with the reminder as mandatory feedback.
+# Event: Stop — exit 2 re-triggers the agent with the reminder as mandatory feedback.
 
 set -uo pipefail
 
-FLAG_FILE="$HOME/.claude/.docs-update-pending"
+STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
+FLAG_FILE="$STATE_DIR/docs-update.pending"
 
 input=$(cat)
 stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
-# Do not re-trigger when the hook itself already activated Claude
+# Do not re-trigger when the hook itself already activated the agent
 [[ "$stop_hook_active" == "true" ]] && exit 0
 
 [[ ! -f "$FLAG_FILE" ]] && exit 0
@@ -41,7 +42,7 @@ for vfile in PACKAGE.md package.json pyproject.toml Cargo.toml go.mod; do
   fi
 done
 
-# Build the message (stdout → Claude as system-reminder; stderr → terminal for the user)
+# Build the message (stdout → the agent as system-reminder; stderr → terminal for the user)
 MSG=""
 MSG+=$'\n'
 MSG+="╔══════════════════════════════════════════════════════════╗"$'\n'
@@ -64,10 +65,10 @@ if [[ "$HAS_VERSIONING" == "true" ]]; then
 fi
 MSG+="╚══════════════════════════════════════════════════════════╝"$'\n'
 
-# stdout → Claude (system-reminder via exit 2)
+# stdout → the agent (system-reminder via exit 2)
 echo "$MSG"
 # stderr → terminal (visible to the user)
 echo "$MSG" >&2
 
-# exit 2 re-triggers Claude with stdout as mandatory feedback.
+# exit 2 re-triggers the agent with stdout as mandatory feedback.
 exit 2
