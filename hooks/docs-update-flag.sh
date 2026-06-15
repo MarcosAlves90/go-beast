@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Flags the project for a docs reminder when Claude modifies source code files.
+# Flags the project for a docs reminder when Claude modifies any non-doc, non-ignored file.
 # Event: PostToolUse (Edit, Write, MultiEdit)
 
 set -uo pipefail
@@ -25,9 +25,27 @@ if echo "$file_path" | grep -qE '\.(md|rst|txt|adoc)$|README|CHANGELOG|CONTRIBUT
   exit 0
 fi
 
-# Flag only source code files
-if echo "$file_path" | grep -qE '\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|cs|rb|php|swift|c|cpp|h|hpp)$'; then
-  printf '%s' "$(dirname "$file_path")" > "$HOME/.claude/.docs-update-pending"
+# Find the nearest existing ancestor directory (file may not exist yet)
+ancestor_dir="$(dirname "$file_path")"
+while [[ ! -d "$ancestor_dir" && "$ancestor_dir" != "/" ]]; do
+  ancestor_dir="$(dirname "$ancestor_dir")"
+done
+
+# Resolve project root: git root if available, otherwise the ancestor dir
+project_dir=$(git -C "$ancestor_dir" rev-parse --show-toplevel 2>/dev/null \
+  || echo "$ancestor_dir")
+
+# If in a git repo, skip files that are gitignored (build artifacts, node_modules, etc.)
+if git -C "$ancestor_dir" rev-parse --show-toplevel &>/dev/null; then
+  # git check-ignore requires path relative to git root
+  rel_path="${file_path#"$project_dir/"}"
+  is_ignored=0
+  git -C "$project_dir" check-ignore -q "$rel_path" 2>/dev/null || is_ignored=$?
+  # exit code 0 = ignored, exit code 1 = not ignored, exit code 128 = error
+  [[ "$is_ignored" -eq 0 ]] && exit 0
 fi
+
+# Flag the project for a docs reminder
+printf '%s' "$project_dir" > "$HOME/.claude/.docs-update-pending"
 
 exit 0

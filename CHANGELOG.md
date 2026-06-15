@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **hooks/docs-update-flag.sh**: replaced language extension allowlist with git-aware detection — any file not in `.gitignore` triggers the docs reminder, regardless of extension. Falls back to firing for all non-doc files in non-git projects. Also resolves project root via `git rev-parse --show-toplevel` instead of `dirname`, so the reminder displays the correct project path.
+
 ### Added
 
 - **hooks/git-commit-remind-flag.sh** — PostToolUse observer: flags `~/.claude/.git-commit-remind-pending` with the git root whenever Edit, Write, or MultiEdit occurs inside a git repository.
