@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.25.0
+version: 1.26.0
 date:    2026-06-15
 author:  @cherry-c
 type:    skill-pack
@@ -20,6 +20,8 @@ go-beast/
 ├── README.md              ← Pack index and pipeline map
 ├── PACKAGE.md             ← This file — manifest and metadata
 ├── CHANGELOG.md           ← Version history
+├── .github/
+│   └── pull_request_template.md ← PR body pattern for repo changes
 ├── go-hawk/
 │   └── SKILL.md           ← Discovery & Requirements
 ├── go-lark/

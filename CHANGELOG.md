@@ -9,6 +9,13 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `.github/pull_request_template.md` — standardized PR body for go-beast changes, covering summary, problem, root cause, change, validation, risks, and follow-ups.
+- `AGENTS.md` — added a pull request pattern section to require one problem per PR, a short imperative title, and end-to-end diff review before opening a PR.
+
+## [1.26.0] - 2026-06-15
+
 ### Removed
 
 - **extensions/beast-control/** — removed the optional Firefox/Zen Browser MCP bridge from the skill pack and deleted its setup, architecture, security, testing, extension, and MCP server files.
