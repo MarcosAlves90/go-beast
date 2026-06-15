@@ -9,10 +9,20 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.27.0] - 2026-06-15
+
 ### Added
 
 - `.github/pull_request_template.md` — standardized PR body for go-beast changes, covering summary, problem, root cause, change, validation, risks, and follow-ups.
 - `AGENTS.md` — added a pull request pattern section to require one problem per PR, a short imperative title, and end-to-end diff review before opening a PR.
+- `hooks/manifest.json` and `scripts/hook-wire.mjs` — shared hook manifest and idempotent wiring helper for Claude Code and Codex.
+
+### Changed
+
+- `scripts/install.mjs` — now auto-wires Claude Code and Codex hook configs from the shared manifest while preserving existing entries.
+- `hooks/sync-go-beast-skills.sh` — now syncs skills, workflows, hooks, and global instructions for both Claude Code and Codex, then rewires hook config on SessionStart.
+- `hooks/code-verify-flag.sh`, `hooks/code-verify-run.sh`, `hooks/docs-update-flag.sh`, `hooks/docs-update-remind.sh`, `hooks/git-commit-remind-flag.sh`, `hooks/git-commit-remind.sh`, and `hooks/version-bump-remind.sh` — moved shared state from `~/.claude` to `~/.go-beast` so Claude Code and Codex use the same flag files.
+- `workflows/go-hook-eval.js` — updated the hook-eval harness to use the shared `~/.go-beast` flag directory.
 
 ## [1.26.0] - 2026-06-15
 

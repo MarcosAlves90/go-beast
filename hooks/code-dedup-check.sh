@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Checks whether functions/classes in the new code already exist in the project.
-# Warns Claude before creating potentially duplicate code.
+# Warns before creating potentially duplicate code.
 # Event: PreToolUse (Edit, Write, MultiEdit)
 
 set -uo pipefail

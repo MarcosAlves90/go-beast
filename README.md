@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more.
 
-**Version 1.26.0** · [Changelog](CHANGELOG.md)
+**Version 1.27.0** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
@@ -58,11 +58,11 @@ Invoked on demand — not bound to a phase.
 
 ## Hooks `[Claude Code · Codex]`
 
-Automated guards that run on agent lifecycle events. The installer symlinks hook scripts into hook-capable agents — edits to the repo take effect immediately. Claude Code wires hooks through `~/.claude/settings.json`; Codex wires hooks through `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml`, then reviews them with `/hooks`.
+Automated guards that run on agent lifecycle events. The installer symlinks hook scripts and writes the agent hook config automatically from the shared manifest, while preserving any existing entries. Claude Code uses `~/.claude/settings.json`; Codex uses `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml`, then reviews them with `/hooks`.
 
 | Hook | Event | What it does |
 |---|---|---|
-| `sync-go-beast-skills.sh` | `SessionStart` | Symlinks skills, workflows, hooks; copies `AGENTS.global.md` → `CLAUDE.md` |
+| `sync-go-beast-skills.sh` | `SessionStart` | Syncs skills, workflows, hooks, and global instructions for Claude Code and Codex |
 | `git-commit-guard.sh` | `PreToolUse (Bash)` | Blocks commits of `.env`, credentials, build artifacts |
 | `git-strip-coauthored.sh` | `PreToolUse (Bash)` | Blocks commits with `Co-Authored-By` tag |
 | `code-dedup-check.sh` | `PreToolUse (Edit/Write)` | Warns when a new function/class already exists in the project |
@@ -71,8 +71,8 @@ Automated guards that run on agent lifecycle events. The installer symlinks hook
 | `docs-update-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project when source code files are modified |
 | `docs-update-remind.sh` | `Stop` | Blocks session close until README, docstrings, and CHANGELOG are reviewed |
 | `git-commit-remind-flag.sh` | `PostToolUse (Edit/Write/MultiEdit)` | Flags the git repo when files are modified |
-| `git-commit-remind.sh` | `Stop` | Reminds Claude to ask the user about committing and pushing uncommitted changes |
-| `version-bump-remind.sh` | `Stop` | Reminds Claude to bump version when CHANGELOG.md has `[Unreleased]` content |
+| `git-commit-remind.sh` | `Stop` | Reminds the agent to ask the user about committing and pushing uncommitted changes |
+| `version-bump-remind.sh` | `Stop` | Reminds the agent to bump version when CHANGELOG.md has `[Unreleased]` content |
 
 
 ## Workflows `[Claude Code]`
@@ -98,16 +98,16 @@ git clone <repo-url> ~/Documents/@cherry-c/go-beast
 node ~/Documents/@cherry-c/go-beast/scripts/install.mjs
 ```
 
-The installer detects which agents are installed, lets you choose which skills, hooks for hook-capable agents, and workflows (Claude Code only) to install, and creates symlinks. It also copies `AGENTS.global.md` to the correct global instructions file for each agent.
+The installer detects which agents are installed, lets you choose which skills, hooks for hook-capable agents, and workflows (Claude Code only) to install, creates symlinks, and writes the hook config for Claude Code and Codex from the shared manifest without removing existing entries. It also copies `AGENTS.global.md` to the correct global instructions file for each agent.
 
 ```bash
 node scripts/install.mjs --all       # install everything, no prompts
 node scripts/install.mjs --uninstall # remove all repo symlinks
 ```
 
-### Claude Code — session-start auto-sync
+### Session-start auto-sync
 
-The sync hook re-runs every session start and keeps everything up to date automatically.
+The sync hook re-runs every session start and keeps the pack up to date automatically for Claude Code and Codex.
 
 ```bash
 # One-time setup
@@ -126,6 +126,8 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
+Use the same command in `~/.codex/hooks.json` if you wire Codex manually; the installer handles both agents automatically.
+
 After setup, skills are available as `/go-hawk`, `/go-fox`, etc. Workflows run via the Workflow tool or `/workflows`.
 
 > **New skill created mid-session?** The sync only runs at session start. To activate a new beast immediately without waiting for the next session:
@@ -135,7 +137,7 @@ After setup, skills are available as `/go-hawk`, `/go-fox`, etc. Workflows run v
 
 ### Codex hooks
 
-Codex discovers hook configuration from `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml`. The installer places hook scripts in `~/.codex/hooks/`; after installation, add the desired event/matcher entries to Codex hook config and review them with `/hooks`.
+Codex discovers hook configuration from `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml`. The installer now writes `~/.codex/hooks.json` automatically from the shared manifest and preserves existing entries; review new or changed hooks with `/hooks`.
 
 ### Other agents (Gemini CLI, Copilot CLI, Cursor…)
 

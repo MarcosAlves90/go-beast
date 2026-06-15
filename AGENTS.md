@@ -2,7 +2,7 @@
 
 > **Scope:** This file is the context for the AI agent that **maintains this repository** (adds skills, edits docs, runs evals). It is not the context for agents that *use* the skills — users load individual `SKILL.md` files via their agent's skill system.
 
-This is the go-beast skill pack repository. It contains skills, workflows, hooks, and a cross-platform installer for the go-* family. The pack is agent-agnostic — skills are plain Markdown and work with any agent. The Claude Code sync hook (`hooks/sync-go-beast-skills.sh`) is Claude Code-specific. `go-swift` and `go-wren` support lifecycle hooks for Claude Code and Codex; Codex uses `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml` rather than Claude Code's `settings.json` schema.
+This is the go-beast skill pack repository. It contains skills, workflows, hooks, and a cross-platform installer for the go-* family. The pack is agent-agnostic — skills are plain Markdown and work with any agent. The sync hook (`hooks/sync-go-beast-skills.sh`) is agent-agnostic and keeps Claude Code and Codex synchronized from the same manifest. `go-swift` and `go-wren` support lifecycle hooks for Claude Code and Codex; Codex uses `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml` rather than Claude Code's `settings.json` schema.
 
 ## What this repo is
 
@@ -110,6 +110,7 @@ go-beast/
 │   ├── SKILL.md           ← One skill per beast
 │   └── references/        ← Optional: supporting content for the skill
 ├── scripts/
+│   ├── hook-wire.mjs      ← Shared hook manifest wiring helper for config and symlinks
 │   └── install.mjs        ← Cross-platform installer (Node.js 18+, no deps)
 ├── workflows/
 │   ├── go-skill-eval.js       ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
@@ -117,7 +118,8 @@ go-beast/
 │   ├── go-workflow-eval.js    ← Workflow eval: structural checklist + LLM judge
 │   └── go-deep-analysis.js    ← Deep multi-dimensional codebase analysis
 ├── hooks/
-│   ├── sync-go-beast-skills.sh       ← Claude Code SessionStart: symlinks skills/workflows/hooks
+│   ├── manifest.json                  ← Shared hook manifest for Claude Code and Codex
+│   ├── sync-go-beast-skills.sh       ← SessionStart: syncs skills/workflows/hooks/global instructions
 │   ├── git-commit-guard.sh           ← PreToolUse(Bash): blocks sensitive file commits
 │   ├── git-strip-coauthored.sh       ← PreToolUse(Bash): blocks Co-Authored-By commits
 │   ├── code-dedup-check.sh           ← PreToolUse(Edit/Write): warns on duplicate declarations
@@ -126,6 +128,6 @@ go-beast/
 │   ├── docs-update-flag.sh           ← PostToolUse(Edit/Write): flags project when source modified
 │   ├── docs-update-remind.sh         ← Stop: reminds to update docs/CHANGELOG after code changes
 │   ├── git-commit-remind-flag.sh     ← PostToolUse(Edit/Write/MultiEdit): flags git repo when files change
-│   ├── git-commit-remind.sh          ← Stop: reminds Claude to ask user about commit/push if uncommitted changes exist
-│   └── version-bump-remind.sh        ← Stop: reminds Claude to bump version when CHANGELOG.md has [Unreleased] content
+│   ├── git-commit-remind.sh          ← Stop: reminds the agent to ask user about commit/push if uncommitted changes exist
+│   └── version-bump-remind.sh        ← Stop: reminds the agent to bump version when CHANGELOG.md has [Unreleased] content
 ```

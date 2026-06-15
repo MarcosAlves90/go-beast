@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "name": "code-dedup-check.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "PreToolUse",
+      "matcher": "Edit|Write|MultiEdit",
+      "statusMessage": "Checking for duplicate code"
+    },
+    {
+      "name": "code-verify-flag.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "PostToolUse",
+      "matcher": "Edit|Write|MultiEdit",
+      "statusMessage": "Flagging code changes"
+    },
+    {
+      "name": "code-verify-run.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "Stop",
+      "statusMessage": "Running verification"
+    },
+    {
+      "name": "docs-update-flag.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "PostToolUse",
+      "matcher": "Edit|Write|MultiEdit",
+      "statusMessage": "Flagging documentation updates"
+    },
+    {
+      "name": "docs-update-remind.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "Stop",
+      "statusMessage": "Reminding about documentation"
+    },
+    {
+      "name": "git-commit-guard.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "statusMessage": "Checking git commit commands"
+    },
+    {
+      "name": "git-commit-remind-flag.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "PostToolUse",
+      "matcher": "Edit|Write|MultiEdit",
+      "statusMessage": "Flagging commit reminders"
+    },
+    {
+      "name": "git-commit-remind.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "Stop",
+      "statusMessage": "Reminding about commit and push"
+    },
+    {
+      "name": "git-strip-coauthored.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "statusMessage": "Checking commit message"
+    },
+    {
+      "name": "sync-go-beast-skills.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "SessionStart",
+      "statusMessage": "Syncing go-beast"
+    },
+    {
+      "name": "version-bump-remind.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "Stop",
+      "statusMessage": "Reminding about version bumps"
+    }
+  ]
+}

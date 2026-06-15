@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Reminds Claude to bump version when CHANGELOG.md has unreleased content.
-# Event: Stop — exit 2 re-triggers Claude with the reminder as mandatory feedback.
+# Reminds the agent to bump version when CHANGELOG.md has unreleased content.
+# Event: Stop — exit 2 re-triggers the agent with the reminder as mandatory feedback.
 
 set -uo pipefail
 
-FLAG_FILE="$HOME/.claude/.docs-update-pending"
+STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
+FLAG_FILE="$STATE_DIR/docs-update.pending"
 
 input=$(cat)
 stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
