@@ -20,8 +20,11 @@ esac
 
 [[ -z "$file_path" ]] && exit 0
 
-# Ignore documentation files — do not remind about docs when editing docs
+# Ignore documentation and repo meta-config files
 if echo "$file_path" | grep -qE '\.(md|rst|txt|adoc)$|README|CHANGELOG|CONTRIBUTING|/docs/'; then
+  exit 0
+fi
+if echo "$file_path" | grep -qE '(^|/)\.gitignore$|(^|/)\.gitattributes$|(^|/)\.editorconfig$|(^|/)\.prettierrc|(^|/)\.eslintrc|(^|/)\.npmrc$|(^|/)\.nvmrc$'; then
   exit 0
 fi
 
