@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Reminds the agent to ask the user about committing and pushing changes.
+# Commit messages must follow Conventional Commits.
 # Event: Stop — exit 2 re-triggers the agent with the reminder as mandatory feedback.
 
 set -uo pipefail
@@ -52,7 +53,7 @@ MSG+="╚═══════════════════════�
 
 # stdout → the agent (system-reminder via exit 2)
 echo "$MSG"
-echo "Ask the user if they want to commit and/or push these changes before ending the session."
+echo "Ask the user if they want to commit and/or push these changes before ending the session. If committing, use Conventional Commits: type(scope): summary."
 
 # stderr → terminal (visible to the user)
 echo "$MSG" >&2

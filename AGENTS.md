@@ -55,6 +55,7 @@ If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file
 ### Pull Request Pattern
 
 - One problem per PR.
+- Commit messages must follow Conventional Commits: `type(scope): summary`. Scope is optional; use lowercase types such as `fix`, `feat`, `docs`, `chore`, `test`, `refactor`, `ci`, `build`, or `perf`.
 - Use a short imperative title in the form `[area] summary`.
 - Write the body from the template in `.github/pull_request_template.md`.
 - Include the problem, root cause, change, validation, and risks or follow-ups.
@@ -128,6 +129,6 @@ go-beast/
 │   ├── docs-update-flag.sh           ← PostToolUse(Edit/Write): flags project when source modified
 │   ├── docs-update-remind.sh         ← Stop: reminds to update docs/CHANGELOG after code changes
 │   ├── git-commit-remind-flag.sh     ← PostToolUse(Edit/Write/MultiEdit): flags git repo when files change
-│   ├── git-commit-remind.sh          ← Stop: reminds the agent to ask user about commit/push if uncommitted changes exist
+│   ├── git-commit-remind.sh          ← Stop: reminds the agent to ask user about commit/push and Conventional Commits if uncommitted changes exist
 │   └── version-bump-remind.sh        ← Stop: reminds the agent to bump version when CHANGELOG.md has [Unreleased] content
 ```

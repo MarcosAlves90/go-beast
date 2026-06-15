@@ -245,7 +245,7 @@ const TESTS = [
     setup: `echo ${REAL_HOME}/Documents/@cherry-c/go-beast > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
     input: stopInput(false),
     expectExit: 2,
-    expectOutput: 'uncommitted',
+    expectOutput: 'Conventional Commits',
   },
 
   // ── code-verify-flag ─────────────────────────────────────────────────────

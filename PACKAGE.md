@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.27.0
+version: 1.28.0
 date:    2026-06-15
 author:  @cherry-c
 type:    skill-pack
@@ -37,13 +37,18 @@ go-beast/
 ├── go-otter/
 │   └── SKILL.md           ← Database Design & Migrations
 ├── go-eagle/
-│   └── SKILL.md           ← Testing Strategy & QA
+│   ├── SKILL.md           ← Testing Strategy & QA
+│   └── references/        ← Test level guidelines
 ├── go-bear/
-│   └── SKILL.md           ← Security Review & Hardening
+│   ├── SKILL.md           ← Security Review & Hardening
+│   ├── references/        ← Security review supporting checklists
+│   └── output/            ← Security review output templates
 ├── go-raven/
-│   └── SKILL.md           ← CI/CD & Deployment
+│   ├── SKILL.md           ← CI/CD & Deployment
+│   └── references/        ← Pipeline templates and rollout guidance
 ├── go-owl/
-│   └── SKILL.md           ← Documentation
+│   ├── SKILL.md           ← Documentation
+│   └── references/        ← Runbook template
 ├── go-jay/
 │   ├── SKILL.md           ← AI Context File Editor
 │   └── references/
@@ -84,7 +89,7 @@ go-beast/
     ├── docs-update-remind.sh       ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
     ├── git-strip-coauthored.sh     ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
     ├── git-commit-remind-flag.sh   ← PostToolUse(Edit/Write/MultiEdit): flags git repo when files change
-    ├── git-commit-remind.sh        ← Stop: reminds the agent to ask user about commit/push if uncommitted changes exist
+    ├── git-commit-remind.sh        ← Stop: reminds about commit/push and Conventional Commits if uncommitted changes exist
     └── version-bump-remind.sh      ← Stop: reminds the agent to bump version when CHANGELOG.md has [Unreleased] content
 ```
 
@@ -105,7 +110,8 @@ go-hawk
                     └─► go-eagle
                           └─► go-bear  ← also invocable earlier on any security-sensitive feature
                                 └─► go-raven
-                                      └─► go-owl  ← also invocable at any phase
+                                      └─► go-crane (optional — invoke when production visibility is needed)
+                                            └─► go-owl  ← also invocable at any phase
 ```
 
 **Meta-skills** — invoked on demand, not bound to a phase:
@@ -113,7 +119,6 @@ go-hawk
 ```
 go-mole    ← session briefing; invoke before any other beast on an unfamiliar project
 go-kite    ← architecture health audit; invoke before go-fox revisions on existing systems
-go-crane   ← observability; invoke after go-raven or after go-wolf before go-bear pre-release review
 go-ant     ← performance; invoke only when a numeric baseline proves a bottleneck exists
 go-jay     ← AI context files; invoke when instructions cannot express the needed behavior
   └─► go-swift   ← hook automation; invoke after go-jay when shell-level automation is needed
@@ -139,12 +144,17 @@ Always update `CHANGELOG.md` before bumping the version in this file.
 
 ## Adding a new beast
 
-1. Create `go-<animal>/SKILL.md` following the existing structure.
-2. The skill must have a unique responsibility not covered by any existing beast.
-3. State prerequisites clearly.
-4. Add the beast to the table in `README.md` and the dependency graph above.
-5. Add a changelog entry under `[Unreleased]`.
-6. Bump version in this file and in `README.md`.
+1. Run go-smith to validate that the gap is real and name the beast.
+2. Create `go-<animal>/SKILL.md` following the existing structure.
+3. The skill must have a unique responsibility not covered by any existing beast.
+4. State prerequisites clearly.
+5. Add the beast to the table in `README.md` and the dependency graph above.
+6. Add checklist entry in `workflows/go-skill-eval.js` under `SKILLS`.
+7. If the skill requires real files to function, add it to `FILESYSTEM_SKILLS` in `workflows/go-skill-eval.js`.
+8. Add a `skillOverrides` entry in `workflows/go-skill-eval.js` with a concrete scenario for eval.
+9. Add a changelog entry under `[Unreleased]`.
+10. Bump version in this file and in `README.md`.
+11. Run `go-skill-eval` filtered to the new skill before a full eval.
 
 ## Adding a workflow
 

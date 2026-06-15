@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more.
 
-**Version 1.27.0** · [Changelog](CHANGELOG.md)
+**Version 1.28.0** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
@@ -71,7 +71,7 @@ Automated guards that run on agent lifecycle events. The installer symlinks hook
 | `docs-update-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project when source code files are modified |
 | `docs-update-remind.sh` | `Stop` | Blocks session close until README, docstrings, and CHANGELOG are reviewed |
 | `git-commit-remind-flag.sh` | `PostToolUse (Edit/Write/MultiEdit)` | Flags the git repo when files are modified |
-| `git-commit-remind.sh` | `Stop` | Reminds the agent to ask the user about committing and pushing uncommitted changes |
+| `git-commit-remind.sh` | `Stop` | Reminds the agent to ask about committing/pushing uncommitted changes and to use Conventional Commits |
 | `version-bump-remind.sh` | `Stop` | Reminds the agent to bump version when CHANGELOG.md has `[Unreleased]` content |
 
 

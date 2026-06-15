@@ -9,6 +9,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.28.0] - 2026-06-15
+
+### Fixed
+
+- **AGENTS.global.md** — aligned the synced global pipeline and skill tables with the current README/PACKAGE docs by adding `go-lark`, optional `go-crane`, and `go-ant`.
+- **PACKAGE.md** — aligned the dependency graph and new-beast contribution steps with `AGENTS.md`, and listed existing skill reference/output directories in the manifest tree.
+- **AGENTS.md**, **AGENTS.global.md**, and `.github/pull_request_template.md` — documented the Conventional Commits requirement for commit messages.
+- **hooks/git-commit-remind.sh** — updated the commit/push reminder to require Conventional Commits when committing, with hook-eval coverage.
+- **go-jay/SKILL.md** (v1.1.0 → v1.2.0): added the required `## Output` section so the skill satisfies the repository's SKILL.md structure contract.
+
 ## [1.27.0] - 2026-06-15
 
 ### Added
