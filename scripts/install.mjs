@@ -7,6 +7,7 @@ import fs   from 'fs'
 import path from 'path'
 import os   from 'os'
 import readline from 'readline'
+import { hooksForAgent, loadHookManifest, wireAgentConfig } from './hook-wire.mjs'
 
 const REPO   = path.resolve(import.meta.dirname, '..')
 const HOME   = os.homedir()
@@ -94,7 +95,8 @@ const AGENTS = [
 
 // ── Collectors ────────────────────────────────────────────────────────────────
 const collectSkills    = () => fs.readdirSync(REPO).filter(n => n.startsWith('go-') && fs.existsSync(j(REPO,n,'SKILL.md'))).sort()
-const collectHooks     = () => fs.readdirSync(j(REPO,'hooks')).filter(n => n.endsWith('.sh')).sort()
+const HOOK_MANIFEST = loadHookManifest(REPO)
+const collectHooks     = () => HOOK_MANIFEST.map(h => h.name).sort()
 const collectWorkflows = () => fs.readdirSync(j(REPO,'workflows')).filter(n => n.endsWith('.js')).sort()
 
 // ── Symlink ───────────────────────────────────────────────────────────────────
@@ -300,11 +302,16 @@ async function main() {
       ln(); ln(`  ${icon.link} ${bold('hooks')} ${dim('→')} ${cyan(agent.name)}`)
       cleanStale(agent.hooks)
       const results = []
-      for (const hook of selHooks) {
-        linkItem(j(REPO, 'hooks', hook), agent.hooks, results)
-        if (!IS_WIN) try { fs.chmodSync(j(REPO, 'hooks', hook), 0o755) } catch {}
+      const available = hooksForAgent(HOOK_MANIFEST, agent.name, selHooks)
+      for (const hook of available) {
+        linkItem(j(REPO, 'hooks', hook.name), agent.hooks, results)
+        if (!IS_WIN) try { fs.chmodSync(j(REPO, 'hooks', hook.name), 0o755) } catch {}
       }
       printResults(results)
+      const wired = wireAgentConfig({ repoRoot: REPO, home: HOME, agentName: agent.name, hookNames: available.map(h => h.name) })
+      if (wired.added > 0) {
+        ln(row(icon.ok, `${agent.name} hook config`, wired.path.replace(HOME, '~')))
+      }
     }
   }
 
@@ -338,21 +345,6 @@ async function main() {
     `${green(String(counts.new))} new  ${gray(String(counts.skip))} already linked  ${counts.warn ? yellow(String(counts.warn)) + ' warnings' : dim('0 warnings')}`,
   ])
 
-  if (hookAgents.length && selHooks.length) {
-    for (const agent of hookAgents) {
-      let configText = ''
-      for (const file of [agent.hookConfig, agent.hookConfigAlt].filter(Boolean)) {
-        try { configText += fs.readFileSync(file, 'utf8') + '\n' } catch {}
-      }
-      const unwired = selHooks.filter(h => !configText.includes(h))
-      if (!unwired.length) continue
-
-      ln()
-      ln(`  ${icon.warn} ${yellow(`Some hooks are not yet wired for ${agent.name}:`)}`)
-      for (const h of unwired) ln(`  ${dim('  –')} ${h}`)
-      ln(`  ${dim('Add entries to')} ${cyan(agent.hookConfigHint)}${dim('.')}`)
-    }
-  }
   ln()
 }
 

@@ -120,7 +120,7 @@ These hooks may be active in a hook-capable agent's lifecycle configuration. Cla
 
 | Hook | Event | Behavior |
 |------|-------|----------|
-| Go-beast sync | `SessionStart` | Syncs skills, workflows, hooks, and CLAUDE.global.md from go-beast repo |
+| Go-beast sync | `SessionStart` | Syncs skills, workflows, hooks, global instructions, and hook config from go-beast repo |
 | git-commit-guard | `PreToolUse (Bash)` | Blocks commits/staging of sensitive files and build artifacts |
 | code-dedup-check | `PreToolUse (Edit/Write)` | Warns before creating functions/classes that already exist in the project |
 | code-verify-flag | `PostToolUse (Edit/Write)` | Flags the project for post-session type/test verification |
@@ -129,8 +129,8 @@ These hooks may be active in a hook-capable agent's lifecycle configuration. Cla
 | docs-update-remind | `Stop` | Reminds to update README, docstrings, and CHANGELOG after code modifications |
 | git-strip-coauthored | `PreToolUse (Bash)` | Blocks commits whose message contains a `Co-Authored-By` tag |
 | git-commit-remind-flag | `PostToolUse (Edit/Write/MultiEdit)` | Flags the git repo when files are modified |
-| git-commit-remind | `Stop` | Reminds Claude to ask the user about committing and pushing uncommitted changes |
-| version-bump-remind | `Stop` | Reminds Claude to bump version when CHANGELOG.md has `[Unreleased]` content |
+| git-commit-remind | `Stop` | Reminds the agent to ask the user about committing and pushing uncommitted changes |
+| version-bump-remind | `Stop` | Reminds the agent to bump version when CHANGELOG.md has `[Unreleased]` content |
 
 ## MCP Tools
 

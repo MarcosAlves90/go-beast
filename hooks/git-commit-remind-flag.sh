@@ -20,5 +20,7 @@ project_dir=$(dirname "$file_path")
 git_root=$(git -C "$project_dir" rev-parse --show-toplevel 2>/dev/null || echo "")
 [[ -z "$git_root" ]] && exit 0
 
-echo "$git_root" > "$HOME/.claude/.git-commit-remind-pending"
+STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
+mkdir -p "$STATE_DIR"
+echo "$git_root" > "$STATE_DIR/git-commit-remind.pending"
 exit 0
