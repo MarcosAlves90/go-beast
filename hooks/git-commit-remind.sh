@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Reminds Claude to ask the user about committing and pushing changes.
-# Event: Stop — exit 2 re-triggers Claude with the reminder as mandatory feedback.
+# Reminds the agent to ask the user about committing and pushing changes.
+# Event: Stop — exit 2 re-triggers the agent with the reminder as mandatory feedback.
 
 set -uo pipefail
 
-FLAG_FILE="$HOME/.claude/.git-commit-remind-pending"
+STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
+FLAG_FILE="$STATE_DIR/git-commit-remind.pending"
 
 input=$(cat)
 stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
-# Do not re-trigger when the hook itself already activated Claude
+# Do not re-trigger when the hook itself already activated the agent
 [[ "$stop_hook_active" == "true" ]] && exit 0
 
 [[ ! -f "$FLAG_FILE" ]] && exit 0
@@ -49,7 +50,7 @@ done <<< "$CHANGED_FILES"
 MSG+="║                                                          ║"$'\n'
 MSG+="╚══════════════════════════════════════════════════════════╝"$'\n'
 
-# stdout → Claude (system-reminder via exit 2)
+# stdout → the agent (system-reminder via exit 2)
 echo "$MSG"
 echo "Ask the user if they want to commit and/or push these changes before ending the session."
 

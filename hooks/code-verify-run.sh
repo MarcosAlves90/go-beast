@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Runs type checking and tests after Claude finishes modifying code.
-# Event: Stop — exits non-zero on failures to re-trigger Claude.
+# Runs type checking and tests after the agent finishes modifying code.
+# Event: Stop — exits non-zero on failures to re-trigger the agent.
 
 set -uo pipefail
 
-FLAG_FILE="$HOME/.claude/.code-verify-pending"
+STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
+FLAG_FILE="$STATE_DIR/code-verify.pending"
 
 input=$(cat)
 stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
-# Prevent infinite loop when the hook itself re-triggers Claude
+# Prevent infinite loop when the hook itself re-triggers the agent
 [[ "$stop_hook_active" == "true" ]] && exit 0
 
 [[ ! -f "$FLAG_FILE" ]] && exit 0

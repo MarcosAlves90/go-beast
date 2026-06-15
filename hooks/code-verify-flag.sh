@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Flags the project for type/test verification when Claude modifies source code files.
+# Flags the project for type/test verification when a supported agent modifies source code files.
 # Event: PostToolUse (Edit, Write, MultiEdit)
 
 set -uo pipefail
@@ -20,8 +20,10 @@ esac
 
 [[ -z "$file_path" ]] && exit 0
 
+STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
 if echo "$file_path" | grep -qE '\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|cs|rb|php|swift|c|cpp|h|hpp)$'; then
-  printf '%s' "$(dirname "$file_path")" > "$HOME/.claude/.code-verify-pending"
+  mkdir -p "$STATE_DIR"
+  printf '%s' "$(dirname "$file_path")" > "$STATE_DIR/code-verify.pending"
 fi
 
 exit 0
