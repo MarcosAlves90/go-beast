@@ -9,3 +9,4 @@ REQUIREMENTS.md
 PERF.md
 OBSERVABILITY.md
 **/output/
+workflows/go-workflow-eval-reports/
