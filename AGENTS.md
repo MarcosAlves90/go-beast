@@ -107,13 +107,15 @@ go-beast/
 │   ├── go-skill-eval.js   ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
 │   └── go-hook-eval.js    ← Hook eval: 27 test cases across all hooks
 ├── hooks/
-│   ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks
-│   ├── git-commit-guard.sh      ← PreToolUse(Bash): blocks sensitive file commits
-│   ├── git-strip-coauthored.sh  ← PreToolUse(Bash): blocks Co-Authored-By commits
-│   ├── code-dedup-check.sh      ← PreToolUse(Edit/Write): warns on duplicate declarations
-│   ├── code-verify-flag.sh      ← PostToolUse(Edit/Write): flags project for verification
-│   ├── code-verify-run.sh       ← Stop: runs type checks + tests on flagged projects
-│   ├── docs-update-flag.sh      ← PostToolUse(Edit/Write): flags project when source modified
-│   └── docs-update-remind.sh    ← Stop: reminds to update docs/CHANGELOG after code changes
+│   ├── sync-go-beast-skills.sh       ← SessionStart: symlinks skills/workflows/hooks
+│   ├── git-commit-guard.sh           ← PreToolUse(Bash): blocks sensitive file commits
+│   ├── git-strip-coauthored.sh       ← PreToolUse(Bash): blocks Co-Authored-By commits
+│   ├── code-dedup-check.sh           ← PreToolUse(Edit/Write): warns on duplicate declarations
+│   ├── code-verify-flag.sh           ← PostToolUse(Edit/Write): flags project for verification
+│   ├── code-verify-run.sh            ← Stop: runs type checks + tests on flagged projects
+│   ├── docs-update-flag.sh           ← PostToolUse(Edit/Write): flags project when source modified
+│   ├── docs-update-remind.sh         ← Stop: reminds to update docs/CHANGELOG after code changes
+│   ├── git-commit-remind-flag.sh     ← PostToolUse(Edit/Write/MultiEdit): flags git repo when files change
+│   └── git-commit-remind.sh          ← Stop: reminds Claude to ask user about commit/push if uncommitted changes exist
 └── extensions/
     └── beast-control/     ← Optional Firefox/Zen Browser MCP bridge

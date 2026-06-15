@@ -85,7 +85,9 @@ go-beast/
     ├── code-verify-run.sh       ← Stop: runs tsc/mypy/go vet/cargo check + tests on flagged projects
     ├── docs-update-flag.sh      ← PostToolUse(Edit/Write): flags project when source files are modified
     ├── docs-update-remind.sh    ← Stop: reminds to update README/docstrings/CHANGELOG after code changes
-    ├── git-strip-coauthored.sh  ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
+    ├── git-strip-coauthored.sh       ← PreToolUse(Bash): blocks commits with Co-Authored-By tag
+    ├── git-commit-remind-flag.sh     ← PostToolUse(Edit/Write/MultiEdit): flags git repo when files change
+    └── git-commit-remind.sh          ← Stop: reminds Claude to ask user about commit/push if uncommitted changes exist
 ```
 
 ---

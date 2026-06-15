@@ -128,6 +128,8 @@ These hooks are active in `~/.claude/settings.json` for all projects:
 | docs-update-flag | `PostToolUse (Edit/Write)` | Flags the project when source code files are modified (ignores .md/.rst/docs/) |
 | docs-update-remind | `Stop` | Reminds to update README, docstrings, and CHANGELOG after code modifications |
 | git-strip-coauthored | `PreToolUse (Bash)` | Blocks commits whose message contains a `Co-Authored-By` tag |
+| git-commit-remind-flag | `PostToolUse (Edit/Write/MultiEdit)` | Flags the git repo when files are modified |
+| git-commit-remind | `Stop` | Reminds Claude to ask the user about committing and pushing uncommitted changes |
 
 ## MCP Tools
 

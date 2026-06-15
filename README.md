@@ -68,6 +68,8 @@ Automated guards that run on Claude Code lifecycle events. All hooks use symlink
 | `code-verify-run.sh` | `Stop` | Runs tsc / mypy / go vet / cargo check + tests when source was modified |
 | `docs-update-flag.sh` | `PostToolUse (Edit/Write)` | Flags the project when source code files are modified |
 | `docs-update-remind.sh` | `Stop` | Blocks session close until README, docstrings, and CHANGELOG are reviewed |
+| `git-commit-remind-flag.sh` | `PostToolUse (Edit/Write/MultiEdit)` | Flags the git repo when files are modified |
+| `git-commit-remind.sh` | `Stop` | Reminds Claude to ask the user about committing and pushing uncommitted changes |
 
 
 ## Workflows `[Claude Code]`

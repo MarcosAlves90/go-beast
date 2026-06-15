@@ -9,6 +9,11 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **hooks/git-commit-remind-flag.sh** — PostToolUse observer: flags `~/.claude/.git-commit-remind-pending` with the git root whenever Edit, Write, or MultiEdit occurs inside a git repository.
+- **hooks/git-commit-remind.sh** — Stop hook: reads the flag, checks for uncommitted changes via `git status --short`, and via exit 2 instructs Claude to ask the user whether to commit and/or push before ending the session. Anti-loop guard via `stop_hook_active`.
+
 ### Fixed
 
 - **workflows/go-deep-analysis.js**: architecture focus now requires reading the concrete call site for every external integration identified — not only the HTTP client interface. Added explicit instruction: do not infer data direction (IN vs OUT) from the HTTP verb alone, as POST is used for both writes and queries. Motivated by a real error where `@PostMapping` on a Feign client was misread as a write to the downstream system, while the calling Tasklet showed it was a read with local persistence.
