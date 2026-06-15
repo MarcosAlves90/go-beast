@@ -49,6 +49,7 @@ If information is missing, say so. If evidence is weak, say so. Do not claim a t
 For PRs, commits, and technical proposals:
 
 - One problem per change. Do not bundle unrelated changes.
+- Commit messages must follow Conventional Commits: `type(scope): summary`. Scope is optional; use lowercase types such as `fix`, `feat`, `docs`, `chore`, `test`, `refactor`, `ci`, `build`, or `perf`.
 - Explain the root cause, alternatives considered, tradeoffs, and validation performed.
 - Do not open speculative fixes or submit placeholders.
 - Before suggesting submission, verify the full diff has been reviewed.
@@ -70,12 +71,15 @@ The go-* pack is the primary skill toolset for software development tasks. Each 
 
 **Standard pipeline:**
 ```
-go-hawk → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle → go-bear → go-raven → go-owl
+go-hawk → [go-lark] → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle → go-bear → go-raven → [go-crane] → go-owl
 ```
+
+`[brackets]` = optional. go-bear can interrupt any beast. go-owl can run at any phase.
 
 | Beast | Phase | Invoke when |
 |---|---|---|
 | go-hawk | Discovery | Problem is underspecified or scope undefined |
+| go-lark | Solution Exploration | Requirements exist and multiple valid approaches need comparison |
 | go-fox | Architecture | Requirements approved; stack and ADRs needed |
 | go-otter | Database | Schema, migrations, or query review needed |
 | go-beaver | Scaffolding | New project or repo restructure needed |
@@ -84,6 +88,7 @@ go-hawk → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle
 | go-eagle | Testing | Test pyramid, coverage policy, or CI gates |
 | go-bear | Security | Auth, payments, PII, file uploads, or pre-release |
 | go-raven | CI/CD | Pipeline, environments, or release automation |
+| go-crane | Observability | Logging, metrics, tracing, health endpoints, or alerting needed |
 | go-owl | Documentation | README, API reference, runbooks, or changelog |
 
 **Meta-skills** (on demand, not phase-bound):
@@ -92,6 +97,7 @@ go-hawk → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle
 |---|---|
 | go-mole | Start of any session on an unfamiliar project — before other beasts |
 | go-kite | Strategic architecture health audit of an existing system — before go-fox revisions |
+| go-ant | Performance problem has a numeric baseline and needs profiling or optimization |
 | go-jay | AI context file authoring when instructions alone can't express the behavior |
 | go-swift | Hook automation needed after go-jay (shell-level lifecycle events for hook-capable agents) |
 | go-wren | An existing lifecycle hook needs to be changed — bug fix, new condition, or threshold update |
@@ -129,7 +135,7 @@ These hooks may be active in a hook-capable agent's lifecycle configuration. Cla
 | docs-update-remind | `Stop` | Reminds to update README, docstrings, and CHANGELOG after code modifications |
 | git-strip-coauthored | `PreToolUse (Bash)` | Blocks commits whose message contains a `Co-Authored-By` tag |
 | git-commit-remind-flag | `PostToolUse (Edit/Write/MultiEdit)` | Flags the git repo when files are modified |
-| git-commit-remind | `Stop` | Reminds the agent to ask the user about committing and pushing uncommitted changes |
+| git-commit-remind | `Stop` | Reminds the agent to ask about committing/pushing uncommitted changes and to use Conventional Commits |
 | version-bump-remind | `Stop` | Reminds the agent to bump version when CHANGELOG.md has `[Unreleased]` content |
 
 ## MCP Tools

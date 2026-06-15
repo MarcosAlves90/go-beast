@@ -1,4 +1,4 @@
-<!-- Keep one problem per PR. Use a short imperative title in the form [area] summary. -->
+<!-- Keep one problem per PR. Use a short imperative title in the form [area] summary. Commits must follow Conventional Commits: type(scope): summary. -->
 
 ## Summary
 - What changed.
