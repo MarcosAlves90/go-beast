@@ -29,7 +29,7 @@ const ALL_DIMENSIONS = [
 - High-level component structure and responsibilities
 - Design patterns in use (MVC, layered, event-driven, etc.)
 - Module boundaries and coupling
-- Data flow between components
+- Data flow between components. For each external HTTP client (Feign, RestTemplate, WebClient, or equivalent) identified, read the actual call site implementation — not only the client interface — to determine whether data flows IN or OUT. Do not infer direction from HTTP verb alone: POST is used for both writes and queries. Confirm by reading what the caller does with the response.
 - Identified architectural risks or anti-patterns
 - Recommendations for improvement`,
   },
@@ -158,7 +158,8 @@ PROJECT: ${discovery.repo_summary}
 ${dim.focus}
 
 Use mcp__filesystem__read_text_file to read relevant source files before making claims.
-Read at minimum 3-5 files most relevant to ${dim.title.toLowerCase()} analysis.
+Read at minimum 8-10 files most relevant to ${dim.title.toLowerCase()} analysis.
+For architecture: for every external integration (HTTP client, message consumer, external API call) identified in interfaces or config, also read at least one concrete implementation file that calls it — the Service, Tasklet, or Consumer that actually uses the integration — before describing data direction or purpose.
 
 Produce a COMPLETE Markdown document with:
 # ${dim.title} Analysis — <Project Name>

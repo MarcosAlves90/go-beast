@@ -9,6 +9,11 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **workflows/go-deep-analysis.js**: architecture focus now requires reading the concrete call site for every external integration identified — not only the HTTP client interface. Added explicit instruction: do not infer data direction (IN vs OUT) from the HTTP verb alone, as POST is used for both writes and queries. Motivated by a real error where `@PostMapping` on a Feign client was misread as a write to the downstream system, while the calling Tasklet showed it was a read with local persistence.
+- **workflows/go-deep-analysis.js**: minimum files read per dimension raised from 3-5 to 8-10, with an architecture-specific rule requiring at least one concrete implementation file per external integration found.
+
 ---
 
 ## [1.24.1] - 2026-06-14
