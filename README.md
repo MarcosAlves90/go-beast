@@ -1,5 +1,7 @@
 # go-beast
 
+![go-beast banner](go-beast-banner.png)
+
 > A versioned skill pack for AI-assisted full-stack software development — from discovery to deployment.
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more.
