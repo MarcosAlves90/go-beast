@@ -85,15 +85,6 @@ Automated guards that run on Claude Code lifecycle events. All hooks use symlink
 | [go-deep-analysis](workflows/go-deep-analysis.js) | Deep multi-dimensional codebase analysis: architecture, security, performance, testing, docs gaps, dependency health — one Markdown doc per dimension |
 
 
-## Extensions
-
-| Extension | What it adds |
-|---|---|
-| [beast-control](extensions/beast-control/README.md) | Firefox/Zen Browser MCP bridge — `browser_*` tools for go-lynx, go-eagle, go-bear. Falls back to Playwright when not installed. |
-
-See `extensions/beast-control/docs/SETUP.md` to install.
-
-
 ## Installation
 
 Skills are plain Markdown files — any agent that can read files can use them.

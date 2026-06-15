@@ -6,7 +6,7 @@ This is the go-beast skill pack repository. It contains skills, workflows, hooks
 
 ## What this repo is
 
-A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.), two eval workflows (`go-skill-eval`, `go-hook-eval`), a set of Claude Code hooks, a cross-platform Node.js installer (`scripts/install.mjs`), and an optional browser extension (`extensions/beast-control/`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
+A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.), eval workflows (`go-skill-eval`, `go-hook-eval`, `go-workflow-eval`, `go-deep-analysis`), a set of Claude Code hooks, and a cross-platform Node.js installer (`scripts/install.mjs`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
 
 ## Conventions
 
@@ -104,8 +104,10 @@ go-beast/
 ├── scripts/
 │   └── install.mjs        ← Cross-platform installer (Node.js 18+, no deps)
 ├── workflows/
-│   ├── go-skill-eval.js   ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
-│   └── go-hook-eval.js    ← Hook eval: 27 test cases across all hooks
+│   ├── go-skill-eval.js       ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
+│   ├── go-hook-eval.js        ← Hook eval: test cases across all hooks
+│   ├── go-workflow-eval.js    ← Workflow eval: structural checklist + LLM judge
+│   └── go-deep-analysis.js    ← Deep multi-dimensional codebase analysis
 ├── hooks/
 │   ├── sync-go-beast-skills.sh       ← SessionStart: symlinks skills/workflows/hooks
 │   ├── git-commit-guard.sh           ← PreToolUse(Bash): blocks sensitive file commits
@@ -118,5 +120,4 @@ go-beast/
 │   ├── git-commit-remind-flag.sh     ← PostToolUse(Edit/Write/MultiEdit): flags git repo when files change
 │   ├── git-commit-remind.sh          ← Stop: reminds Claude to ask user about commit/push if uncommitted changes exist
 │   └── version-bump-remind.sh        ← Stop: reminds Claude to bump version when CHANGELOG.md has [Unreleased] content
-└── extensions/
-    └── beast-control/     ← Optional Firefox/Zen Browser MCP bridge
+```
