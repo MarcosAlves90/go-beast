@@ -21,7 +21,7 @@ esac
 [[ -z "$file_path" ]] && exit 0
 
 if echo "$file_path" | grep -qE '\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|cs|rb|php|swift|c|cpp|h|hpp)$'; then
-  printf '%s' "$(pwd)" > "$HOME/.claude/.code-verify-pending"
+  printf '%s' "$(dirname "$file_path")" > "$HOME/.claude/.code-verify-pending"
 fi
 
 exit 0

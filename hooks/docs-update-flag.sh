@@ -27,7 +27,7 @@ fi
 
 # Flag only source code files
 if echo "$file_path" | grep -qE '\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|cs|rb|php|swift|c|cpp|h|hpp)$'; then
-  printf '%s' "$(pwd)" > "$HOME/.claude/.docs-update-pending"
+  printf '%s' "$(dirname "$file_path")" > "$HOME/.claude/.docs-update-pending"
 fi
 
 exit 0
