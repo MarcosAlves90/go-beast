@@ -9,6 +9,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.28.2] - 2026-06-15
+
+### Changed
+
+- **AGENTS.md** and **PACKAGE.md** — clarified SemVer `x.y.z` handling for patch, minor, and major releases.
+
 ## [1.28.1] - 2026-06-15
 
 ### Fixed

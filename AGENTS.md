@@ -22,9 +22,9 @@ Optional: `references/` subfolder for content referenced via `${CLAUDE_SKILL_DIR
 
 ### Versioning
 
-- **Patch** (1.0.x): wording corrections, checklist fixes, typos
-- **Minor** (1.x.0): new rules, new output sections, new skills added
-- **Major** (x.0.0): skill renamed/removed, pipeline order changed, breaking output format change
+- **Patch** (`x.y.z`, bump `z`): wording corrections, checklist fixes, typos, metadata fixes, and other backward-compatible corrections.
+- **Minor** (`x.y.z`, bump `y`, reset `z` to `0`): new rules, new output sections, new skills, new hooks, or new workflows that are backward-compatible.
+- **Major** (`x.y.z`, bump `x`, reset `y` and `z` to `0`): skill renamed/removed, pipeline order changed, breaking output format change, or any change that invalidates existing downstream expectations.
 
 Always update `CHANGELOG.md` before bumping version in `PACKAGE.md` and `README.md`.
 Release `[Unreleased]` changes at the smallest valid SemVer level: patch-only changes become `x.y.z`, not a new minor release.

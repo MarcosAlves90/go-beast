@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.28.1
+version: 1.28.2
 date:    2026-06-15
 author:  @cherry-c
 type:    skill-pack
@@ -134,9 +134,9 @@ go-bee     ← Workflow script authoring; invoke when a multi-agent orchestratio
 
 ## Versioning policy
 
-- **Patch** (1.0.x): corrections to wording, checklist fixes, typos.
-- **Minor** (1.x.0): new sections, new rules, new outputs added to existing skills.
-- **Major** (x.0.0): skill renamed, skill removed, pipeline order changed, breaking change to output format.
+- **Patch** (`x.y.z`, bump `z`): corrections to wording, checklist fixes, typos, metadata fixes, and other backward-compatible corrections.
+- **Minor** (`x.y.z`, bump `y`, reset `z` to `0`): new sections, new rules, new outputs, new skills, new hooks, or new workflows that are backward-compatible.
+- **Major** (`x.y.z`, bump `x`, reset `y` and `z` to `0`): skill renamed, skill removed, pipeline order changed, breaking change to output format, or any change that invalidates existing downstream expectations.
 
 Always update `CHANGELOG.md` before bumping the version in this file.
 Release `[Unreleased]` changes at the smallest valid SemVer level: patch-only changes become `x.y.z`, not a new minor release.

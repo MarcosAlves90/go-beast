@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more.
 
-**Version 1.28.1** · [Changelog](CHANGELOG.md)
+**Version 1.28.2** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
