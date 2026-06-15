@@ -66,17 +66,11 @@ go-beast/
 │   └── SKILL.md           ← Obsidian Vault Design & PKM (meta-skill)
 ├── go-bee/
 │   └── SKILL.md           ← Workflow Script Authoring (meta-skill)
-├── extensions/
-│   └── beast-control/          ← Firefox/Zen Browser MCP bridge (optional — install separately)
-│       ├── README.md
-│       ├── CONTEXT.md
-│       ├── extension/     ← Firefox extension (MV3)
-│       ├── mcp-server/    ← Node.js MCP server (stdio)
-│       ├── docs/
-│       └── scripts/
 ├── workflows/
-│   ├── go-skill-eval.js   ← Skill eval pipeline: all go-* skills, structural checklist + LLM-as-judge (A/B/C/D)
-│   └── go-hook-eval.js    ← Hook eval pipeline: 27 test cases across all go-beast hooks
+│   ├── go-skill-eval.js       ← Skill eval pipeline: all go-* skills, structural checklist + LLM-as-judge (A/B/C/D)
+│   ├── go-hook-eval.js        ← Hook eval pipeline across all go-beast hooks
+│   ├── go-workflow-eval.js    ← Workflow eval pipeline for Workflow scripts
+│   └── go-deep-analysis.js    ← Deep multi-dimensional codebase analysis workflow
 └── hooks/
     ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks + copies AGENTS.global.md
     ├── git-commit-guard.sh      ← PreToolUse(Bash): blocks commits of sensitive files/build artifacts

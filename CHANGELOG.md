@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Removed
+
+- **extensions/beast-control/** — removed the optional Firefox/Zen Browser MCP bridge from the skill pack and deleted its setup, architecture, security, testing, extension, and MCP server files.
+
 ### Added
 
 - **hooks/version-bump-remind.sh** — Stop hook: fires when `CHANGELOG.md` has a non-empty `[Unreleased]` section; via exit 2 instructs Claude to ask the user to bump the version in `PACKAGE.md`, `package.json`, and `README.md` before ending the session.
