@@ -27,6 +27,7 @@ Optional: `references/` subfolder for content referenced via `${CLAUDE_SKILL_DIR
 - **Major** (x.0.0): skill renamed/removed, pipeline order changed, breaking output format change
 
 Always update `CHANGELOG.md` before bumping version in `PACKAGE.md` and `README.md`.
+Release `[Unreleased]` changes at the smallest valid SemVer level: patch-only changes become `x.y.z`, not a new minor release.
 
 ### Language
 

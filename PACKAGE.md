@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.28.0
+version: 1.28.1
 date:    2026-06-15
 author:  @cherry-c
 type:    skill-pack
@@ -139,6 +139,7 @@ go-bee     ← Workflow script authoring; invoke when a multi-agent orchestratio
 - **Major** (x.0.0): skill renamed, skill removed, pipeline order changed, breaking change to output format.
 
 Always update `CHANGELOG.md` before bumping the version in this file.
+Release `[Unreleased]` changes at the smallest valid SemVer level: patch-only changes become `x.y.z`, not a new minor release.
 
 ---
 

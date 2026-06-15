@@ -9,9 +9,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.28.1] - 2026-06-15
+
 ### Fixed
 
 - **go-jay/SKILL.md** (v1.2.0 → v1.2.1): quoted the frontmatter `description` value so the internal `Agent-agnostic:` label parses as valid YAML.
+- **AGENTS.md** and **PACKAGE.md** — clarified that patch-only unreleased changes should be released as `x.y.z`, not a new minor version.
 
 ## [1.28.0] - 2026-06-15
 
