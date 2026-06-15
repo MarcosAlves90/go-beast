@@ -83,12 +83,12 @@ const row = (ico, label, note) =>
 
 // ── Agent registry ─────────────────────────────────────────────────────────────
 const AGENTS = [
-  { name: 'claude-code', detect: j(HOME,'.claude'),           skills: j(HOME,'.claude','skills'),           hooks: j(HOME,'.claude','hooks'), workflows: j(HOME,'.claude','workflows'), globalMd: j(HOME,'.claude','CLAUDE.md') },
+  { name: 'claude-code', detect: j(HOME,'.claude'),           skills: j(HOME,'.claude','skills'),           hooks: j(HOME,'.claude','hooks'), workflows: j(HOME,'.claude','workflows'), globalMd: j(HOME,'.claude','CLAUDE.md'), hookConfig: j(HOME,'.claude','settings.json'), hookConfigHint: '~/.claude/settings.json or run go-swift' },
   { name: 'cursor',      detect: j(HOME,'.cursor'),           skills: j(HOME,'.cursor','skills'),           globalMd: j(HOME,'.cursor','rules') },
   { name: 'gemini',      detect: j(HOME,'.gemini'),           skills: j(HOME,'.gemini','skills'),           globalMd: j(HOME,'.gemini','GEMINI.md') },
   { name: 'cline',       detect: j(HOME,'.cline'),            skills: j(HOME,'.cline','skills'),            globalMd: j(HOME,'.cline','AGENTS.md') },
   { name: 'copilot',     detect: j(HOME,'.github','copilot'), skills: j(HOME,'.github','copilot','skills'), globalMd: j(HOME,'.github','copilot-instructions.md') },
-  { name: 'codex',       detect: j(HOME,'.codex'),            skills: j(HOME,'.codex','skills'),            globalMd: j(HOME,'.codex','AGENTS.md') },
+  { name: 'codex',       detect: j(HOME,'.codex'),            skills: j(HOME,'.codex','skills'),            hooks: j(HOME,'.codex','hooks'), globalMd: j(HOME,'.codex','AGENTS.md'), hookConfig: j(HOME,'.codex','hooks.json'), hookConfigAlt: j(HOME,'.codex','config.toml'), hookConfigHint: '~/.codex/hooks.json or inline [hooks] in ~/.codex/config.toml, then review with /hooks' },
   { name: 'agents',      detect: j(HOME,'.agents'),           skills: j(HOME,'.agents','skills'),           globalMd: j(HOME,'.agents','AGENTS.md') },
 ]
 
@@ -250,23 +250,32 @@ async function main() {
   const allSkills = collectSkills()
   const selSkills = flag === '--all' ? allSkills : await pickItems('Skills', allSkills)
 
-  // 4. Claude Code extras
+  // 4. Hook-capable agent extras
   const cc = selAgents.find(a => a.name === 'claude-code')
+  const hookAgents = selAgents.filter(a => a.hooks)
   let selHooks = [], selWorkflows = []
-  if (cc) {
+  if (hookAgents.length) {
     const allHooks = collectHooks()
-    const allWf    = collectWorkflows()
     if (flag === '--all') {
-      selHooks = allHooks; selWorkflows = allWf
+      selHooks = allHooks
     } else {
-      if (allHooks.length) selHooks     = await pickItems('Hooks  (Claude Code only)', allHooks)
-      if (allWf.length)    selWorkflows = await pickItems('Workflows  (Claude Code only)', allWf)
+      if (allHooks.length) selHooks = await pickItems(`Hooks  (${hookAgents.map(a => a.name).join(', ')})`, allHooks)
+    }
+  }
+
+  // 5. Claude Code workflow extras
+  if (cc) {
+    const allWf = collectWorkflows()
+    if (flag === '--all') {
+      selWorkflows = allWf
+    } else {
+      if (allWf.length) selWorkflows = await pickItems('Workflows  (Claude Code only)', allWf)
     }
   }
 
   rl.close()
 
-  // 5. Install
+  // 6. Install
   section('Installing')
 
   const counts = { new: 0, skip: 0, warn: 0 }
@@ -286,15 +295,17 @@ async function main() {
     }
   }
 
-  if (cc && selHooks.length) {
-    ln(); ln(`  ${icon.link} ${bold('hooks')} ${dim('→')} ${cyan('claude-code')}`)
-    cleanStale(cc.hooks)
-    const results = []
-    for (const hook of selHooks) {
-      linkItem(j(REPO, 'hooks', hook), cc.hooks, results)
-      if (!IS_WIN) try { fs.chmodSync(j(REPO, 'hooks', hook), 0o755) } catch {}
+  if (hookAgents.length && selHooks.length) {
+    for (const agent of hookAgents) {
+      ln(); ln(`  ${icon.link} ${bold('hooks')} ${dim('→')} ${cyan(agent.name)}`)
+      cleanStale(agent.hooks)
+      const results = []
+      for (const hook of selHooks) {
+        linkItem(j(REPO, 'hooks', hook), agent.hooks, results)
+        if (!IS_WIN) try { fs.chmodSync(j(REPO, 'hooks', hook), 0o755) } catch {}
+      }
+      printResults(results)
     }
-    printResults(results)
   }
 
   if (cc && selWorkflows.length) {
@@ -321,28 +332,25 @@ async function main() {
   box('Done', [
     `agents     ${bold(String(selAgents.length))}  ${dim(selAgents.map(a => a.name).join(', '))}`,
     `skills     ${bold(String(selSkills.length))}`,
-    ...(cc && selHooks.length    ? [`hooks      ${bold(String(selHooks.length))}`]     : []),
+    ...(hookAgents.length && selHooks.length ? [`hooks      ${bold(String(selHooks.length))}  ${dim(hookAgents.map(a => a.name).join(', '))}`] : []),
     ...(cc && selWorkflows.length ? [`workflows  ${bold(String(selWorkflows.length))}`] : []),
     '---',
     `${green(String(counts.new))} new  ${gray(String(counts.skip))} already linked  ${counts.warn ? yellow(String(counts.warn)) + ' warnings' : dim('0 warnings')}`,
   ])
 
-  if (cc && selHooks.length) {
-    // Check if any of the installed hooks are already wired in settings.json
-    const settingsPath = j(HOME, '.claude', 'settings.json')
-    let unwired = []
-    try {
-      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
-      const wiredCmds = JSON.stringify(settings.hooks ?? '')
-      unwired = selHooks.filter(h => !wiredCmds.includes(h))
-    } catch {
-      unwired = selHooks
-    }
-    if (unwired.length > 0) {
+  if (hookAgents.length && selHooks.length) {
+    for (const agent of hookAgents) {
+      let configText = ''
+      for (const file of [agent.hookConfig, agent.hookConfigAlt].filter(Boolean)) {
+        try { configText += fs.readFileSync(file, 'utf8') + '\n' } catch {}
+      }
+      const unwired = selHooks.filter(h => !configText.includes(h))
+      if (!unwired.length) continue
+
       ln()
-      ln(`  ${icon.warn} ${yellow('Some hooks are not yet wired:')}`)
+      ln(`  ${icon.warn} ${yellow(`Some hooks are not yet wired for ${agent.name}:`)}`)
       for (const h of unwired) ln(`  ${dim('  –')} ${h}`)
-      ln(`  ${dim('Add entries to')} ${cyan('~/.claude/settings.json')} ${dim('or run')} ${cyan('go-swift')}${dim('.')}`)
+      ln(`  ${dim('Add entries to')} ${cyan(agent.hookConfigHint)}${dim('.')}`)
     }
   }
   ln()

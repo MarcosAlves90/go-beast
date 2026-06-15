@@ -48,17 +48,17 @@ Invoked on demand — not bound to a phase.
 | [go-kite](go-kite/SKILL.md) | Strategic audit of an existing system before go-fox revisions |
 | [go-ant](go-ant/SKILL.md) | A performance problem has a numeric baseline and needs a fix |
 | [go-jay](go-jay/SKILL.md) | Authoring or syncing AI context files (CLAUDE.md, AGENTS.md, GEMINI.md…) |
-| [go-swift](go-swift/SKILL.md) `[Claude Code]` | Creating new Claude Code hook scripts |
-| [go-wren](go-wren/SKILL.md) `[Claude Code]` | Patching an existing Claude Code hook |
+| [go-swift](go-swift/SKILL.md) `[Claude Code · Codex]` | Creating new lifecycle hook scripts |
+| [go-wren](go-wren/SKILL.md) `[Claude Code · Codex]` | Patching an existing lifecycle hook |
 | [go-smith](go-smith/SKILL.md) | A gap in the pack is identified and a new beast is needed |
 | [go-finch](go-finch/SKILL.md) | An existing skill needs improvement after eval feedback |
 | [go-vole](go-vole/SKILL.md) | Designing or restructuring an Obsidian vault / PKM system |
 | [go-bee](go-bee/SKILL.md) | Designing and implementing multi-agent Workflow scripts (pipeline, parallel, loop patterns) |
 
 
-## Hooks `[Claude Code]`
+## Hooks `[Claude Code · Codex]`
 
-Automated guards that run on Claude Code lifecycle events. All hooks use symlinks — edits to the repo take effect immediately.
+Automated guards that run on agent lifecycle events. The installer symlinks hook scripts into hook-capable agents — edits to the repo take effect immediately. Claude Code wires hooks through `~/.claude/settings.json`; Codex wires hooks through `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml`, then reviews them with `/hooks`.
 
 | Hook | Event | What it does |
 |---|---|---|
@@ -98,7 +98,7 @@ git clone <repo-url> ~/Documents/@cherry-c/go-beast
 node ~/Documents/@cherry-c/go-beast/scripts/install.mjs
 ```
 
-The installer detects which agents are installed, lets you choose which skills, hooks (Claude Code only), and workflows (Claude Code only) to install, and creates symlinks. It also copies `AGENTS.global.md` to the correct global instructions file for each agent.
+The installer detects which agents are installed, lets you choose which skills, hooks for hook-capable agents, and workflows (Claude Code only) to install, and creates symlinks. It also copies `AGENTS.global.md` to the correct global instructions file for each agent.
 
 ```bash
 node scripts/install.mjs --all       # install everything, no prompts
@@ -133,11 +133,15 @@ After setup, skills are available as `/go-hawk`, `/go-fox`, etc. Workflows run v
 > bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
 > ```
 
+### Codex hooks
+
+Codex discovers hook configuration from `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml`. The installer places hook scripts in `~/.codex/hooks/`; after installation, add the desired event/matcher entries to Codex hook config and review them with `/hooks`.
+
 ### Other agents (Gemini CLI, Copilot CLI, Cursor…)
 
 Clone the repo and point your agent at the skill directory. Each skill is a self-contained `SKILL.md` — no dependencies, no platform-specific syntax.
 
-> `go-swift` and `go-wren` require Claude Code's hook system and are not applicable to other agents.
+> `go-swift` and `go-wren` support Claude Code and Codex hook schemas. Other agents may still need agent-specific guidance before hooks can be installed.
 
 
 ## Design principles

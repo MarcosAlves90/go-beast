@@ -1,45 +1,50 @@
 ---
 name: go-swift
-version: 1.1.0
-platform: Claude Code
-description: "[Claude Code] Designs, writes, tests, and registers Claude Code hooks — shell scripts triggered by lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop, SubagentStop, PreCompact). Produces hook scripts, wires them into settings.json, and verifies execution."
-when_to_use: "Use when the user wants to automate a behavior on a Claude Code lifecycle event — before, after, or around tool calls, session start/stop, or compaction. Claude Code only: other agents do not have an equivalent hook system. Invoke after go-jay when the desired behavior cannot be expressed as instructions alone. Invoke before go-raven when hooks are part of the deployment or developer-setup story."
+version: 1.2.0
+platform: Claude Code, Codex
+description: "Designs, writes, tests, and registers lifecycle hooks for hook-capable coding agents — currently Claude Code and Codex. Produces hook scripts, wires them into the agent's hook configuration, and verifies execution."
+when_to_use: "Use when the user wants to automate a behavior on a supported agent lifecycle event — before, after, or around tool calls, session start/stop, compaction, or user prompt submission. Supported targets: Claude Code and Codex. Invoke after go-jay when the desired behavior cannot be expressed as instructions alone. Invoke before go-raven when hooks are part of the deployment or developer-setup story."
 ---
 
-# go-swift — Claude Code Hook Authoring `[Claude Code only]`
+# go-swift — Lifecycle Hook Authoring `[Claude Code · Codex]`
 
-go-swift reacts before the moment passes. It does not build features — it wires automated responses to Claude Code lifecycle events. This skill is specific to Claude Code and has no equivalent for other agents.
+go-swift reacts before the moment passes. It does not build features — it wires automated responses to lifecycle events in hook-capable coding agents. Claude Code and Codex use different configuration files, so choose the target agent before writing the hook.
 
 ## Quick start
 
 ```
 User: "Whenever Claude runs a bash command, log it to a file."
 → invoke go-swift
-→ identify event → design script → write hook → wire settings.json → test
+→ identify target agent and event → design script → write hook → wire hook config → test
 ```
 
 ## Workflow
 
 ### 1. Identify the event
 
-Map the user's intent to the correct Claude Code hook event:
+Map the user's intent to the correct lifecycle event for the target agent:
 
 | Event | Fires when |
 |-------|-----------|
-| `SessionStart` | A new Claude Code session begins |
+| `SessionStart` | A new session begins |
 | `PreToolUse` | Just before any tool call executes |
 | `PostToolUse` | Just after a tool call completes |
-| `Stop` | Claude produces a final response (non-subagent) |
+| `Stop` | The agent produces a final response (non-subagent) |
 | `SubagentStop` | A subagent produces a final response |
 | `PreCompact` | Context is about to be compacted |
+| `PermissionRequest` | Codex asks whether a tool action should be approved |
+| `PostCompact` | Codex finishes compaction |
+| `UserPromptSubmit` | Codex receives a user prompt |
+| `SubagentStart` | Codex starts a subagent |
 
 Checklist:
-- [ ] Is the trigger a Claude Code lifecycle event, not a file system event or timer?
+- [ ] Is the target agent Claude Code or Codex?
+- [ ] Is the trigger a supported lifecycle event for that agent, not a file system event or timer?
 - [ ] Which specific event fires at the right moment?
 - [ ] Does the hook need to block execution (`PreToolUse` with non-zero exit) or just observe?
 - [ ] Does the hook need to read tool input from stdin (`PreToolUse`, `PostToolUse`)?
 
-If the trigger cannot be mapped to one of these six events, stop — this is not a hook use case. Suggest an alternative (cron, file watcher, MCP tool).
+If the trigger cannot be mapped to a supported lifecycle event for the target agent, stop — this is not a hook use case. Suggest an alternative (cron, file watcher, MCP tool).
 
 ### 2. Determine hook behavior
 
@@ -53,11 +58,16 @@ Checklist:
 - [ ] Does it need the tool name, input, or output? (available via stdin JSON on Pre/PostToolUse)
 - [ ] Should it block silently, block with message, or only observe?
 - [ ] Could it run more than once for the same operation? Design for idempotency.
-- [ ] Does it need to be fast? SessionStart blocks session load — keep it under 2s.
+- [ ] Does it need to be fast? `SessionStart` blocks session load — keep it under 2s.
 
 ### 3. Write the hook script
 
-Hook scripts are shell scripts (`bash` or `zsh`) placed in `~/.claude/hooks/`.
+Hook scripts are shell scripts (`bash` or `zsh`) placed in the target agent's hook script directory:
+
+| Agent | Script directory |
+|-------|------------------|
+| Claude Code | `~/.claude/hooks/` |
+| Codex | `~/.codex/hooks/` |
 
 **Script skeleton for observer hooks:**
 ```bash
@@ -106,11 +116,16 @@ Rules for scripts:
 - Write to stderr for debug output; write block reasons to stdout.
 - Never hardcode absolute paths outside of `$HOME`-relative paths.
 
-### 4. Wire the hook into settings.json
+### 4. Wire the hook into agent config
 
-Hooks are registered in `~/.claude/settings.json` (global) or `.claude/settings.json` (project-local).
+Hooks are registered in the target agent's lifecycle configuration:
 
-**Global hook entry structure:**
+| Agent | Global config | Project-local config |
+|-------|---------------|----------------------|
+| Claude Code | `~/.claude/settings.json` | `.claude/settings.json` |
+| Codex | `~/.codex/hooks.json` or `[hooks]` in `~/.codex/config.toml` | `.codex/hooks.json` or `[hooks]` in `.codex/config.toml` |
+
+**Claude Code global hook entry structure:**
 ```json
 {
   "hooks": {
@@ -129,6 +144,37 @@ Hooks are registered in `~/.claude/settings.json` (global) or `.claude/settings.
 }
 ```
 
+**Codex hooks.json entry structure:**
+```json
+{
+  "hooks": {
+    "<EventName>": [
+      {
+        "matcher": "<matcher or omit when unsupported>",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.codex/hooks/<script-name>.sh",
+            "statusMessage": "<message shown in UI while hook runs>"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Codex inline TOML structure:**
+```toml
+[[hooks.PreToolUse]]
+matcher = "^Bash$"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "bash ~/.codex/hooks/<script-name>.sh"
+statusMessage = "Checking Bash command"
+```
+
 **With matcher (PreToolUse / PostToolUse only):**
 ```json
 {
@@ -145,18 +191,21 @@ Hooks are registered in `~/.claude/settings.json` (global) or `.claude/settings.
 Checklist:
 - [ ] Is the event key spelled exactly right (case-sensitive)?
 - [ ] Is the command path correct relative to the user's `$HOME`?
-- [ ] Does the hook need `continueOnBlock: true` to let the session continue even if the hook exits non-zero?
+- [ ] Does the matcher syntax match the target agent's supported matcher values?
+- [ ] For Codex, will the user review and trust the hook with `/hooks` after configuration?
+- [ ] For Claude Code, does the hook need `continueOnBlock: true` to let the session continue even if the hook exits non-zero?
 - [ ] Is `statusMessage` set for hooks that take more than ~0.5s?
 
 ### 5. Test the hook
 
 Test before declaring done:
 
-1. **Dry-run the script directly**: run `echo '<test-json>' | bash ~/.claude/hooks/<script>.sh` and verify exit code and output.
+1. **Dry-run the script directly**: run `echo '<test-json>' | bash <agent-hook-dir>/<script>.sh` and verify exit code and output.
 2. **Start a new session** (for SessionStart hooks) and confirm the status message appears.
 3. **Trigger the event** manually in a test session — use a throw-away command for PreToolUse blockers.
-4. **Check logs**: if the hook writes to a file, confirm the file has the expected content.
-5. **Check for regressions**: verify the hook does not block legitimate operations.
+4. **Codex trust review**: for Codex hooks, run `/hooks` and confirm the hook is reviewed and trusted before expecting it to execute.
+5. **Check logs**: if the hook writes to a file, confirm the file has the expected content.
+6. **Check for regressions**: verify the hook does not block legitimate operations.
 
 For blocker hooks, test both the blocked path (non-zero exit, correct message) and the allowed path (exit 0, no message).
 
@@ -164,22 +213,23 @@ For blocker hooks, test both the blocked path (non-zero exit, correct message) a
 
 If this hook is part of a go-beast project workflow, add it to the project's handoff plan:
 
-- Document the event, script name, and purpose in the project's `REQUIREMENTS.md` or `CLAUDE.md`.
+- Document the event, script name, target agent, and purpose in the project's `REQUIREMENTS.md`, `CLAUDE.md`, or `AGENTS.md`.
 - If the hook syncs from a shared repo (like go-beast), confirm the sync script (e.g., `sync-go-beast-skills.sh`) includes the new hook directory or file.
-- Note whether this is a **global** hook (developer machine default) or **project-local** hook (checked into `.claude/`).
+- Note whether this is a **global** hook (developer machine default) or **project-local** hook (checked into `.claude/` or `.codex/`).
 
 ## Rules
 
-- Do not write hooks for events that cannot be mapped to a Claude Code lifecycle event. Suggest the correct tool instead.
+- Do not write hooks for events that cannot be mapped to a supported lifecycle event for the target agent. Suggest the correct tool instead.
 - Blocker hooks must exit non-zero AND write a human-readable message to stdout. Silent blocks are not acceptable.
-- Never write a hook that modifies `settings.json` from within itself — that creates recursive configuration drift.
+- Never write a hook that modifies its own hook configuration from within itself — that creates recursive configuration drift.
 - Observer hooks must exit 0 unconditionally. A failing observer that blocks the tool call is a bug.
+- Codex hooks must include a trust-review step using `/hooks` after configuration; installing the script file alone is not enough.
 - Test every hook before marking the task done. "It should work" is not a test.
 
 ## Output
 
-- `~/.claude/hooks/<name>.sh` — executable hook script
-- Updated `~/.claude/settings.json` (or `.claude/settings.json`) — hook wired to the correct event
+- `<agent-hook-dir>/<name>.sh` — executable hook script
+- Updated hook configuration — `~/.claude/settings.json`, `.claude/settings.json`, `~/.codex/hooks.json`, `.codex/hooks.json`, or inline `[hooks]` in Codex `config.toml`
 - Test evidence — manual run output confirming correct behavior for both happy path and error path
 
 ## Position in the pack
@@ -192,4 +242,4 @@ go-jay → go-swift → go-raven
 - **go-swift** implements the automation as a hook script and wires it.
 - **go-raven** includes hooks in CI/CD setup, dotfile provisioning, or developer onboarding scripts.
 
-go-swift is also invoked on demand, independently of the full chain, whenever a user wants to add or modify a Claude Code hook.
+go-swift is also invoked on demand, independently of the full chain, whenever a user wants to add or modify a supported lifecycle hook.

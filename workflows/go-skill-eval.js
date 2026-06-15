@@ -67,8 +67,8 @@ const SKILLS = {
     checklist: ['gap analysis', 'SKILL.md', 'when_to_use', 'workflow steps', 'checklist', 'position in chain', 'handoff'],
   },
   'go-swift': {
-    description: 'Designs, writes, tests, and registers Claude Code hooks — shell scripts triggered by lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop, SubagentStop, PreCompact). Produces hook scripts, wires them into settings.json, and verifies execution.',
-    checklist: ['hook script', 'settings.json', 'event', 'chmod', 'verification'],
+    description: 'Designs, writes, tests, and registers lifecycle hooks for hook-capable coding agents — currently Claude Code and Codex. Produces hook scripts, wires them into the agent hook configuration, and verifies execution.',
+    checklist: ['hook script', 'hook configuration', 'event', 'chmod', 'verification'],
   },
   'go-kite': {
     description: 'Audits an existing system architecture across five dimensions — structure/modularity, observability, reliability, scalability, and security posture — and produces a prioritized findings report with capability gaps and concrete improvement proposals, each referencing the next beast to invoke.',
@@ -83,7 +83,7 @@ const SKILLS = {
     checklist: ['PERF.md', 'baseline', 'profiler output', 'bottleneck', 'root cause', 'benchmark results', 'before/after', 'optimization'],
   },
   'go-wren': {
-    description: 'Audits an existing Claude Code hook script, classifies the requested change (threshold, condition, behaviour, or bug fix), applies the minimal edit preserving the exit-code contract, and re-validates with go-hook-eval. Never rewrites a working hook from scratch.',
+    description: 'Audits an existing Claude Code or Codex hook script, classifies the requested change (threshold, condition, behaviour, or bug fix), applies the minimal edit preserving the exit-code contract, and re-validates with go-hook-eval. Never rewrites a working hook from scratch.',
     checklist: ['HOOK CONTRACT', 'change type', 'PROPOSED DIFF', 'exit code', 'TEST EVIDENCE', 'happy path'],
   },
   'go-finch': {
@@ -388,7 +388,7 @@ function buildPrompt(skillName, skillDesc, input, checklist) {
   // Per-skill overrides to ensure complete output in the eval context
   const skillOverrides = {
     'go-kite': `EVAL CONTEXT: You do not have access to filesystem tools in this context. The files above are the repomix output equivalent — treat them as the complete codebase. Produce the full audit across all 5 dimensions (structure, observability, reliability, scalability, security) AND the capability gaps section AND at least 3 concrete recommendations referencing the provided files. DO NOT skip dimensions due to lack of tool access.`,
-    'go-swift': `EVAL CONTEXT: You are generating the output go-swift would produce for a Claude Code project. The provided settings.json is the real file to be modified. Produce the complete hook script, show the settings.json changes, specify the event, and include chmod.`,
+    'go-swift': `EVAL CONTEXT: You are generating the output go-swift would produce for a Claude Code project. The provided settings.json is the real hook configuration file to be modified. Produce the complete hook script, show the hook configuration changes, specify the event, and include chmod.`,
     'go-jay': `EVAL CONTEXT: The provided context files (CLAUDE.md, AGENTS.md) are the real files to be audited and edited. Produce the full analysis, proposed edits with before/after, and the regression check.`,
     'go-ant': `EVAL CONTEXT: The code files above are the real codebase. Simulate go-ant's complete output: baseline measurements, profiler output indicating bottlenecks, root cause analysis, applied optimization with before/after benchmark. Use the provided files as evidence.`,
     'go-bee': `EVAL CONTEXT: You ARE the go-bee skill executing its workflow. Design and implement a complete Workflow script for the following task:
@@ -657,7 +657,7 @@ ${importanteNote}${override}`
 // Filesystem-dependent skills receive only C and D (real code).
 // go-kite, go-ant, go-crane: require a codebase to function.
 // go-owl, go-beaver, go-mole: confirmed collapse on A/B without a concrete project (eval 2026-06-13).
-// go-swift: Claude Code-specific; B inputs without hook context collapse (eval 2026-06-13).
+// go-swift: hook-authoring skill; B inputs without hook context collapse (eval 2026-06-13).
 // go-jay: without real context files, completeness/adherence collapse on A (eval 2026-06-13).
 // go-wren: requires an existing hook script; meaningless without real files.
 // go-finch: requires an existing SKILL.md to audit; meaningless without real files.

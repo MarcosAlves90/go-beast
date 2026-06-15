@@ -1,12 +1,12 @@
 ---
 name: go-wren
-version: 1.1.0
-platform: Claude Code
-description: "[Claude Code] Audits an existing Claude Code hook script, records the current contract (hook name, event, behaviour, exit codes), classifies the requested change (threshold / condition / behaviour / bug fix), applies the minimal edit as an explicit before/after diff, and re-validates with direct shell tests. Never rewrites a working hook from scratch — every change must be proven by running the hook with real JSON inputs."
-when_to_use: "Use when a Claude Code hook already exists and needs to be changed — the trigger condition is wrong, a new file type must be matched, a threshold changed, or a bug fixed. Invoke instead of go-swift when the hook file already exists. Invoke go-hook-eval after to confirm no regressions."
+version: 1.2.0
+platform: Claude Code, Codex
+description: "Audits an existing lifecycle hook script for Claude Code or Codex, records the current contract (hook name, event, behaviour, exit codes), classifies the requested change (threshold / condition / behaviour / bug fix), applies the minimal edit as an explicit before/after diff, and re-validates with direct shell tests. Never rewrites a working hook from scratch — every change must be proven by running the hook with real JSON inputs."
+when_to_use: "Use when a Claude Code or Codex hook already exists and needs to be changed — the trigger condition is wrong, a new file type must be matched, a threshold changed, or a bug fixed. Invoke instead of go-swift when the hook file already exists. Invoke go-hook-eval after to confirm no regressions."
 ---
 
-# go-wren — Hook Maintenance `[Claude Code only]`
+# go-wren — Hook Maintenance `[Claude Code · Codex]`
 
 go-wren patches what go-swift built. It does not design new hooks — it audits, edits, and re-validates existing ones. The discipline is surgical: change the minimum, preserve the contract, prove no regression.
 
@@ -25,9 +25,10 @@ User: "The docs-update-remind hook fires even for .md files — fix it."
 Before touching anything, understand what the hook currently does:
 
 - [ ] Read the full script from `~/.claude/hooks/<name>.sh` (or the provided hook content in eval context)
+- [ ] For Codex hooks, also check `~/.codex/hooks/<name>.sh` or the project-local `.codex/hooks/<name>.sh` path.
 - [ ] Identify the event it handles (`SessionStart`, `PreToolUse`, `PostToolUse`, `Stop`, etc.)
 - [ ] Map its current behaviour: what inputs does it read, what conditions does it check, what does it output, what exit codes does it use?
-- [ ] Confirm the hook entry in `~/.claude/settings.json` — event key, command path, any matcher
+- [ ] Confirm the hook entry in the target agent's config — Claude Code `settings.json`, Codex `hooks.json`, or Codex inline `[hooks]` in `config.toml`; record event key, command path, matcher, timeout, and status message.
 
 Produce the **HOOK CONTRACT** block as the first artifact — always, before any edit:
 
@@ -69,13 +70,15 @@ Checklist for medium/high risk changes:
 
 **Hook input mechanics (read before writing any hook code):**
 
-Claude Code passes event data to hooks via **stdin as JSON** — not environment variables, not positional arguments. The hook reads it with `input=$(cat)`. The JSON shape differs by event:
+Claude Code and Codex pass event data to command hooks via **stdin as JSON** — not environment variables, not positional arguments. The hook reads it with `input=$(cat)`. The JSON shape differs by event and agent, so inspect the existing hook and test with realistic input before editing:
 
 | Event | stdin shape |
 |-------|-------------|
 | `PreToolUse` / `PostToolUse` | `{"tool_name":"Bash","tool_input":{...}}` |
 | `Stop` / `SubagentStop` | `{"stop_hook_active":true/false}` |
 | `SessionStart` | `{}` (empty or minimal) |
+| `PermissionRequest` (Codex) | approval request JSON for the requested tool action |
+| `UserPromptSubmit` (Codex) | prompt submission JSON |
 
 Any proposed hook code that reads from `$TOOL_INPUT`, `$1`, or environment variables is incorrect. If the existing script uses `input=$(cat)` + `jq`, preserve that pattern.
 
@@ -96,7 +99,7 @@ These patterns cause silent failures or wrong behavior in hooks that use `set -e
 | Unbound variable with `set -u` | Using `${var}` before assignment when the variable might be empty causes immediate exit | Initialize all variables before use: `var=""` or `var=0` |
 | `$(pwd)` in PostToolUse hooks | Returns the hook process's working directory (usually `$HOME`), not the project directory | Derive from `file_path`: `$(dirname "$file_path")` or `git rev-parse --show-toplevel` |
 
-**settings.json hook registration schema:**
+**Claude Code settings.json hook registration schema:**
 
 ```json
 {
@@ -122,7 +125,38 @@ These patterns cause silent failures or wrong behavior in hooks that use `set -e
 }
 ```
 
-Stop/SessionStart/SubagentStop/PreCompact hooks do **not** use a `matcher` field — they fire unconditionally. PreToolUse and PostToolUse hooks use `matcher` to filter by tool name. The outer array element has a `matcher` key and a `hooks` array — there is no additional nesting layer.
+**Codex hooks.json hook registration schema:**
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "bash ~/.codex/hooks/<name>.sh" }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "bash ~/.codex/hooks/<name>.sh" }]
+      }
+    ]
+  }
+}
+```
+
+**Codex inline TOML hook registration schema:**
+
+```toml
+[[hooks.PreToolUse]]
+matcher = "^Bash$"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "bash ~/.codex/hooks/<name>.sh"
+```
+
+Stop/UserPromptSubmit hooks do **not** use a `matcher` field in Codex. In Claude Code, Stop/SessionStart/SubagentStop/PreCompact hooks fire unconditionally. PreToolUse and PostToolUse hooks use `matcher` to filter by tool name. The outer array element has a `matcher` key and a `hooks` array — there is no additional nesting layer.
 
 First, show the **before/after diff** explicitly as a named artifact before applying it:
 
@@ -150,6 +184,7 @@ After editing, verify:
 - [ ] The script is still executable (`chmod +x` if it was not already)
 - [ ] The exit-code contract is unchanged (unless the change explicitly alters it)
 - [ ] All existing comment headers still describe the behaviour accurately — update only the lines that changed
+- [ ] For Codex hooks, note whether `/hooks` trust review is required because the hook definition or script changed.
 
 ### 4. Update go-hook-eval test cases (if needed)
 
@@ -206,12 +241,13 @@ If the change is user-visible (new blocked pattern, different message, new event
 - Every change must be validated with at least one direct shell test before marking done. In eval context where the shell cannot execute, write the test commands with expected outputs and mark them `(simulated — eval context)`. Never omit the TEST EVIDENCE block.
 - Do not update `go-hook-eval.js` test cases without re-running the eval to confirm they pass.
 - Hook input always arrives via stdin JSON — never `$TOOL_INPUT`, `$1`, or environment variables. Any generated hook code using those patterns is a bug.
+- For Codex hooks, do not claim the changed hook will run until its updated definition has been reviewed and trusted with `/hooks`.
 
 ## Output
 
 - **HOOK CONTRACT** block — current behaviour documented before any edit (always required)
 - **PROPOSED DIFF** block — before/after diff shown explicitly before applying (always required)
-- Modified `~/.claude/hooks/<name>.sh` — minimal diff applied, existing contract preserved
+- Modified hook script (`~/.claude/hooks/<name>.sh`, `~/.codex/hooks/<name>.sh`, or project-local equivalent) — minimal diff applied, existing contract preserved
 - **TEST EVIDENCE** block — shell commands with expected outputs for changed path and happy path (always required; mark simulated if shell is unavailable)
 - Updated `workflows/go-hook-eval.js` — test cases reflect new behaviour (if applicable)
 - Updated `CHANGELOG.md` entry (if behaviour changed)
@@ -222,7 +258,7 @@ If the change is user-visible (new blocked pattern, different message, new event
 go-swift → (hook in production) → go-wren → go-hook-eval
 ```
 
-- **go-swift** creates hooks and wires them into `settings.json`.
+- **go-swift** creates hooks and wires them into the target agent's hook config.
 - **go-wren** maintains hooks after they are in production — bug fixes, threshold changes, new conditions.
 - **go-hook-eval** validates the full hook suite after any change.
 
