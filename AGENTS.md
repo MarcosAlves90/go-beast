@@ -52,6 +52,14 @@ Checklist terms in `go-skill-eval.js` must be:
 
 If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file must exist and contain actionable content. Do not use `${CLAUDE_SKILL_DIR}` references for content the LLM needs at execution time — inline it in the step instead.
 
+### Pull Request Pattern
+
+- One problem per PR.
+- Use a short imperative title in the form `[area] summary`.
+- Write the body from the template in `.github/pull_request_template.md`.
+- Include the problem, root cause, change, validation, and risks or follow-ups.
+- Do not open a PR until the full diff has been reviewed end to end.
+
 ## Adding a new beast
 
 1. Run go-smith to validate the gap is real and name the beast
