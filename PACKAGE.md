@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.25.0
+version: 1.26.0
 date:    2026-06-15
 author:  @cherry-c
 type:    skill-pack
@@ -16,10 +16,12 @@ scope:   full-stack software development lifecycle
 ```
 go-beast/
 ├── AGENTS.md              ← Agent context: conventions, eval usage, adding new beasts
-├── AGENTS.global.md       ← Global agent instructions — synced to ~/.claude/CLAUDE.md on SessionStart
+├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
 ├── README.md              ← Pack index and pipeline map
 ├── PACKAGE.md             ← This file — manifest and metadata
 ├── CHANGELOG.md           ← Version history
+├── .github/
+│   └── pull_request_template.md ← PR body pattern for repo changes
 ├── go-hawk/
 │   └── SKILL.md           ← Discovery & Requirements
 ├── go-lark/
@@ -51,7 +53,7 @@ go-beast/
 ├── go-smith/
 │   └── SKILL.md           ← Skill Authoring (meta-skill)
 ├── go-swift/
-│   └── SKILL.md           ← Claude Code Hook Authoring
+│   └── SKILL.md           ← Lifecycle Hook Authoring
 ├── go-kite/
 │   └── SKILL.md           ← Architecture Health Audit (meta-skill)
 ├── go-crane/
@@ -59,7 +61,7 @@ go-beast/
 ├── go-ant/
 │   └── SKILL.md           ← Performance Profiling & Optimization
 ├── go-wren/
-│   └── SKILL.md           ← Claude Code Hook Maintenance (meta-skill)
+│   └── SKILL.md           ← Lifecycle Hook Maintenance (meta-skill)
 ├── go-finch/
 │   └── SKILL.md           ← go-* Skill Maintenance (meta-skill)
 ├── go-vole/
@@ -72,7 +74,7 @@ go-beast/
 │   ├── go-workflow-eval.js    ← Workflow eval pipeline for Workflow scripts
 │   └── go-deep-analysis.js    ← Deep multi-dimensional codebase analysis workflow
 └── hooks/
-    ├── sync-go-beast-skills.sh  ← SessionStart: symlinks skills/workflows/hooks + copies AGENTS.global.md
+    ├── sync-go-beast-skills.sh  ← Claude Code SessionStart: symlinks skills/workflows/hooks + copies AGENTS.global.md
     ├── git-commit-guard.sh      ← PreToolUse(Bash): blocks commits of sensitive files/build artifacts
     ├── code-dedup-check.sh      ← PreToolUse(Edit/Write): warns on duplicate function/class names
     ├── code-verify-flag.sh      ← PostToolUse(Edit/Write): flags project for post-session verification

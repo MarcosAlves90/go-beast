@@ -93,8 +93,8 @@ go-hawk → go-fox → go-otter → go-beaver → go-wolf + go-lynx → go-eagle
 | go-mole | Start of any session on an unfamiliar project — before other beasts |
 | go-kite | Strategic architecture health audit of an existing system — before go-fox revisions |
 | go-jay | AI context file authoring when instructions alone can't express the behavior |
-| go-swift | Hook automation needed after go-jay (shell-level Claude Code lifecycle events) |
-| go-wren | An existing Claude Code hook needs to be changed — bug fix, new condition, or threshold update |
+| go-swift | Hook automation needed after go-jay (shell-level lifecycle events for hook-capable agents) |
+| go-wren | An existing lifecycle hook needs to be changed — bug fix, new condition, or threshold update |
 | go-smith | A gap in the pack is identified and a new beast is needed |
 | go-finch | An existing go-* skill needs improvement — vague step, missing rule, incomplete output, or eval-driven fix |
 | go-vole | Obsidian vault design, restructuring, plugin configuration, or PKM system setup needed |
@@ -116,7 +116,7 @@ For tasks involving multiple independent steps, parallel research, or large-scal
 
 ## Global Hooks
 
-These hooks are active in `~/.claude/settings.json` for all projects:
+These hooks may be active in a hook-capable agent's lifecycle configuration. Claude Code uses `~/.claude/settings.json`; Codex uses `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml`.
 
 | Hook | Event | Behavior |
 |------|-------|----------|

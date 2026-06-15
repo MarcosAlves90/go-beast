@@ -2,11 +2,11 @@
 
 > **Scope:** This file is the context for the AI agent that **maintains this repository** (adds skills, edits docs, runs evals). It is not the context for agents that *use* the skills — users load individual `SKILL.md` files via their agent's skill system.
 
-This is the go-beast skill pack repository. It contains skills, workflows, hooks, and a cross-platform installer for the go-* family. The pack is agent-agnostic — skills are plain Markdown and work with any agent. The Claude Code sync hook (`hooks/sync-go-beast-skills.sh`), `go-swift`, and `go-wren` are the only Claude Code-specific components.
+This is the go-beast skill pack repository. It contains skills, workflows, hooks, and a cross-platform installer for the go-* family. The pack is agent-agnostic — skills are plain Markdown and work with any agent. The Claude Code sync hook (`hooks/sync-go-beast-skills.sh`) is Claude Code-specific. `go-swift` and `go-wren` support lifecycle hooks for Claude Code and Codex; Codex uses `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml` rather than Claude Code's `settings.json` schema.
 
 ## What this repo is
 
-A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.), eval workflows (`go-skill-eval`, `go-hook-eval`, `go-workflow-eval`, `go-deep-analysis`), a set of Claude Code hooks, and a cross-platform Node.js installer (`scripts/install.mjs`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
+A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.), eval workflows (`go-skill-eval`, `go-hook-eval`, `go-workflow-eval`, `go-deep-analysis`), lifecycle hook scripts for hook-capable agents, and a cross-platform Node.js installer (`scripts/install.mjs`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
 
 ## Conventions
 
@@ -51,6 +51,14 @@ Checklist terms in `go-skill-eval.js` must be:
 ### Reference files
 
 If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file must exist and contain actionable content. Do not use `${CLAUDE_SKILL_DIR}` references for content the LLM needs at execution time — inline it in the step instead.
+
+### Pull Request Pattern
+
+- One problem per PR.
+- Use a short imperative title in the form `[area] summary`.
+- Write the body from the template in `.github/pull_request_template.md`.
+- Include the problem, root cause, change, validation, and risks or follow-ups.
+- Do not open a PR until the full diff has been reviewed end to end.
 
 ## Adding a new beast
 
@@ -109,7 +117,7 @@ go-beast/
 │   ├── go-workflow-eval.js    ← Workflow eval: structural checklist + LLM judge
 │   └── go-deep-analysis.js    ← Deep multi-dimensional codebase analysis
 ├── hooks/
-│   ├── sync-go-beast-skills.sh       ← SessionStart: symlinks skills/workflows/hooks
+│   ├── sync-go-beast-skills.sh       ← Claude Code SessionStart: symlinks skills/workflows/hooks
 │   ├── git-commit-guard.sh           ← PreToolUse(Bash): blocks sensitive file commits
 │   ├── git-strip-coauthored.sh       ← PreToolUse(Bash): blocks Co-Authored-By commits
 │   ├── code-dedup-check.sh           ← PreToolUse(Edit/Write): warns on duplicate declarations
