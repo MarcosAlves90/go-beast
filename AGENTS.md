@@ -2,11 +2,30 @@
 
 > **Scope:** This file is the context for the AI agent that **maintains this repository** (adds skills, edits docs, runs evals). It is not the context for agents that *use* the skills — users load individual `SKILL.md` files via their agent's skill system.
 
-This is the go-beast skill pack repository. It contains skills, workflows, hooks, and a cross-platform installer for the go-* family. The pack is agent-agnostic — skills are plain Markdown and work with any agent. The sync hook (`hooks/sync-go-beast-skills.sh`) is agent-agnostic and keeps Claude Code and Codex synchronized from the same manifest. `go-swift` and `go-wren` support lifecycle hooks for Claude Code and Codex; Codex uses `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml` rather than Claude Code's `settings.json` schema.
+This is the go-beast skill pack repository. It contains skills, workflows,
+optional hook integrations, an optional plugin adapter bundle, and a
+cross-platform installer for the go-* family. The pack is agent-agnostic —
+skills are plain Markdown and work with any agent. The sync hook
+(`hooks/sync-go-beast-skills.sh`) supports optional Claude Code and Codex
+integration from the same manifest when those harnesses are installed.
+`go-swift` and `go-wren` support lifecycle hooks for Claude Code and Codex;
+Codex uses `~/.codex/hooks.json` or inline `[hooks]` tables in
+`~/.codex/config.toml` rather than Claude Code's `settings.json` schema.
 
 ## What this repo is
 
-A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.), eval workflows (`go-skill-eval`, `go-hook-eval`, `go-workflow-eval`, `go-deep-analysis`), lifecycle hook scripts for hook-capable agents, and a cross-platform Node.js installer (`scripts/install.mjs`). Each skill is a directory with a `SKILL.md` and optional `references/` subfolder.
+A versioned collection of agent-agnostic skills (`go-hawk`, `go-fox`, etc.),
+eval workflows (`go-skill-eval`, `go-hook-eval`, `go-workflow-eval`,
+`go-deep-analysis`), optional lifecycle hook scripts for hook-capable agents,
+an optional plugin adapter bundle under `plugins/go-beast/`, and a
+cross-platform Node.js installer (`scripts/install.mjs`). Each skill is a
+directory with a `SKILL.md` and optional `references/` subfolder.
+
+## Compatibility rule
+
+Anything in this repository that depends on a specific AI surface, harness,
+plugin schema, hook config, or live agent runtime is optional. The canonical
+core is the root `go-*` skill directories and the documentation they require.
 
 ## Conventions
 
@@ -71,8 +90,10 @@ If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file
 5. Add checklist entry in `go-skill-eval.js` under `SKILLS`
 6. If the skill requires real files to function, add it to `FILESYSTEM_SKILLS` in `go-skill-eval.js`
 7. Add a `skillOverrides` entry in `go-skill-eval.js` with a concrete scenario for eval
-8. Update `CHANGELOG.md` and bump version (minor)
-9. Run `go-skill-eval` filtered to the new skill to validate before a full run:
+8. Add or update an integration test under `tests/` when the skill changes real agent behavior
+9. Run `node scripts/sync-plugin-skills.mjs` to refresh the plugin adapter bundle
+10. Update `CHANGELOG.md` and bump version (minor)
+11. Run `go-skill-eval` filtered to the new skill to validate before a full run:
 
 ```js
 Workflow({ name: "go-skill-eval", args: { skills: ["go-<animal>"] } })
@@ -105,15 +126,32 @@ Note: slash commands do not support args — use the Workflow tool directly for 
 go-beast/
 ├── AGENTS.md              ← This file (context for the repo maintainer agent)
 ├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
+├── AGENTS.bootstrap.md    ← Optional stricter bootstrap instructions synced when bootstrap mode is enabled
 ├── README.md              ← Pack index, pipeline map, install instructions
 ├── PACKAGE.md             ← Manifest, directory tree, versioning policy
 ├── CHANGELOG.md           ← Version history
 ├── go-*/
 │   ├── SKILL.md           ← One skill per beast
 │   └── references/        ← Optional: supporting content for the skill
+├── package.json           ← Package metadata and repo-maintenance scripts
+├── plugins/
+│   └── go-beast/
+│       ├── .codex-plugin/plugin.json   ← Codex plugin manifest for the adapter bundle
+│       ├── .claude-plugin/plugin.json  ← Claude plugin manifest for the adapter bundle
+│       ├── README.md                   ← Adapter scope and maintenance notes
+│       └── skills/                     ← Symlinks to canonical root go-* skills
 ├── scripts/
 │   ├── hook-wire.mjs      ← Shared hook manifest wiring helper for config and symlinks
-│   └── install.mjs        ← Cross-platform installer (Node.js 18+, no deps)
+│   ├── install.mjs        ← Cross-platform installer (Node.js 18+, no deps)
+│   └── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
+├── tests/
+│   ├── helpers.sh                  ← Shared shell assertions for repo integration tests
+│   ├── claude-code/                ← Claude Code real-session integration tests
+│   ├── codex/                      ← Codex real-session integration tests
+│   └── plugin/                     ← Plugin bundle structural/integration checks
+├── docs/
+│   └── architecture/
+│       └── ADR-001-plugin-adapter-bundle.md ← Records the plugin adapter architecture decision
 ├── workflows/
 │   ├── go-skill-eval.js       ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
 │   ├── go-hook-eval.js        ← Hook eval: test cases across all hooks

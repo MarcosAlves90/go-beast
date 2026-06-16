@@ -66,6 +66,14 @@ const SKILLS = {
     description: 'Designs, writes, and validates new skills for the go-* family — from gap analysis to SKILL.md authoring, naming, description quality, workflow structure, and integration into the pack handoff chain.',
     checklist: ['gap analysis', 'SKILL.md', 'when_to_use', 'workflow steps', 'checklist', 'position in chain', 'handoff'],
   },
+  'go-tern': {
+    description: 'Reviews a diff, branch, task, or named artifact against requirements, behavioral risk, security, and regression potential; produces severity-ranked findings, open questions, and a merge recommendation.',
+    checklist: ['REVIEW FINDINGS', 'Critical', 'Important', 'OPEN QUESTIONS', 'MERGE RECOMMENDATION'],
+  },
+  'go-marten': {
+    description: 'Plans, creates, validates, and cleans up isolated git worktrees for parallel development, risky refactors, or review staging; records provenance and safe cleanup rules.',
+    checklist: ['WORKTREE PLAN', 'WORKTREE STATE', 'CLEANUP RULES', 'branch', 'provenance'],
+  },
   'go-swift': {
     description: 'Designs, writes, tests, and registers lifecycle hooks for hook-capable coding agents — currently Claude Code and Codex. Produces hook scripts, wires them into the agent hook configuration, and verifies execution.',
     checklist: ['hook script', 'hook configuration', 'event', 'chmod', 'verification'],
@@ -402,6 +410,22 @@ Produce go-bee's complete output:
 4. Write the complete workflow script body: phase() calls, pipeline() with 3 stages (discover → audit → aggregate), agent() calls with labels and phase assignments, log() calls, save-report agent, return statement
 5. Show the complete final script as a single code block starting with export const meta
 6. State which file it goes in (workflows/auth-audit.js) and the README Workflows table entry`,
+    'go-tern': `EVAL CONTEXT: You ARE the go-tern skill executing its workflow. Review the provided change scope and produce findings, not implementation.
+
+Review scope:
+- Requirements source: "Task 3 from docs/plan.md — sanitize all user-controlled SQL inputs and keep login behavior unchanged."
+- Diff summary: the change replaced a parameterized SQL query with string concatenation in the login path, added logging of a password hash on successful login, and removed one integration test covering invalid email input.
+
+Produce go-tern's full output:
+1. REVIEW FINDINGS block with at least one Critical or Important finding grounded in the described change
+2. OPEN QUESTIONS block
+3. MERGE RECOMMENDATION block
+4. State why each finding severity is justified`,
+    'go-marten': `EVAL CONTEXT: You ARE the go-marten skill executing its workflow. The user wants a safe isolated workspace for a risky auth refactor on a clean git repository. Do not execute commands. Produce:
+1. WORKTREE PLAN block with branch, base, path, and reason
+2. WORKTREE STATE block describing the expected clean state after creation
+3. CLEANUP RULES block with explicit safe/forbidden cleanup conditions
+4. provenance handling for worktrees created by the skill vs pre-existing ones`,
     'go-vole': `EVAL CONTEXT: You ARE the go-vole skill executing its workflow. The user is a solo developer building a knowledge base for their software projects. They use Obsidian and want to set up a vault from scratch. They have Dataview and Templater installed. They work on 3-5 active projects at a time, take architecture and meeting notes, and maintain a reference library of technical concepts. Expected note volume: ~500 notes within a year. No existing vault yet — clean start.
 
 Execute go-vole's complete workflow and produce ALL required artifacts:

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // go-beast installer — cross-platform (macOS, Linux, Windows)
 // No external dependencies. Requires Node.js 18+.
-// Usage: ./scripts/install.mjs [--all] [--uninstall]
+// Usage: ./scripts/install.mjs [--all] [--bootstrap] [--uninstall]
 
 import fs   from 'fs'
 import path from 'path'
@@ -14,6 +14,7 @@ const HOME   = os.homedir()
 const IS_WIN = process.platform === 'win32'
 const W      = process.stdout.columns || 60
 const j      = (...p) => path.join(...p)
+const BOOTSTRAP_MARKER = j(HOME, '.go-beast', 'bootstrap.enabled')
 
 // ── ANSI ──────────────────────────────────────────────────────────────────────
 const TTY = process.stdout.isTTY && (!IS_WIN || process.env.WT_SESSION || process.env.TERM)
@@ -207,6 +208,17 @@ async function pickItems(label, items) {
   return result
 }
 
+async function askYesNo(label, defaultValue = false) {
+  const hint = defaultValue ? 'Y/n' : 'y/N'
+  while (true) {
+    const v = (await ask(`  ${cyan('›')} ${label} ${gray(`(${hint})`)} `)).trim().toLowerCase()
+    if (!v) return defaultValue
+    if (v === 'y' || v === 'yes') return true
+    if (v === 'n' || v === 'no') return false
+    ln(`  ${gray('type y or n')}`)
+  }
+}
+
 // ── Install section with tabular output ───────────────────────────────────────
 function printResults(results) {
   const newOnes  = results.filter(r => r.ico === icon.new)
@@ -221,8 +233,10 @@ function printResults(results) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  const flag = process.argv[2] ?? ''
-  if (flag === '--uninstall') { uninstall(); rl.close(); return }
+  const flags = new Set(process.argv.slice(2))
+  const installAll = flags.has('--all')
+  const bootstrapFlag = flags.has('--bootstrap')
+  if (flags.has('--uninstall')) { uninstall(); rl.close(); return }
 
   // Header
   ln()
@@ -240,7 +254,7 @@ async function main() {
 
   // 2. Select agents
   let selAgents
-  if (flag === '--all') {
+  if (installAll) {
     selAgents = detected
   } else {
     const names = await pickItems('Agents', detected.map(a => a.name))
@@ -250,7 +264,7 @@ async function main() {
 
   // 3. Skills
   const allSkills = collectSkills()
-  const selSkills = flag === '--all' ? allSkills : await pickItems('Skills', allSkills)
+  const selSkills = installAll ? allSkills : await pickItems('Skills', allSkills)
 
   // 4. Hook-capable agent extras
   const cc = selAgents.find(a => a.name === 'claude-code')
@@ -258,7 +272,7 @@ async function main() {
   let selHooks = [], selWorkflows = []
   if (hookAgents.length) {
     const allHooks = collectHooks()
-    if (flag === '--all') {
+    if (installAll) {
       selHooks = allHooks
     } else {
       if (allHooks.length) selHooks = await pickItems(`Hooks  (${hookAgents.map(a => a.name).join(', ')})`, allHooks)
@@ -268,12 +282,14 @@ async function main() {
   // 5. Claude Code workflow extras
   if (cc) {
     const allWf = collectWorkflows()
-    if (flag === '--all') {
+    if (installAll) {
       selWorkflows = allWf
     } else {
       if (allWf.length) selWorkflows = await pickItems('Workflows  (Claude Code only)', allWf)
     }
   }
+
+  const useBootstrap = installAll ? bootstrapFlag : await askYesNo('Enable optional bootstrap mode?', false)
 
   rl.close()
 
@@ -323,7 +339,7 @@ async function main() {
     printResults(results)
   }
 
-  const globalSrc = j(REPO, 'AGENTS.global.md')
+  const globalSrc = useBootstrap ? j(REPO, 'AGENTS.bootstrap.md') : j(REPO, 'AGENTS.global.md')
   if (fs.existsSync(globalSrc)) {
     ln(); ln(`  ${icon.link} ${bold('global instructions')}`)
     for (const agent of selAgents) {
@@ -334,11 +350,21 @@ async function main() {
     }
   }
 
+  fs.mkdirSync(path.dirname(BOOTSTRAP_MARKER), { recursive: true })
+  if (useBootstrap) {
+    fs.writeFileSync(BOOTSTRAP_MARKER, 'enabled\n')
+    ln(row(icon.ok, 'bootstrap mode', '~/.go-beast/bootstrap.enabled'))
+  } else if (fs.existsSync(BOOTSTRAP_MARKER)) {
+    fs.unlinkSync(BOOTSTRAP_MARKER)
+    ln(row(icon.skip, 'bootstrap mode', 'disabled'))
+  }
+
   // Summary box
   ln()
   box('Done', [
     `agents     ${bold(String(selAgents.length))}  ${dim(selAgents.map(a => a.name).join(', '))}`,
     `skills     ${bold(String(selSkills.length))}`,
+    `bootstrap  ${bold(useBootstrap ? 'enabled' : 'disabled')}`,
     ...(hookAgents.length && selHooks.length ? [`hooks      ${bold(String(selHooks.length))}  ${dim(hookAgents.map(a => a.name).join(', '))}`] : []),
     ...(cc && selWorkflows.length ? [`workflows  ${bold(String(selWorkflows.length))}`] : []),
     '---',

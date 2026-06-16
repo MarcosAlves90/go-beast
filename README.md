@@ -4,7 +4,7 @@
 
 > A versioned skill pack for AI-assisted full-stack software development — from discovery to deployment.
 
-Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more.
+Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
 **Version 1.28.2** · [Changelog](CHANGELOG.md)
 
@@ -51,6 +51,8 @@ Invoked on demand — not bound to a phase.
 | [go-swift](go-swift/SKILL.md) `[Claude Code · Codex]` | Creating new lifecycle hook scripts |
 | [go-wren](go-wren/SKILL.md) `[Claude Code · Codex]` | Patching an existing lifecycle hook |
 | [go-smith](go-smith/SKILL.md) | A gap in the pack is identified and a new beast is needed |
+| [go-tern](go-tern/SKILL.md) | Reviewing a diff, task output, or branch before merge or handoff |
+| [go-marten](go-marten/SKILL.md) | Setting up and governing isolated git worktrees for risky or parallel work |
 | [go-finch](go-finch/SKILL.md) | An existing skill needs improvement after eval feedback |
 | [go-vole](go-vole/SKILL.md) | Designing or restructuring an Obsidian vault / PKM system |
 | [go-bee](go-bee/SKILL.md) | Designing and implementing multi-agent Workflow scripts (pipeline, parallel, loop patterns) |
@@ -89,6 +91,40 @@ Automated guards that run on agent lifecycle events. The installer symlinks hook
 
 Skills are plain Markdown files — any agent that can read files can use them.
 
+**Rule:** anything in this repository that depends on a specific AI surface,
+harness, hook schema, plugin system, or live agent runtime is optional. The core
+pack remains the root `go-*` skill directories plus the plain Markdown docs they
+depend on.
+
+### Plugin adapter bundle
+
+The repository now includes `plugins/go-beast/`, a plugin-oriented adapter that
+packages the root `go-*` skills behind optional Codex and Claude plugin
+manifests.
+
+This adapter is intentionally narrow:
+
+- it exposes optional plugin metadata and a dedicated `skills/` directory
+- it does **not** replace the root skill pack as the source of truth
+- it does **not** wire hooks through the plugin manifest; hook installation
+  remains handled by `scripts/install.mjs` and `hooks/sync-go-beast-skills.sh`
+
+### Optional bootstrap mode
+
+`go-beast` now ships an optional stricter bootstrap in `AGENTS.bootstrap.md`.
+When enabled, SessionStart sync installs that file instead of `AGENTS.global.md`
+and pushes the agent toward `go-mole`, `go-hawk`, and `go-lark` before
+implementation.
+
+Enable it with:
+
+```bash
+node scripts/install.mjs --bootstrap
+```
+
+Or choose bootstrap mode in the interactive installer. The choice is persisted
+at `~/.go-beast/bootstrap.enabled`.
+
 ### Interactive installer (macOS · Linux · Windows)
 
 Requires Node.js 18+. No external dependencies.
@@ -98,16 +134,44 @@ git clone <repo-url> ~/Documents/@cherry-c/go-beast
 node ~/Documents/@cherry-c/go-beast/scripts/install.mjs
 ```
 
-The installer detects which agents are installed, lets you choose which skills, hooks for hook-capable agents, and workflows (Claude Code only) to install, creates symlinks, and writes the hook config for Claude Code and Codex from the shared manifest without removing existing entries. It also copies `AGENTS.global.md` to the correct global instructions file for each agent.
+The installer detects which agents are installed, lets you choose which skills,
+optional hook integrations for hook-capable agents, and workflows (Claude Code
+only) to install, creates symlinks, and writes hook config only for the agents
+you actually have installed and selected. It also copies the chosen global
+instructions file to the correct location for each selected agent. This remains
+the supported installation path for optional hooks and global instructions even
+when the plugin adapter bundle is used for skill packaging.
 
 ```bash
 node scripts/install.mjs --all       # install everything, no prompts
+node scripts/install.mjs --all --bootstrap # install everything with stricter bootstrap mode
 node scripts/install.mjs --uninstall # remove all repo symlinks
+```
+
+### Validation
+
+Structural and repo-local checks:
+
+```bash
+npm run sync:plugin-skills
+npm run test:plugin
+```
+
+Live harness tests are opt-in because they require a working local harness
+environment:
+
+```bash
+GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:go-mole
+GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:bootstrap
+GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-tern
+GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-marten
 ```
 
 ### Session-start auto-sync
 
-The sync hook re-runs every session start and keeps the pack up to date automatically for Claude Code and Codex.
+The sync hook re-runs every session start and keeps the pack up to date
+automatically for the optional hook-capable agents you use, currently Claude
+Code and Codex.
 
 ```bash
 # One-time setup
@@ -126,7 +190,8 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-Use the same command in `~/.codex/hooks.json` if you wire Codex manually; the installer handles both agents automatically.
+Use the same command in `~/.codex/hooks.json` if you wire Codex manually; this
+is optional and only relevant if you use Codex.
 
 After setup, skills are available as `/go-hawk`, `/go-fox`, etc. Workflows run via the Workflow tool or `/workflows`.
 
@@ -135,9 +200,12 @@ After setup, skills are available as `/go-hawk`, `/go-fox`, etc. Workflows run v
 > bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
 > ```
 
-### Codex hooks
+### Codex hooks (optional)
 
-Codex discovers hook configuration from `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml`. The installer now writes `~/.codex/hooks.json` automatically from the shared manifest and preserves existing entries; review new or changed hooks with `/hooks`.
+Codex discovers hook configuration from `~/.codex/hooks.json` or inline
+`[hooks]` tables in `~/.codex/config.toml`. The installer writes
+`~/.codex/hooks.json` only when Codex is installed and selected, and preserves
+existing entries; review new or changed hooks with `/hooks`.
 
 ### Other agents (Gemini CLI, Copilot CLI, Cursor…)
 

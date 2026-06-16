@@ -65,6 +65,11 @@ Respond in the same language the user writes in.
 
 ## Skills and Workflows
 
+AI-surface-specific integrations are optional. If a workflow depends on a
+specific harness, plugin system, hook schema, or live runtime, treat that
+integration as additive rather than required. The core go-beast pack is the
+plain Markdown `go-*` skills.
+
 ### go-* Family
 
 The go-* pack is the primary skill toolset for software development tasks. Each beast owns exactly one phase of the project lifecycle. Invoke via the `Skill` tool.
@@ -102,6 +107,8 @@ go-hawk → [go-lark] → go-fox → go-otter → go-beaver → go-wolf + go-lyn
 | go-swift | Hook automation needed after go-jay (shell-level lifecycle events for hook-capable agents) |
 | go-wren | An existing lifecycle hook needs to be changed — bug fix, new condition, or threshold update |
 | go-smith | A gap in the pack is identified and a new beast is needed |
+| go-tern | Review a diff, task output, or branch against requirements and risk before merge or handoff |
+| go-marten | Isolated git worktree setup, validation, or cleanup is needed for parallel or risky work |
 | go-finch | An existing go-* skill needs improvement — vague step, missing rule, incomplete output, or eval-driven fix |
 | go-vole | Obsidian vault design, restructuring, plugin configuration, or PKM system setup needed |
 | go-bee | A multi-agent Workflow script needs to be designed or implemented |
