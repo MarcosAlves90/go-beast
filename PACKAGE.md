@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.30.0
+version: 1.31.0
 date:    2026-06-17
 author:  @cherry-c
 type:    skill-pack
@@ -100,6 +100,7 @@ go-hawk
 go-mole    ← session briefing; invoke before any other beast on an unfamiliar project
 go-kite    ← architecture health audit; invoke before go-fox revisions on existing systems
 go-ant     ← performance; invoke only when a numeric baseline proves a bottleneck exists
+go-mule    ← explicit go-beast initialization; invoke before go-mole when SessionStart hooks are unavailable or undesirable
 go-jay     ← AI context files; invoke when instructions cannot express the needed behavior
   └─► go-swift   ← hook automation; invoke after go-jay when shell-level automation is needed
         └─► go-raven  ← includes hooks in CI/CD and onboarding scripts

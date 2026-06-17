@@ -9,8 +9,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.31.0] - 2026-06-17
+### Added
+
+- `skills/go-mule/SKILL.md` — new meta-skill for explicit go-beast initialization as an alternative to SessionStart sync-hook instrumentation, including core setup, optional harness wiring, validation, and next-beast handoff.
+- `tests/codex/test-go-mule.sh` plus `package.json` script `test:codex:go-mule` — live Codex integration coverage for the initialization skill contract.
+
 ### Changed
 
+- `README.md`, `PACKAGE.md`, and `AGENTS.global.md` — registered `go-mule`, documented when to prefer explicit initialization versus the sync hook, and added the new live validation command.
+- `workflows/go-skill-eval.js` — registered `go-mule` with a structural checklist and a repo-specific initialization scenario.
+- `tests/plugin/test-plugin-bundle.sh` — now asserts that the plugin adapter exposes the canonical `go-mule` skill.
 - `.github/ISSUE_TEMPLATE.md`, `.github/pull_request_template.md`, `README.md`, and `AGENTS.md` — clarified issue/PR linking expectations by adding explicit related-items guidance for issues and a required GitHub closing-keyword reminder for PRs.
 
 ## [1.30.0] - 2026-06-17

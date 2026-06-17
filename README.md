@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
-**Version 1.30.0** · [Changelog](CHANGELOG.md)
+**Version 1.31.0** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
@@ -47,6 +47,7 @@ Invoked on demand — not bound to a phase.
 | [go-mole](skills/go-mole/SKILL.md) | Starting work on an unfamiliar project — before other beasts |
 | [go-kite](skills/go-kite/SKILL.md) | Strategic audit of an existing system before go-fox revisions |
 | [go-ant](skills/go-ant/SKILL.md) | A performance problem has a numeric baseline and needs a fix |
+| [go-mule](skills/go-mule/SKILL.md) | Explicitly initializing go-beast for a new agent session or environment, especially without SessionStart hooks |
 | [go-jay](skills/go-jay/SKILL.md) | Authoring or syncing AI context files (CLAUDE.md, AGENTS.md, GEMINI.md…) |
 | [go-swift](skills/go-swift/SKILL.md) `[Claude Code · Codex]` | Creating new lifecycle hook scripts |
 | [go-wren](skills/go-wren/SKILL.md) `[Claude Code · Codex]` | Patching an existing lifecycle hook |
@@ -109,6 +110,30 @@ This adapter is intentionally narrow:
 - it does **not** wire hooks through the plugin manifest; hook installation
   remains handled by `scripts/install.mjs` and `hooks/sync-go-beast-skills.sh`
 
+### Explicit initialization skill
+
+`go-mule` is the manual, user-invoked alternative to the automatic
+`sync-go-beast-skills.sh` path.
+
+Prefer `go-mule` when:
+
+- hooks are unavailable, untrusted, or undesirable
+- the user wants a planning-only or read-only bootstrap first
+- the environment supports skills but not reliable SessionStart automation
+- you need to separate core setup (`skills/`, `AGENTS.global.md`,
+  `AGENTS.bootstrap.md`, `scripts/install.mjs`) from optional Codex or Claude
+  hook wiring
+
+Prefer the sync hook when:
+
+- the environment already trusts SessionStart automation
+- the user wants ongoing background refresh of skills, workflows, hooks, and
+  global instructions
+- the machine is already instrumented and automatic drift correction is desired
+
+Use `go-mule` first when you need an explicit bootstrap contract. Use the sync
+hook after that only if the user wants automation to take over.
+
 ### Optional bootstrap mode
 
 `go-beast` now ships an optional stricter bootstrap in `AGENTS.bootstrap.md`.
@@ -163,6 +188,7 @@ environment:
 ```bash
 GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:go-mole
 GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:bootstrap
+GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-mule
 GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-tern
 GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-marten
 ```
