@@ -1,6 +1,6 @@
 {
   "name": "go-beast",
-  "version": "1.30.0",
+  "version": "1.31.0",
   "private": true,
   "type": "module",
   "description": "Agent-agnostic go-* skill pack with hooks, workflows, and plugin adapter bundles for coding agents.",
@@ -9,6 +9,7 @@
     "test:plugin": "bash tests/plugin/test-plugin-bundle.sh",
     "test:claude:go-mole": "bash tests/claude-code/test-go-mole.sh",
     "test:claude:bootstrap": "bash tests/claude-code/test-bootstrap-triage.sh",
+    "test:codex:go-mule": "bash tests/codex/test-go-mule.sh",
     "test:codex:go-tern": "bash tests/codex/test-go-tern.sh",
     "test:codex:go-marten": "bash tests/codex/test-go-marten.sh"
   },

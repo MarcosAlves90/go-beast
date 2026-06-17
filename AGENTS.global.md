@@ -103,6 +103,7 @@ go-hawk → [go-lark] → go-fox → go-otter → go-beaver → go-wolf + go-lyn
 | go-mole | Start of any session on an unfamiliar project — before other beasts |
 | go-kite | Strategic architecture health audit of an existing system — before go-fox revisions |
 | go-ant | Performance problem has a numeric baseline and needs profiling or optimization |
+| go-mule | Explicit go-beast initialization is needed before work starts, especially when SessionStart hooks are unavailable or undesirable |
 | go-jay | AI context file authoring when instructions alone can't express the behavior |
 | go-swift | Hook automation needed after go-jay (shell-level lifecycle events for hook-capable agents) |
 | go-wren | An existing lifecycle hook needs to be changed — bug fix, new condition, or threshold update |

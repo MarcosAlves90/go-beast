@@ -66,6 +66,10 @@ const SKILLS = {
     description: 'Designs, writes, and validates new skills for the go-* family — from gap analysis to SKILL.md authoring, naming, description quality, workflow structure, and integration into the pack handoff chain.',
     checklist: ['gap analysis', 'SKILL.md', 'when_to_use', 'workflow steps', 'checklist', 'position in chain', 'handoff'],
   },
+  'go-mule': {
+    description: 'Initializes go-beast explicitly for a new agent session or environment as an alternative to SessionStart sync-hook instrumentation, separating canonical core setup from optional harness-specific wiring and validating readiness before work begins.',
+    checklist: ['INITIALIZATION PLAN', 'CORE SETUP', 'OPTIONAL HARNESS STEPS', 'VALIDATION REPORT', 'NEXT BEAST HANDOFF', 'install.mjs', 'AGENTS.global.md', 'skills/'],
+  },
   'go-tern': {
     description: 'Reviews a diff, branch, task, or named artifact against requirements, behavioral risk, security, and regression potential; produces severity-ranked findings, open questions, and a merge recommendation.',
     checklist: ['REVIEW FINDINGS', 'Critical', 'Important', 'OPEN QUESTIONS', 'MERGE RECOMMENDATION'],
@@ -398,6 +402,25 @@ function buildPrompt(skillName, skillDesc, input, checklist) {
     'go-kite': `EVAL CONTEXT: You do not have access to filesystem tools in this context. The files above are the repomix output equivalent — treat them as the complete codebase. Produce the full audit across all 5 dimensions (structure, observability, reliability, scalability, security) AND the capability gaps section AND at least 3 concrete recommendations referencing the provided files. DO NOT skip dimensions due to lack of tool access.`,
     'go-swift': `EVAL CONTEXT: You are generating the output go-swift would produce for a Claude Code project. The provided settings.json is the real hook configuration file to be modified. Produce the complete hook script, show the hook configuration changes, specify the event, and include chmod.`,
     'go-jay': `EVAL CONTEXT: The provided context files (CLAUDE.md, AGENTS.md) are the real files to be audited and edited. Produce the full analysis, proposed edits with before/after, and the regression check.`,
+    'go-mule': `EVAL CONTEXT: You ARE the go-mule skill executing its workflow for the go-beast repository. The user wants an explicit initialization path for a hookless Codex environment as an alternative to SessionStart sync-hook instrumentation.
+
+Relevant repository facts you must use:
+- canonical skills live in \`skills/\`
+- the explicit installer entrypoint is \`scripts/install.mjs\`
+- the optional SessionStart automation path is \`hooks/sync-go-beast-skills.sh\`
+- standard global instructions come from \`AGENTS.global.md\`
+- stricter bootstrap instructions come from \`AGENTS.bootstrap.md\`
+- Codex optional hook wiring uses \`~/.codex/hooks.json\` or inline \`[hooks]\` in \`~/.codex/config.toml\`, then requires \`/hooks\` trust review
+- the plugin adapter bundle under \`plugins/go-beast/\` is optional, not core
+
+Produce the full go-mule output with these exact artifacts:
+1. INITIALIZATION PLAN
+2. CORE SETUP
+3. OPTIONAL HARNESS STEPS
+4. VALIDATION REPORT
+5. NEXT BEAST HANDOFF
+
+Be explicit about when to prefer planning-only, installer-backed, manual, and optional hook-wired setup. Keep core setup agent-agnostic and put Codex-specific wiring only in OPTIONAL HARNESS STEPS.`,
     'go-ant': `EVAL CONTEXT: The code files above are the real codebase. Simulate go-ant's complete output: baseline measurements, profiler output indicating bottlenecks, root cause analysis, applied optimization with before/after benchmark. Use the provided files as evidence.`,
     'go-bee': `EVAL CONTEXT: You ARE the go-bee skill executing its workflow. Design and implement a complete Workflow script for the following task:
 

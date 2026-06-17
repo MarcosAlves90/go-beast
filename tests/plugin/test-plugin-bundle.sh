@@ -26,4 +26,9 @@ assert_symlink_target \
   "$REPO_ROOT/skills/go-marten" \
   "plugin bundle links canonical go-marten skill"
 
+assert_symlink_target \
+  "$REPO_ROOT/plugins/go-beast/skills/go-mule" \
+  "$REPO_ROOT/skills/go-mule" \
+  "plugin bundle links canonical go-mule skill"
+
 echo "STATUS: PASSED"
