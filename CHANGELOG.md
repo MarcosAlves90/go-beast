@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.29.0] - 2026-06-17
+
 ### Added
 
 - `plugins/go-beast/` — plugin adapter bundle with Codex and Claude plugin manifests plus a dedicated `skills/` directory for plugin-oriented packaging.
