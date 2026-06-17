@@ -4,6 +4,7 @@ import fs from 'fs'
 import path from 'path'
 
 const REPO = path.resolve(import.meta.dirname, '..')
+const CANONICAL_SKILLS_DIR = path.join(REPO, 'skills')
 const SKILLS_DIR = path.join(REPO, 'plugins', 'go-beast', 'skills')
 
 function normalizeLinkTarget(targetPath) {
@@ -15,14 +16,14 @@ function ensureDir(dirPath) {
 }
 
 function repoSkills(repoRoot) {
-  return fs.readdirSync(repoRoot)
+  return fs.readdirSync(CANONICAL_SKILLS_DIR)
     .filter(name => name.startsWith('go-'))
-    .filter(name => fs.existsSync(path.join(repoRoot, name, 'SKILL.md')))
+    .filter(name => fs.existsSync(path.join(CANONICAL_SKILLS_DIR, name, 'SKILL.md')))
     .sort()
 }
 
 function ensureSkillLink(skillName) {
-  const src = path.join(REPO, skillName)
+  const src = path.join(CANONICAL_SKILLS_DIR, skillName)
   const dst = path.join(SKILLS_DIR, skillName)
 
   try {

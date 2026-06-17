@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.29.0
+version: 1.30.0
 date:    2026-06-17
 author:  @cherry-c
 type:    skill-pack
@@ -12,7 +12,8 @@ scope:   full-stack software development lifecycle
 ---
 
 Agent-specific adapters, plugin manifests, hook integrations, and live harness
-tests are optional layers around the core root `go-*` skill directories.
+tests are optional layers around the core `skills/go-*` directories. Root
+`go-*` entries remain as compatibility symlinks.
 
 ---
 
@@ -30,9 +31,12 @@ go-beast/
 ├── .github/
 │   ├── ISSUE_TEMPLATE.md        ← Issue body pattern for repo changes
 │   └── pull_request_template.md ← PR body pattern for repo changes
+├── skills/
+│   └── go-*/              ← Canonical skill directories
 ├── docs/
 │   └── architecture/
-│       └── ADR-001-plugin-adapter-bundle.md ← Plugin adapter architecture decision
+│       ├── ADR-001-plugin-adapter-bundle.md ← Plugin adapter architecture decision
+│       └── ADR-002-canonical-skills-directory.md ← Canonical skills directory decision
 ├── plugins/
 │   └── go-beast/
 │       ├── .codex-plugin/
@@ -40,62 +44,8 @@ go-beast/
 │       ├── .claude-plugin/
 │       │   └── plugin.json ← Claude plugin manifest for the adapter bundle
 │       ├── README.md       ← Adapter scope and maintenance notes
-│       └── skills/         ← Symlinks to canonical root go-* skills
-├── go-hawk/
-│   └── SKILL.md           ← Discovery & Requirements
-├── go-lark/
-│   └── SKILL.md           ← Solution Space Exploration
-├── go-fox/
-│   └── SKILL.md           ← Architecture & Design
-├── go-beaver/
-│   └── SKILL.md           ← Scaffolding & Project Init
-├── go-wolf/
-│   └── SKILL.md           ← Backend API Development
-├── go-lynx/
-│   └── SKILL.md           ← Frontend UI Development
-├── go-otter/
-│   └── SKILL.md           ← Database Design & Migrations
-├── go-eagle/
-│   ├── SKILL.md           ← Testing Strategy & QA
-│   └── references/        ← Test level guidelines
-├── go-bear/
-│   ├── SKILL.md           ← Security Review & Hardening
-│   ├── references/        ← Security review supporting checklists
-│   └── output/            ← Security review output templates
-├── go-raven/
-│   ├── SKILL.md           ← CI/CD & Deployment
-│   └── references/        ← Pipeline templates and rollout guidance
-├── go-owl/
-│   ├── SKILL.md           ← Documentation
-│   └── references/        ← Runbook template
-├── go-jay/
-│   ├── SKILL.md           ← AI Context File Editor
-│   └── references/
-│       └── REFERENCE.md   ← CLAUDE.md conventions, memory schema, sync protocol
-├── go-marten/
-│   └── SKILL.md           ← Git Worktrees (meta-skill)
-├── go-mole/
-│   └── SKILL.md           ← Documentation Briefing
-├── go-smith/
-│   └── SKILL.md           ← Skill Authoring (meta-skill)
-├── go-tern/
-│   └── SKILL.md           ← Code Review (meta-skill)
-├── go-swift/
-│   └── SKILL.md           ← Lifecycle Hook Authoring
-├── go-kite/
-│   └── SKILL.md           ← Architecture Health Audit (meta-skill)
-├── go-crane/
-│   └── SKILL.md           ← Observability & Monitoring
-├── go-ant/
-│   └── SKILL.md           ← Performance Profiling & Optimization
-├── go-wren/
-│   └── SKILL.md           ← Lifecycle Hook Maintenance (meta-skill)
-├── go-finch/
-│   └── SKILL.md           ← go-* Skill Maintenance (meta-skill)
-├── go-vole/
-│   └── SKILL.md           ← Obsidian Vault Design & PKM (meta-skill)
-├── go-bee/
-│   └── SKILL.md           ← Workflow Script Authoring (meta-skill)
+│       └── skills/         ← Symlinks to canonical `skills/go-*` directories
+├── go-*/                  ← Compatibility symlinks to `skills/go-*`
 ├── workflows/
 │   ├── go-skill-eval.js       ← Skill eval pipeline: all go-* skills, structural checklist + LLM-as-judge (A/B/C/D)
 │   ├── go-hook-eval.js        ← Hook eval pipeline across all go-beast hooks
@@ -180,7 +130,7 @@ Release `[Unreleased]` changes at the smallest valid SemVer level: patch-only ch
 ## Adding a new beast
 
 1. Run go-smith to validate that the gap is real and name the beast.
-2. Create `go-<animal>/SKILL.md` following the existing structure.
+2. Create `skills/go-<animal>/SKILL.md` following the existing structure.
 3. The skill must have a unique responsibility not covered by any existing beast.
 4. State prerequisites clearly.
 5. Add the beast to the table in `README.md` and the dependency graph above.
@@ -190,7 +140,7 @@ Release `[Unreleased]` changes at the smallest valid SemVer level: patch-only ch
 9. Add or update an integration test under `tests/` when the skill changes real agent behavior.
 10. Run `node scripts/sync-plugin-skills.mjs` to refresh the plugin adapter bundle.
 11. Add a changelog entry under `[Unreleased]`.
-12. Bump version in this file and in `README.md`.
+12. Bump version in this file, `README.md`, and `package.json`.
 13. Run `go-skill-eval` filtered to the new skill before a full eval.
 
 ## Adding a workflow

@@ -13,17 +13,17 @@ node --input-type=module -e "import fs from 'fs'; JSON.parse(fs.readFileSync('pl
 
 assert_symlink_target \
   "$REPO_ROOT/plugins/go-beast/skills/go-mole" \
-  "$REPO_ROOT/go-mole" \
+  "$REPO_ROOT/skills/go-mole" \
   "plugin bundle links canonical go-mole skill"
 
 assert_symlink_target \
   "$REPO_ROOT/plugins/go-beast/skills/go-tern" \
-  "$REPO_ROOT/go-tern" \
+  "$REPO_ROOT/skills/go-tern" \
   "plugin bundle links canonical go-tern skill"
 
 assert_symlink_target \
   "$REPO_ROOT/plugins/go-beast/skills/go-marten" \
-  "$REPO_ROOT/go-marten" \
+  "$REPO_ROOT/skills/go-marten" \
   "plugin bundle links canonical go-marten skill"
 
 echo "STATUS: PASSED"
