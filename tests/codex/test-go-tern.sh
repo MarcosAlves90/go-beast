@@ -32,7 +32,7 @@ git commit -m "refactor: inline query" --quiet
 HEAD_SHA="$(git rev-parse HEAD)"
 
 OUTPUT_FILE="$TEST_PROJECT/output.txt"
-PROMPT="Review the change between $BASE_SHA and $HEAD_SHA using the go-tern skill. Return severity-ranked findings and a merge recommendation."
+PROMPT="Review the change between $BASE_SHA and $HEAD_SHA using the go-tern skill. Produce REVIEW FINDINGS, OPEN QUESTIONS, and MERGE RECOMMENDATION blocks."
 
 codex exec "$PROMPT" \
   -C "$TEST_PROJECT" \
@@ -40,7 +40,8 @@ codex exec "$PROMPT" \
   --output-last-message "$OUTPUT_FILE" \
   >/tmp/go-beast-codex-go-tern.log
 
-assert_contains "$OUTPUT_FILE" "Critical|Important" "go-tern produced a severity-ranked finding"
-assert_contains "$OUTPUT_FILE" "merge" "go-tern produced a merge recommendation"
+assert_contains "$OUTPUT_FILE" "REVIEW FINDINGS|Review Findings" "go-tern produced findings block"
+assert_contains "$OUTPUT_FILE" "Critical|Important|Minor" "go-tern produced a severity-ranked finding"
+assert_contains "$OUTPUT_FILE" "MERGE RECOMMENDATION|Merge Recommendation" "go-tern produced merge recommendation block"
 
 echo "STATUS: PASSED"

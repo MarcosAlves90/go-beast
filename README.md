@@ -167,6 +167,10 @@ GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-tern
 GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-marten
 ```
 
+These live tests are intentionally less brittle than exact-string snapshot
+checks: they assert the expected skill artifacts and headings while tolerating
+harmless wording differences between agent responses.
+
 ### Session-start auto-sync
 
 The sync hook re-runs every session start and keeps the pack up to date

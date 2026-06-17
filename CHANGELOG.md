@@ -18,6 +18,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - `go-tern/SKILL.md` and `go-marten/SKILL.md` — new meta-skills for code review and git worktree workflows.
 - `tests/` — initial integration suite covering the plugin bundle, Claude real-session skill/bootstrap behavior, and Codex real-session checks for the new meta-skills.
 
+### Fixed
+
+- `tests/codex/test-go-marten.sh` and `tests/codex/test-go-tern.sh` — reduced output fragility by matching the expected skill artifacts and headings instead of overly exact wording, while keeping the tests live-harness opt-in.
+
 ## [1.28.2] - 2026-06-15
 
 ### Changed

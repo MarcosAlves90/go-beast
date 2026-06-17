@@ -19,7 +19,7 @@ git add README.md
 git commit -m "chore: init" --quiet
 
 OUTPUT_FILE="$TEST_PROJECT/output.txt"
-PROMPT="Use the go-marten skill. I need an isolated worktree for a risky auth refactor. Do not execute commands. Produce the worktree plan, worktree state expectations, and cleanup rules."
+PROMPT="Use the go-marten skill. I need an isolated worktree for a risky auth refactor. Do not create or remove any worktree. You may read local skill instructions if needed. Produce the worktree plan, worktree state expectations, and cleanup rules."
 
 codex exec "$PROMPT" \
   -C "$TEST_PROJECT" \
@@ -27,7 +27,7 @@ codex exec "$PROMPT" \
   --output-last-message "$OUTPUT_FILE" \
   >/tmp/go-beast-codex-go-marten.log
 
-assert_contains "$OUTPUT_FILE" "WORKTREE PLAN" "go-marten produced worktree plan"
-assert_contains "$OUTPUT_FILE" "CLEANUP RULES" "go-marten produced cleanup rules"
+assert_contains "$OUTPUT_FILE" "WORKTREE PLAN|Worktree Plan" "go-marten produced worktree plan"
+assert_contains "$OUTPUT_FILE" "CLEANUP RULES|Cleanup Rules" "go-marten produced cleanup rules"
 
 echo "STATUS: PASSED"
