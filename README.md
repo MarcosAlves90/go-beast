@@ -4,7 +4,7 @@
 
 > A versioned skill pack for AI-assisted full-stack software development — from discovery to deployment.
 
-Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`, while root-level `go-*` entries are compatibility symlinks for existing paths and tooling. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
+Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
 **Version 1.30.0** · [Changelog](CHANGELOG.md)
 
@@ -94,7 +94,7 @@ Skills are plain Markdown files — any agent that can read files can use them.
 **Rule:** anything in this repository that depends on a specific AI surface,
 harness, hook schema, plugin system, or live agent runtime is optional. The core
 pack remains the canonical `skills/` directory plus the plain Markdown docs
-they depend on. Root-level `go-*` entries remain as compatibility symlinks.
+they depend on.
 
 ### Plugin adapter bundle
 
@@ -213,7 +213,7 @@ existing entries; review new or changed hooks with `/hooks`.
 
 ### Other agents (Gemini CLI, Copilot CLI, Cursor…)
 
-Clone the repo and point your agent at `skills/` (or use the root `go-*` compatibility symlinks if a harness expects the legacy layout). Each skill is a self-contained `SKILL.md` — no dependencies, no platform-specific syntax.
+Clone the repo and point your agent at `skills/`. Each skill is a self-contained `SKILL.md` — no dependencies, no platform-specific syntax.
 
 > `go-swift` and `go-wren` support Claude Code and Codex hook schemas. Other agents may still need agent-specific guidance before hooks can be installed.
 

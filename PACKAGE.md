@@ -12,8 +12,7 @@ scope:   full-stack software development lifecycle
 ---
 
 Agent-specific adapters, plugin manifests, hook integrations, and live harness
-tests are optional layers around the core `skills/go-*` directories. Root
-`go-*` entries remain as compatibility symlinks.
+tests are optional layers around the core `skills/go-*` directories.
 
 ---
 
@@ -45,7 +44,6 @@ go-beast/
 │       │   └── plugin.json ← Claude plugin manifest for the adapter bundle
 │       ├── README.md       ← Adapter scope and maintenance notes
 │       └── skills/         ← Symlinks to canonical `skills/go-*` directories
-├── go-*/                  ← Compatibility symlinks to `skills/go-*`
 ├── workflows/
 │   ├── go-skill-eval.js       ← Skill eval pipeline: all go-* skills, structural checklist + LLM-as-judge (A/B/C/D)
 │   ├── go-hook-eval.js        ← Hook eval pipeline across all go-beast hooks

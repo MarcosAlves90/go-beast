@@ -19,9 +19,8 @@ using the core pack.
   plugin validation guidance rejects manifest-level `hooks`, so hook
   installation remains the job of `scripts/install.mjs` and
   `hooks/sync-go-beast-skills.sh`.
-- The canonical source of truth is `skills/`. The root `go-*` entries are
-  compatibility symlinks. Do not edit skills through the symlinked adapter
-  directory.
+- The canonical source of truth is `skills/`. Do not edit skills through the
+  symlinked adapter directory.
 
 ## Maintenance
 

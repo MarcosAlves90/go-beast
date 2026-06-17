@@ -23,13 +23,12 @@ plugin symlinks.
 
 ## Decision
 
-Move the canonical skills into a real top-level `skills/` directory and keep
-root `go-*` entries as compatibility symlinks.
+Move the canonical skills into a real top-level `skills/` directory and remove
+the root `go-*` compatibility layer.
 
 This migration changes the source of truth for repository maintenance:
 
 - canonical skill directories live at `skills/go-*`
-- root `go-*` paths remain available as symlinks for compatibility
 - plugin adapter symlinks now target `skills/go-*`
 - installer and sync tooling enumerate canonical skills from `skills/`
 
@@ -40,17 +39,14 @@ This migration changes the source of truth for repository maintenance:
 - aligns repository layout with plugin-oriented expectations
 - removes the mismatch between documented and actual `skills/` semantics
 - gives the pack one explicit canonical location for skill maintenance
-- preserves backward compatibility for tooling or docs that still reference
-  root `go-*` paths
+- removes duplicate path conventions from documentation and tooling
 
 ### Negative
 
-- introduces a compatibility layer that must stay intact until legacy path
-  assumptions are removed
-- requires repo tooling and tests to stay aware that root `go-*` entries are
-  symlinks, not real directories
+- external consumers that still hardcode root `go-*` paths must update to
+  `skills/go-*`
 
 ## Operational rule
 
-Edit canonical skills only under `skills/`. Treat root `go-*` paths as
-compatibility aliases, not primary locations.
+Edit canonical skills only under `skills/`. Do not recreate root-level
+compatibility aliases.

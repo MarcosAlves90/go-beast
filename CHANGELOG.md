@@ -14,14 +14,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `.github/ISSUE_TEMPLATE.md` — standardized issue body for go-beast changes, covering the problem, why it matters, desired outcome, constraints, and acceptance criteria.
-- `docs/architecture/ADR-002-canonical-skills-directory.md` — records the decision to move the canonical skills into a real top-level `skills/` directory while keeping root `go-*` compatibility symlinks.
+- `docs/architecture/ADR-002-canonical-skills-directory.md` — records the decision to move the canonical skills into a real top-level `skills/` directory without preserving a root compatibility layer.
 
 ### Changed
 
-- `skills/` plus root `go-*` symlinks — the canonical source of truth now lives in `skills/go-*`, while legacy root paths remain available as compatibility links.
+- `skills/` — the canonical source of truth now lives only in `skills/go-*`; root `go-*` entries were removed instead of being retained as compatibility symlinks.
 - `scripts/install.mjs`, `scripts/sync-plugin-skills.mjs`, and `hooks/sync-go-beast-skills.sh` — installer, plugin sync, and session-start sync now source skills from the canonical `skills/` directory.
 - `tests/plugin/test-plugin-bundle.sh` — plugin bundle assertions now verify that plugin skill symlinks resolve to `skills/go-*`.
-- `AGENTS.md`, `PACKAGE.md`, `README.md`, `plugins/go-beast/README.md`, and `docs/architecture/ADR-001-plugin-adapter-bundle.md` — updated docs to describe the canonical `skills/` directory, compatibility symlinks, and the superseding architecture decision.
+- `AGENTS.md`, `PACKAGE.md`, `README.md`, `plugins/go-beast/README.md`, and `docs/architecture/ADR-001-plugin-adapter-bundle.md` — updated docs to describe the canonical `skills/` directory, the removal of the root compatibility layer, and the superseding architecture decision.
 
 ## [1.29.0] - 2026-06-17
 

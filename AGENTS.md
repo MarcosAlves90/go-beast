@@ -25,8 +25,7 @@ directory with a `SKILL.md` and optional `references/` subfolder.
 
 Anything in this repository that depends on a specific AI surface, harness,
 plugin schema, hook config, or live agent runtime is optional. The canonical
-core is the `skills/` directory and the documentation it requires. Root
-`go-*` entries are compatibility symlinks.
+core is the `skills/` directory and the documentation it requires.
 
 ## Conventions
 
@@ -141,7 +140,6 @@ go-beast/
 ├── CHANGELOG.md           ← Version history
 ├── skills/
 │   └── go-*/              ← Canonical skill directories
-├── go-*/                  ← Compatibility symlinks to `skills/go-*`
 ├── package.json           ← Package metadata and repo-maintenance scripts
 ├── .github/
 │   ├── ISSUE_TEMPLATE.md        ← Issue body pattern for repo changes
