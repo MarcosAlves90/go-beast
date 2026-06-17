@@ -1,0 +1,43 @@
+{
+  "name": "go-beast",
+  "version": "1.28.2",
+  "description": "Agent-agnostic go-* skill pack for discovery, architecture, implementation, testing, security, and documentation workflows.",
+  "author": {
+    "name": "MarcosAlves90",
+    "url": "https://github.com/MarcosAlves90"
+  },
+  "homepage": "https://github.com/MarcosAlves90/go-beast",
+  "repository": "https://github.com/MarcosAlves90/go-beast",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "agents",
+    "architecture",
+    "testing",
+    "security",
+    "documentation",
+    "workflows"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "go-beast",
+    "shortDescription": "Lifecycle skills for coding agents",
+    "longDescription": "Use go-beast to drive agent work through discovery, architecture, scaffolding, backend/frontend delivery, testing, security, observability, documentation, and repo-maintenance workflows.",
+    "developerName": "MarcosAlves90",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/MarcosAlves90/go-beast",
+    "privacyPolicyURL": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement",
+    "termsOfServiceURL": "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service",
+    "defaultPrompt": [
+      "Analyze this repo before we change anything.",
+      "Plan this feature using the go-beast pipeline.",
+      "Audit this project for architecture and risks."
+    ],
+    "brandColor": "#0F766E"
+  }
+}

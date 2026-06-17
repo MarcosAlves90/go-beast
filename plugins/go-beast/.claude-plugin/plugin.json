@@ -1,0 +1,19 @@
+{
+  "name": "go-beast",
+  "version": "1.28.2",
+  "description": "go-* lifecycle skills for discovery, delivery, testing, security, observability, and documentation.",
+  "author": {
+    "name": "MarcosAlves90",
+    "url": "https://github.com/MarcosAlves90"
+  },
+  "homepage": "https://github.com/MarcosAlves90/go-beast",
+  "repository": "https://github.com/MarcosAlves90/go-beast",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "architecture",
+    "testing",
+    "security",
+    "documentation"
+  ]
+}

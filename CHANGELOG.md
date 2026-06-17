@@ -9,6 +9,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `plugins/go-beast/` — plugin adapter bundle with Codex and Claude plugin manifests plus a dedicated `skills/` directory for plugin-oriented packaging.
+- `docs/architecture/ADR-001-plugin-adapter-bundle.md` — records the decision to keep the root `go-*` directories as the canonical source while exposing a plugin-friendly adapter bundle.
+- `package.json` and `scripts/sync-plugin-skills.mjs` — package metadata plus a maintenance script to keep the plugin adapter skill symlinks aligned with the root skill directories.
+- `AGENTS.bootstrap.md` plus installer/sync support for optional bootstrap mode, persisted at `~/.go-beast/bootstrap.enabled`.
+- `go-tern/SKILL.md` and `go-marten/SKILL.md` — new meta-skills for code review and git worktree workflows.
+- `tests/` — initial integration suite covering the plugin bundle, Claude real-session skill/bootstrap behavior, and Codex real-session checks for the new meta-skills.
+
+### Fixed
+
+- `tests/codex/test-go-marten.sh` and `tests/codex/test-go-tern.sh` — reduced output fragility by matching the expected skill artifacts and headings instead of overly exact wording, while keeping the tests live-harness opt-in.
+
 ## [1.28.2] - 2026-06-15
 
 ### Changed

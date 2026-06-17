@@ -11,17 +11,35 @@ scope:   full-stack software development lifecycle
 
 ---
 
+Agent-specific adapters, plugin manifests, hook integrations, and live harness
+tests are optional layers around the core root `go-*` skill directories.
+
+---
+
 ## Contents
 
 ```
 go-beast/
 ├── AGENTS.md              ← Agent context: conventions, eval usage, adding new beasts
 ├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
+├── AGENTS.bootstrap.md    ← Optional stricter bootstrap instructions for discovery-first sessions
 ├── README.md              ← Pack index and pipeline map
 ├── PACKAGE.md             ← This file — manifest and metadata
 ├── CHANGELOG.md           ← Version history
+├── package.json           ← Package metadata and maintenance scripts
 ├── .github/
 │   └── pull_request_template.md ← PR body pattern for repo changes
+├── docs/
+│   └── architecture/
+│       └── ADR-001-plugin-adapter-bundle.md ← Plugin adapter architecture decision
+├── plugins/
+│   └── go-beast/
+│       ├── .codex-plugin/
+│       │   └── plugin.json ← Codex plugin manifest for the adapter bundle
+│       ├── .claude-plugin/
+│       │   └── plugin.json ← Claude plugin manifest for the adapter bundle
+│       ├── README.md       ← Adapter scope and maintenance notes
+│       └── skills/         ← Symlinks to canonical root go-* skills
 ├── go-hawk/
 │   └── SKILL.md           ← Discovery & Requirements
 ├── go-lark/
@@ -53,10 +71,14 @@ go-beast/
 │   ├── SKILL.md           ← AI Context File Editor
 │   └── references/
 │       └── REFERENCE.md   ← CLAUDE.md conventions, memory schema, sync protocol
+├── go-marten/
+│   └── SKILL.md           ← Git Worktrees (meta-skill)
 ├── go-mole/
 │   └── SKILL.md           ← Documentation Briefing
 ├── go-smith/
 │   └── SKILL.md           ← Skill Authoring (meta-skill)
+├── go-tern/
+│   └── SKILL.md           ← Code Review (meta-skill)
 ├── go-swift/
 │   └── SKILL.md           ← Lifecycle Hook Authoring
 ├── go-kite/
@@ -78,6 +100,15 @@ go-beast/
 │   ├── go-hook-eval.js        ← Hook eval pipeline across all go-beast hooks
 │   ├── go-workflow-eval.js    ← Workflow eval pipeline for Workflow scripts
 │   └── go-deep-analysis.js    ← Deep multi-dimensional codebase analysis workflow
+├── scripts/
+│   ├── hook-wire.mjs          ← Shared hook manifest wiring helper for config and symlinks
+│   ├── install.mjs            ← Cross-platform installer (Node.js 18+, no deps)
+│   └── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
+├── tests/
+│   ├── helpers.sh             ← Shared shell assertions for integration tests
+│   ├── claude-code/           ← Claude Code real-session integration tests
+│   ├── codex/                 ← Codex real-session integration tests
+│   └── plugin/                ← Plugin bundle checks
 └── hooks/
     ├── manifest.json             ← Shared hook manifest for Claude Code and Codex
     ├── sync-go-beast-skills.sh    ← SessionStart: syncs skills/workflows/hooks/global instructions
@@ -124,6 +155,8 @@ go-jay     ← AI context files; invoke when instructions cannot express the nee
   └─► go-swift   ← hook automation; invoke after go-jay when shell-level automation is needed
         └─► go-raven  ← includes hooks in CI/CD and onboarding scripts
 go-smith   ← skill authoring; invoke when a pack gap is identified
+go-tern    ← code review; invoke after implementation and before merge or handoff
+go-marten  ← isolated git worktrees; invoke before risky or parallel work in a clean repo
 go-finch   ← skill maintenance; invoke when an existing skill needs improvement (not replacement)
 go-wren    ← hook maintenance; invoke when an existing hook needs to be changed (not created)
 go-vole    ← Obsidian vault design and PKM; invoke on demand for vault setup, restructuring, or plugin config
@@ -153,9 +186,11 @@ Release `[Unreleased]` changes at the smallest valid SemVer level: patch-only ch
 6. Add checklist entry in `workflows/go-skill-eval.js` under `SKILLS`.
 7. If the skill requires real files to function, add it to `FILESYSTEM_SKILLS` in `workflows/go-skill-eval.js`.
 8. Add a `skillOverrides` entry in `workflows/go-skill-eval.js` with a concrete scenario for eval.
-9. Add a changelog entry under `[Unreleased]`.
-10. Bump version in this file and in `README.md`.
-11. Run `go-skill-eval` filtered to the new skill before a full eval.
+9. Add or update an integration test under `tests/` when the skill changes real agent behavior.
+10. Run `node scripts/sync-plugin-skills.mjs` to refresh the plugin adapter bundle.
+11. Add a changelog entry under `[Unreleased]`.
+12. Bump version in this file and in `README.md`.
+13. Run `go-skill-eval` filtered to the new skill before a full eval.
 
 ## Adding a workflow
 

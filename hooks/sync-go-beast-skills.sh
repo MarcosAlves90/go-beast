@@ -51,12 +51,16 @@ if ! node "$GO_BEAST_DIR/scripts/hook-wire.mjs" sync --repo "$GO_BEAST_DIR" --ho
   exit 1
 fi
 
-# Sync AGENTS.global.md → Claude and Codex global instructions
+# Sync AGENTS.global.md or AGENTS.bootstrap.md → Claude and Codex global instructions
+BOOTSTRAP_MARKER="$HOME/.go-beast/bootstrap.enabled"
 GLOBAL_MD="$GO_BEAST_DIR/AGENTS.global.md"
+if [ -f "$BOOTSTRAP_MARKER" ] && [ -f "$GO_BEAST_DIR/AGENTS.bootstrap.md" ]; then
+  GLOBAL_MD="$GO_BEAST_DIR/AGENTS.bootstrap.md"
+fi
 if [ -f "$GLOBAL_MD" ]; then
   mkdir -p "$HOME/.claude" "$HOME/.codex"
   cp "$GLOBAL_MD" "$HOME/.claude/CLAUDE.md"
   cp "$GLOBAL_MD" "$HOME/.codex/AGENTS.md"
-  echo "go-beast: synced AGENTS.global.md → ~/.claude/CLAUDE.md"
-  echo "go-beast: synced AGENTS.global.md → ~/.codex/AGENTS.md"
+  echo "go-beast: synced $(basename "$GLOBAL_MD") → ~/.claude/CLAUDE.md"
+  echo "go-beast: synced $(basename "$GLOBAL_MD") → ~/.codex/AGENTS.md"
 fi
