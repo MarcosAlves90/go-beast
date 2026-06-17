@@ -10,11 +10,11 @@ import readline from 'readline'
 import { hooksForAgent, loadHookManifest, wireAgentConfig } from './hook-wire.mjs'
 
 const REPO   = path.resolve(import.meta.dirname, '..')
-const CANONICAL_SKILLS_DIR = j(REPO, 'skills')
 const HOME   = os.homedir()
 const IS_WIN = process.platform === 'win32'
 const W      = process.stdout.columns || 60
 const j      = (...p) => path.join(...p)
+const CANONICAL_SKILLS_DIR = j(REPO, 'skills')
 const BOOTSTRAP_MARKER = j(HOME, '.go-beast', 'bootstrap.enabled')
 
 // ── ANSI ──────────────────────────────────────────────────────────────────────
