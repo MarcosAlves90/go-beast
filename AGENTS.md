@@ -81,6 +81,14 @@ If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file
 - Include the problem, root cause, change, validation, and risks or follow-ups.
 - Do not open a PR until the full diff has been reviewed end to end.
 
+### Issue Pattern
+
+- One problem per issue.
+- Use a short imperative title in the form `[area] summary`.
+- Write the body from the template in `.github/ISSUE_TEMPLATE.md`.
+- State the problem, why it matters, desired outcome, constraints, and acceptance criteria.
+- Do not file speculative issues with no concrete problem statement or no plausible owner path.
+
 ## Adding a new beast
 
 1. Run go-smith to validate the gap is real and name the beast
@@ -134,6 +142,9 @@ go-beast/
 │   ├── SKILL.md           ← One skill per beast
 │   └── references/        ← Optional: supporting content for the skill
 ├── package.json           ← Package metadata and repo-maintenance scripts
+├── .github/
+│   ├── ISSUE_TEMPLATE.md        ← Issue body pattern for repo changes
+│   └── pull_request_template.md ← PR body pattern for repo changes
 ├── plugins/
 │   └── go-beast/
 │       ├── .codex-plugin/plugin.json   ← Codex plugin manifest for the adapter bundle

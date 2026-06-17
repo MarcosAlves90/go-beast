@@ -9,6 +9,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `.github/ISSUE_TEMPLATE.md` — standardized issue body for go-beast changes, covering the problem, why it matters, desired outcome, constraints, and acceptance criteria.
+
+### Changed
+
+- `AGENTS.md`, `PACKAGE.md`, and `README.md` — documented the repository's issue pattern alongside the existing PR pattern.
+
 ## [1.29.0] - 2026-06-17
 
 ### Added

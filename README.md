@@ -226,3 +226,8 @@ Clone the repo and point your agent at the skill directory. Each skill is a self
 4. **Security is not a phase.** go-bear can interrupt any beast at any time.
 5. **Do not skip steps.** Each beast reduces the cost of every beast that follows.
 6. **English only.** All content in this repo — skills, docs, commits, PRs — must be in English. See [AGENTS.md](AGENTS.md) for the full policy.
+
+## Contribution patterns
+
+- Issues: use `.github/ISSUE_TEMPLATE.md` and keep one concrete problem per issue.
+- PRs: use `.github/pull_request_template.md` and keep one concrete problem per PR.

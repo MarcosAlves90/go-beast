@@ -28,6 +28,7 @@ go-beast/
 ├── CHANGELOG.md           ← Version history
 ├── package.json           ← Package metadata and maintenance scripts
 ├── .github/
+│   ├── ISSUE_TEMPLATE.md        ← Issue body pattern for repo changes
 │   └── pull_request_template.md ← PR body pattern for repo changes
 ├── docs/
 │   └── architecture/
