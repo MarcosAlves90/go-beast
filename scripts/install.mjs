@@ -14,6 +14,7 @@ const HOME   = os.homedir()
 const IS_WIN = process.platform === 'win32'
 const W      = process.stdout.columns || 60
 const j      = (...p) => path.join(...p)
+const CANONICAL_SKILLS_DIR = j(REPO, 'skills')
 const BOOTSTRAP_MARKER = j(HOME, '.go-beast', 'bootstrap.enabled')
 
 // ── ANSI ──────────────────────────────────────────────────────────────────────
@@ -95,7 +96,7 @@ const AGENTS = [
 ]
 
 // ── Collectors ────────────────────────────────────────────────────────────────
-const collectSkills    = () => fs.readdirSync(REPO).filter(n => n.startsWith('go-') && fs.existsSync(j(REPO,n,'SKILL.md'))).sort()
+const collectSkills    = () => fs.readdirSync(CANONICAL_SKILLS_DIR).filter(n => n.startsWith('go-') && fs.existsSync(j(CANONICAL_SKILLS_DIR,n,'SKILL.md'))).sort()
 const HOOK_MANIFEST = loadHookManifest(REPO)
 const collectHooks     = () => HOOK_MANIFEST.map(h => h.name).sort()
 const collectWorkflows = () => fs.readdirSync(j(REPO,'workflows')).filter(n => n.endsWith('.js')).sort()
@@ -303,7 +304,7 @@ async function main() {
       ln(); ln(`  ${icon.link} ${bold('skills')} ${dim('→')} ${cyan(agent.name)}`)
       cleanStale(agent.skills)
       const results = []
-      for (const skill of selSkills) linkItem(j(REPO, skill), agent.skills, results)
+      for (const skill of selSkills) linkItem(j(CANONICAL_SKILLS_DIR, skill), agent.skills, results)
       printResults(results)
       for (const r of results) {
         if (r.ico === icon.new)  counts.new++

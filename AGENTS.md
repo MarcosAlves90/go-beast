@@ -25,7 +25,7 @@ directory with a `SKILL.md` and optional `references/` subfolder.
 
 Anything in this repository that depends on a specific AI surface, harness,
 plugin schema, hook config, or live agent runtime is optional. The canonical
-core is the root `go-*` skill directories and the documentation they require.
+core is the `skills/` directory and the documentation it requires.
 
 ## Conventions
 
@@ -92,7 +92,7 @@ If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file
 ## Adding a new beast
 
 1. Run go-smith to validate the gap is real and name the beast
-2. Create `go-<animal>/SKILL.md` following the structure above
+2. Create `skills/go-<animal>/SKILL.md` following the structure above
 3. Add to the skills tables in `README.md`
 4. Add to directory tree in `PACKAGE.md`
 5. Add checklist entry in `go-skill-eval.js` under `SKILLS`
@@ -138,9 +138,8 @@ go-beast/
 ├── README.md              ← Pack index, pipeline map, install instructions
 ├── PACKAGE.md             ← Manifest, directory tree, versioning policy
 ├── CHANGELOG.md           ← Version history
-├── go-*/
-│   ├── SKILL.md           ← One skill per beast
-│   └── references/        ← Optional: supporting content for the skill
+├── skills/
+│   └── go-*/              ← Canonical skill directories
 ├── package.json           ← Package metadata and repo-maintenance scripts
 ├── .github/
 │   ├── ISSUE_TEMPLATE.md        ← Issue body pattern for repo changes
@@ -150,7 +149,7 @@ go-beast/
 │       ├── .codex-plugin/plugin.json   ← Codex plugin manifest for the adapter bundle
 │       ├── .claude-plugin/plugin.json  ← Claude plugin manifest for the adapter bundle
 │       ├── README.md                   ← Adapter scope and maintenance notes
-│       └── skills/                     ← Symlinks to canonical root go-* skills
+│       └── skills/                     ← Symlinks to canonical `skills/go-*` directories
 ├── scripts/
 │   ├── hook-wire.mjs      ← Shared hook manifest wiring helper for config and symlinks
 │   ├── install.mjs        ← Cross-platform installer (Node.js 18+, no deps)
@@ -162,7 +161,8 @@ go-beast/
 │   └── plugin/                     ← Plugin bundle structural/integration checks
 ├── docs/
 │   └── architecture/
-│       └── ADR-001-plugin-adapter-bundle.md ← Records the plugin adapter architecture decision
+│       ├── ADR-001-plugin-adapter-bundle.md ← Records the original plugin adapter architecture decision
+│       └── ADR-002-canonical-skills-directory.md ← Records the canonical `skills/` migration decision
 ├── workflows/
 │   ├── go-skill-eval.js       ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
 │   ├── go-hook-eval.js        ← Hook eval: test cases across all hooks

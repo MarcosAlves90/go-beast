@@ -440,7 +440,7 @@ Execute go-vole's complete workflow and produce ALL required artifacts:
 
 The go-eagle skill needs improvement. A go-skill-eval run flagged it: its Rules section contains "Try to" language (guidelines, not hard constraints), and its Output section lists "test results" without naming the artifact file or format. These are two distinct weaknesses — fix ONLY the Rules section in this pass (one weakness per invocation).
 
-EXISTING SKILL FILE (go-eagle/SKILL.md) — treat as the real file:
+EXISTING SKILL FILE (skills/go-eagle/SKILL.md) — treat as the real file:
 
 \`\`\`markdown
 ---
@@ -631,7 +631,7 @@ Produce go-wren's complete output:
 
 The go-bear skill needs improvement. A go-skill-eval run on ShopLegacy (adversarial Flask/MySQL project) revealed that go-bear's Output section lists "THREAT_MODEL" and "SECURITY_REVIEW.md" as artifacts but the Output section does not specify what format THREAT_MODEL should be (Markdown table? STRIDE matrix? free prose?) or where it lives. The eval agent skipped it because the format was ambiguous.
 
-EXISTING OUTPUT SECTION (go-bear/SKILL.md) — the rest of the file is fine, fix only this section:
+EXISTING OUTPUT SECTION (skills/go-bear/SKILL.md) — the rest of the file is fine, fix only this section:
 
 \`\`\`markdown
 ## Output
@@ -645,7 +645,7 @@ EXISTING OUTPUT SECTION (go-bear/SKILL.md) — the rest of the file is fine, fix
 THE TASK IS NARROW: fix ONLY the Output section — add format, location, and actionability to each artifact. Do not touch any other section.
 
 Produce go-finch's complete output:
-1. SKILL AUDIT block (Skill: go-bear v<current>, File: go-bear/SKILL.md, Weakness: Output artifacts lack format/location spec, Type: Sharpening, Risk: Low, Scope: ## Output)
+1. SKILL AUDIT block (Skill: go-bear v<current>, File: skills/go-bear/SKILL.md, Weakness: Output artifacts lack format/location spec, Type: Sharpening, Risk: Low, Scope: ## Output)
 2. Change classification with checklist
 3. PROPOSED EDIT block — BEFORE (exact current Output section) and AFTER (rewritten with format/location/actionability for each artifact)
 4. Apply the edit (describe using Edit tool)

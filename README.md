@@ -4,9 +4,9 @@
 
 > A versioned skill pack for AI-assisted full-stack software development — from discovery to deployment.
 
-Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
+Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
-**Version 1.29.0** · [Changelog](CHANGELOG.md)
+**Version 1.30.0** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
@@ -25,18 +25,18 @@ go-hawk → [go-lark] → go-fox → go-otter → go-beaver
 
 | Skill | Phase | Produces |
 |---|---|---|
-| [go-hawk](go-hawk/SKILL.md) | Discovery | `REQUIREMENTS.md`, scope, handoff plan |
-| [go-lark](go-lark/SKILL.md) | Solution Exploration | `APPROACH.md` — 3–5 options evaluated, one selected |
-| [go-fox](go-fox/SKILL.md) | Architecture | `ADR.md`, `STACK.md`, `DIAGRAM.md`, `CONTRACTS.md` |
-| [go-otter](go-otter/SKILL.md) | Database | ER diagram, migrations, index strategy |
-| [go-beaver](go-beaver/SKILL.md) | Scaffolding | Working repo skeleton, tooling, `.env.example`, `SETUP.md` |
-| [go-wolf](go-wolf/SKILL.md) | Backend | REST/GraphQL API, auth, middleware, validation |
-| [go-lynx](go-lynx/SKILL.md) | Frontend | Components, state, API integration, a11y |
-| [go-eagle](go-eagle/SKILL.md) | Testing | Test pyramid, unit/integration/E2E, CI gates, `TESTING.md` |
-| [go-bear](go-bear/SKILL.md) | Security | OWASP review, `THREAT_MODEL.md`, `SECURITY_REVIEW.md` |
-| [go-raven](go-raven/SKILL.md) | CI/CD | Pipeline, environments, release automation |
-| [go-crane](go-crane/SKILL.md) | Observability | Logging, metrics, tracing, health endpoints, `OBSERVABILITY.md` |
-| [go-owl](go-owl/SKILL.md) | Documentation | README, API reference, runbooks, changelog |
+| [go-hawk](skills/go-hawk/SKILL.md) | Discovery | `REQUIREMENTS.md`, scope, handoff plan |
+| [go-lark](skills/go-lark/SKILL.md) | Solution Exploration | `APPROACH.md` — 3–5 options evaluated, one selected |
+| [go-fox](skills/go-fox/SKILL.md) | Architecture | `ADR.md`, `STACK.md`, `DIAGRAM.md`, `CONTRACTS.md` |
+| [go-otter](skills/go-otter/SKILL.md) | Database | ER diagram, migrations, index strategy |
+| [go-beaver](skills/go-beaver/SKILL.md) | Scaffolding | Working repo skeleton, tooling, `.env.example`, `SETUP.md` |
+| [go-wolf](skills/go-wolf/SKILL.md) | Backend | REST/GraphQL API, auth, middleware, validation |
+| [go-lynx](skills/go-lynx/SKILL.md) | Frontend | Components, state, API integration, a11y |
+| [go-eagle](skills/go-eagle/SKILL.md) | Testing | Test pyramid, unit/integration/E2E, CI gates, `TESTING.md` |
+| [go-bear](skills/go-bear/SKILL.md) | Security | OWASP review, `THREAT_MODEL.md`, `SECURITY_REVIEW.md` |
+| [go-raven](skills/go-raven/SKILL.md) | CI/CD | Pipeline, environments, release automation |
+| [go-crane](skills/go-crane/SKILL.md) | Observability | Logging, metrics, tracing, health endpoints, `OBSERVABILITY.md` |
+| [go-owl](skills/go-owl/SKILL.md) | Documentation | README, API reference, runbooks, changelog |
 
 ### Meta-skills
 
@@ -44,18 +44,18 @@ Invoked on demand — not bound to a phase.
 
 | Skill | Invoke when |
 |---|---|
-| [go-mole](go-mole/SKILL.md) | Starting work on an unfamiliar project — before other beasts |
-| [go-kite](go-kite/SKILL.md) | Strategic audit of an existing system before go-fox revisions |
-| [go-ant](go-ant/SKILL.md) | A performance problem has a numeric baseline and needs a fix |
-| [go-jay](go-jay/SKILL.md) | Authoring or syncing AI context files (CLAUDE.md, AGENTS.md, GEMINI.md…) |
-| [go-swift](go-swift/SKILL.md) `[Claude Code · Codex]` | Creating new lifecycle hook scripts |
-| [go-wren](go-wren/SKILL.md) `[Claude Code · Codex]` | Patching an existing lifecycle hook |
-| [go-smith](go-smith/SKILL.md) | A gap in the pack is identified and a new beast is needed |
-| [go-tern](go-tern/SKILL.md) | Reviewing a diff, task output, or branch before merge or handoff |
-| [go-marten](go-marten/SKILL.md) | Setting up and governing isolated git worktrees for risky or parallel work |
-| [go-finch](go-finch/SKILL.md) | An existing skill needs improvement after eval feedback |
-| [go-vole](go-vole/SKILL.md) | Designing or restructuring an Obsidian vault / PKM system |
-| [go-bee](go-bee/SKILL.md) | Designing and implementing multi-agent Workflow scripts (pipeline, parallel, loop patterns) |
+| [go-mole](skills/go-mole/SKILL.md) | Starting work on an unfamiliar project — before other beasts |
+| [go-kite](skills/go-kite/SKILL.md) | Strategic audit of an existing system before go-fox revisions |
+| [go-ant](skills/go-ant/SKILL.md) | A performance problem has a numeric baseline and needs a fix |
+| [go-jay](skills/go-jay/SKILL.md) | Authoring or syncing AI context files (CLAUDE.md, AGENTS.md, GEMINI.md…) |
+| [go-swift](skills/go-swift/SKILL.md) `[Claude Code · Codex]` | Creating new lifecycle hook scripts |
+| [go-wren](skills/go-wren/SKILL.md) `[Claude Code · Codex]` | Patching an existing lifecycle hook |
+| [go-smith](skills/go-smith/SKILL.md) | A gap in the pack is identified and a new beast is needed |
+| [go-tern](skills/go-tern/SKILL.md) | Reviewing a diff, task output, or branch before merge or handoff |
+| [go-marten](skills/go-marten/SKILL.md) | Setting up and governing isolated git worktrees for risky or parallel work |
+| [go-finch](skills/go-finch/SKILL.md) | An existing skill needs improvement after eval feedback |
+| [go-vole](skills/go-vole/SKILL.md) | Designing or restructuring an Obsidian vault / PKM system |
+| [go-bee](skills/go-bee/SKILL.md) | Designing and implementing multi-agent Workflow scripts (pipeline, parallel, loop patterns) |
 
 
 ## Hooks `[Claude Code · Codex]`
@@ -93,19 +93,19 @@ Skills are plain Markdown files — any agent that can read files can use them.
 
 **Rule:** anything in this repository that depends on a specific AI surface,
 harness, hook schema, plugin system, or live agent runtime is optional. The core
-pack remains the root `go-*` skill directories plus the plain Markdown docs they
-depend on.
+pack remains the canonical `skills/` directory plus the plain Markdown docs
+they depend on.
 
 ### Plugin adapter bundle
 
 The repository now includes `plugins/go-beast/`, a plugin-oriented adapter that
-packages the root `go-*` skills behind optional Codex and Claude plugin
+packages the canonical `skills/go-*` skills behind optional Codex and Claude plugin
 manifests.
 
 This adapter is intentionally narrow:
 
 - it exposes optional plugin metadata and a dedicated `skills/` directory
-- it does **not** replace the root skill pack as the source of truth
+- it does **not** replace `skills/` as the source of truth
 - it does **not** wire hooks through the plugin manifest; hook installation
   remains handled by `scripts/install.mjs` and `hooks/sync-go-beast-skills.sh`
 
@@ -213,7 +213,7 @@ existing entries; review new or changed hooks with `/hooks`.
 
 ### Other agents (Gemini CLI, Copilot CLI, Cursor…)
 
-Clone the repo and point your agent at the skill directory. Each skill is a self-contained `SKILL.md` — no dependencies, no platform-specific syntax.
+Clone the repo and point your agent at `skills/`. Each skill is a self-contained `SKILL.md` — no dependencies, no platform-specific syntax.
 
 > `go-swift` and `go-wren` support Claude Code and Codex hook schemas. Other agents may still need agent-specific guidance before hooks can be installed.
 

@@ -13,8 +13,8 @@ if [ ! -d "$GO_BEAST_DIR" ]; then
   exit 0
 fi
 
-# Sync skills (go-* directories) into Claude and Codex
-for skill_dir in "$GO_BEAST_DIR"/go-*/; do
+# Sync skills (canonical skills/go-* directories) into Claude and Codex
+for skill_dir in "$GO_BEAST_DIR"/skills/go-*/; do
   [ -d "$skill_dir" ] || continue
   skill_name=$(basename "$skill_dir")
   for base_dir in "$CLAUDE_SKILLS_DIR" "$CODEX_SKILLS_DIR"; do
