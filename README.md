@@ -229,5 +229,5 @@ Clone the repo and point your agent at `skills/`. Each skill is a self-contained
 
 ## Contribution patterns
 
-- Issues: use `.github/ISSUE_TEMPLATE.md` and keep one concrete problem per issue.
-- PRs: use `.github/pull_request_template.md` and keep one concrete problem per PR.
+- Issues: use `.github/ISSUE_TEMPLATE.md`, keep one concrete problem per issue, and list related items explicitly.
+- PRs: use `.github/pull_request_template.md`, keep one concrete problem per PR, and include a GitHub closing keyword such as `Closes #123` when the PR resolves an issue.

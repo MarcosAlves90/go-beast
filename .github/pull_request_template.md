@@ -1,5 +1,9 @@
 <!-- Keep one problem per PR. Use a short imperative title in the form [area] summary. Commits must follow Conventional Commits: type(scope): summary. -->
 
+## Closing
+- Use a GitHub closing keyword when applicable: `Closes #<issue>`, `Fixes #<issue>`, or `Resolves #<issue>`.
+- Closing issue(s):
+
 ## Environment
 - Model and version:
 - Harness and version:

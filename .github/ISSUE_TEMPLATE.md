@@ -1,5 +1,9 @@
 <!-- Keep one problem per issue. Use a short imperative title in the form [area] summary. -->
 
+## Related Items
+- Related issues, PRs, ADRs, docs, or code paths.
+- If this issue is expected to be auto-closed by a future PR, note the target relationship explicitly here.
+
 ## Problem
 - What concrete problem exists today?
 
@@ -18,7 +22,7 @@
 - [ ] Core vs optional harness-specific scope is clear, if relevant.
 - [ ] Follow-up work can be derived from this issue without guessing intent.
 
-## Prior Art / Related Items
+## Prior Art
 - Existing issues, PRs, docs, or code paths that matter here.
 
 ## Notes

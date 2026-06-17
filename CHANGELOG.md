@@ -9,8 +9,11 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [1.30.0] - 2026-06-17
+### Changed
 
+- `.github/ISSUE_TEMPLATE.md`, `.github/pull_request_template.md`, `README.md`, and `AGENTS.md` — clarified issue/PR linking expectations by adding explicit related-items guidance for issues and a required GitHub closing-keyword reminder for PRs.
+
+## [1.30.0] - 2026-06-17
 ### Added
 
 - `.github/ISSUE_TEMPLATE.md` — standardized issue body for go-beast changes, covering the problem, why it matters, desired outcome, constraints, and acceptance criteria.

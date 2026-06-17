@@ -78,6 +78,7 @@ If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file
 - Commit messages must follow Conventional Commits: `type(scope): summary`. Scope is optional; use lowercase types such as `fix`, `feat`, `docs`, `chore`, `test`, `refactor`, `ci`, `build`, or `perf`.
 - Use a short imperative title in the form `[area] summary`.
 - Write the body from the template in `.github/pull_request_template.md`.
+- Add a GitHub closing keyword such as `Closes #123` when the PR resolves an existing issue.
 - Include the problem, root cause, change, validation, and risks or follow-ups.
 - Do not open a PR until the full diff has been reviewed end to end.
 
@@ -86,7 +87,7 @@ If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file
 - One problem per issue.
 - Use a short imperative title in the form `[area] summary`.
 - Write the body from the template in `.github/ISSUE_TEMPLATE.md`.
-- State the problem, why it matters, desired outcome, constraints, and acceptance criteria.
+- State the problem, why it matters, desired outcome, constraints, acceptance criteria, and related items.
 - Do not file speculative issues with no concrete problem statement or no plausible owner path.
 
 ## Adding a new beast
