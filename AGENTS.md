@@ -39,6 +39,9 @@ behavior:
 The detailed contract-writing pattern and precedence model live in
 `docs/architecture/AGENT_INSTRUCTION_CONTRACTS.md`.
 
+The procedural layer for recurring maintainer workflows lives in
+`docs/architecture/MAINTAINER_PROTOCOLS.md`.
+
 ## Conventions
 
 ### Skill structure
@@ -178,6 +181,7 @@ go-beast/
 │       ├── ADR-002-canonical-skills-directory.md ← Records the canonical `skills/` migration decision
 │       ├── ADR-003-harness-bootstrap-architecture.md ← Records the harness versus bootstrap layer split
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Explains how global, bootstrap, and repo-local agent contracts relate
+│       ├── MAINTAINER_PROTOCOLS.md ← Defines discovery, implementation, validation, PR/release, and blocker protocols
 │       └── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Explains source-of-truth boundaries for maintainers
 ├── workflows/
 │   ├── go-skill-eval.js       ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)

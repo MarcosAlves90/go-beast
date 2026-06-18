@@ -9,6 +9,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.33.0] - 2026-06-18
+### Added
+
+- `docs/architecture/MAINTAINER_PROTOCOLS.md` — defines the initial maintainer-facing operational protocol layer with Discovery, Implementation, Validation, PR/Release, and Blocker/Escalation protocols, including triggers, stop conditions, outputs, exit criteria, and related go-* skills.
+
+### Changed
+
+- `docs/architecture/AGENT_INSTRUCTION_CONTRACTS.md` — clarified the relationship between instruction contracts and protocols, and documented that protocols are operational sequences rather than a new precedence layer.
+- `AGENTS.global.md` and `AGENTS.bootstrap.md` — now point to the canonical maintainer protocol layer and explain how protocols interact with baseline versus bootstrap behavior.
+- `AGENTS.md`, `README.md`, and `PACKAGE.md` — registered the maintainer protocol layer and linked it from the repo-maintainer architecture docs.
+
 ## [1.32.0] - 2026-06-18
 ### Added
 

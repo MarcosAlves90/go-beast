@@ -158,6 +158,22 @@ Rules:
   requires another language.
 - Do not use flattery, filler, vague confidence, or generic summaries.
 
+## Operational Protocols
+
+For recurring high-risk workflows, follow the maintainer protocol layer in
+`docs/architecture/MAINTAINER_PROTOCOLS.md`.
+
+Use it to decide the required sequence for:
+
+- discovery
+- implementation
+- validation
+- PR/release preparation
+- blocker and escalation handling
+
+These protocols operationalize this file. They do not replace precedence or
+repo-local rules.
+
 ## Skills and Workflows
 
 AI-surface-specific integrations are optional. If a workflow depends on a
