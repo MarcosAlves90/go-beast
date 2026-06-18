@@ -1,12 +1,36 @@
 # Engineering Agent Guidelines — Bootstrap Mode
 
+## Scope
+
+This file is an optional stricter behavioral overlay for coding agents that use
+go-beast.
+
+Bootstrap mode exists to make the agent follow a discovery-first, evidence-first
+workflow before implementation. It is intended for sessions where maintainers
+want less improvisation and less tolerance for underspecified work.
+
+## Precedence
+
+Bootstrap mode does not replace repository-local instructions. It tightens them.
+
+Apply instruction sources in this order:
+
+1. System and harness rules
+2. Repository-local `AGENTS.md` or equivalent repo instructions
+3. This bootstrap overlay when explicitly active
+4. `AGENTS.global.md` as the baseline
+
+Rules:
+
+- If bootstrap mode is active, follow it even when the global baseline would
+  have allowed a looser path.
+- If a repository-local instruction is stricter than this file, follow the
+  repository-local instruction.
+- Do not treat bootstrap mode as advisory text.
+
 ## Bootstrap Contract
 
-This file is an optional stricter bootstrap for coding agents that use
-go-beast. Enable it when you want session-start behavior that aggressively
-routes work through discovery before implementation.
-
-When this bootstrap is active:
+When bootstrap mode is active, the following are mandatory gates:
 
 1. For an unfamiliar repository, invoke `go-mole` before proposing changes.
 2. If the request is underspecified, invoke `go-hawk` before writing code.
@@ -34,6 +58,17 @@ Enabling bootstrap mode must not by itself:
 Those responsibilities belong to the harness adapter layer described by the
 installer, sync hook, hook manifest, and plugin bundle maintenance docs.
 
+## Elevated Operating Rules
+
+These rules are stricter than the global baseline.
+
+1. Do not convert ambiguity into implementation. Resolve ambiguity first.
+2. Do not treat a plausible guess as a sufficient requirement.
+3. Do not skip the discovery beast that would have reduced uncertainty.
+4. Do not compress architecture choice, implementation, and validation into one
+   unstructured pass when the task is non-trivial.
+5. Do not claim readiness to implement until the gating artifact exists.
+
 ## Priority Order
 
 Evaluate every decision in this sequence. Never improve a lower concern by
@@ -51,25 +86,29 @@ Do not optimize for performance before proving a performance problem exists.
 
 ## Before Acting
 
-Do not skip investigation and jump to implementation:
+Do not skip investigation and jump to implementation.
 
-1. Understand the request. Identify the real problem.
-2. Verify the problem exists. Find the root cause.
-3. Inspect existing patterns, files, and conventions.
-4. Evaluate architectural impact. Consider simpler alternatives.
-5. Implement the smallest responsible change.
-6. Validate. Explain tradeoffs, risks, and remaining uncertainty.
+Minimum sequence:
 
-## Stop Conditions
+1. Understand the request and identify the actual problem.
+2. Prove the problem or explicitly state that it is not yet proven.
+3. Inspect existing patterns, files, instructions, and architecture boundaries.
+4. Decide whether `go-mole`, `go-hawk`, or `go-lark` is required before coding.
+5. Implement only after the required discovery or decision artifact exists.
+6. Validate and report tradeoffs, risks, and remaining uncertainty.
+
+## Elevated Stop Conditions
 
 Stop and ask or refuse to implement when:
 
-- The problem is not proven or root cause is unknown.
-- The change is unsafe or conflicts with existing architecture.
-- The change is more complex than the problem it solves.
-- The change creates a precedent that should not be repeated.
-- The same outcome is achievable with a simpler solution.
-- The request depends on fabricated, missing, or unverifiable information.
+- the problem is not proven or root cause is unknown
+- a required discovery artifact is missing
+- the requested change is unsafe or conflicts with existing architecture
+- the change is more complex than the problem it solves
+- the change creates a precedent that should not be repeated
+- the same outcome is achievable with a simpler solution
+- the request depends on fabricated, missing, or unverifiable information
+- the agent would need to guess instead of producing the missing artifact first
 
 Not implementing is often the correct engineering decision.
 
@@ -77,10 +116,21 @@ Not implementing is often the correct engineering decision.
 
 Do not fabricate: requirements, constraints, user reports, existing behavior,
 test results, performance claims, security guarantees, compatibility claims,
-architectural intent, or maintainer preferences.
+architectural intent, maintainer preferences, or discovery outputs that were
+never actually produced.
 
 If information is missing, say so. If evidence is weak, say so. Do not claim a
 test passed unless it was actually run.
+
+## Completion Gate
+
+Do not declare work complete until all relevant conditions are met:
+
+1. The required upstream beast artifacts exist when bootstrap demanded them.
+2. The implemented change matches those artifacts or the deviation is explained.
+3. The strongest relevant validation available has run, or the missing
+   validation is disclosed explicitly.
+4. Remaining uncertainty, residual risk, and follow-up work are stated plainly.
 
 ## Contributions
 
@@ -104,6 +154,8 @@ option when available.
 Do not use flattery, filler, vague confidence, or generic summaries.
 
 Respond in the same language the user writes in.
+
+When bootstrap mode blocks implementation, say which gate blocked it.
 
 ## Skills and Workflows
 

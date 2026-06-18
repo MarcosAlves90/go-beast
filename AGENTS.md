@@ -27,6 +27,18 @@ Anything in this repository that depends on a specific AI surface, harness,
 plugin schema, hook config, or live agent runtime is optional. The canonical
 core is the `skills/` directory and the documentation it requires.
 
+## Instruction files and precedence
+
+This repository uses three instruction layers for maintainer-facing agent
+behavior:
+
+1. Repository-local `AGENTS.md` for repo-specific rules
+2. `AGENTS.bootstrap.md` as an optional stricter overlay
+3. `AGENTS.global.md` as the reusable baseline
+
+The detailed contract-writing pattern and precedence model live in
+`docs/architecture/AGENT_INSTRUCTION_CONTRACTS.md`.
+
 ## Conventions
 
 ### Skill structure
@@ -165,6 +177,7 @@ go-beast/
 │       ├── ADR-001-plugin-adapter-bundle.md ← Records the original plugin adapter architecture decision
 │       ├── ADR-002-canonical-skills-directory.md ← Records the canonical `skills/` migration decision
 │       ├── ADR-003-harness-bootstrap-architecture.md ← Records the harness versus bootstrap layer split
+│       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Explains how global, bootstrap, and repo-local agent contracts relate
 │       └── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Explains source-of-truth boundaries for maintainers
 ├── workflows/
 │   ├── go-skill-eval.js       ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
