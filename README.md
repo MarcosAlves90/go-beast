@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
-**Version 1.31.0** · [Changelog](CHANGELOG.md)
+**Version 1.31.1** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
@@ -196,6 +196,11 @@ GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-marten
 These live tests are intentionally less brittle than exact-string snapshot
 checks: they assert the expected skill artifacts and headings while tolerating
 harmless wording differences between agent responses.
+
+## Architecture docs
+
+- [docs/architecture/ADR-003-harness-bootstrap-architecture.md](docs/architecture/ADR-003-harness-bootstrap-architecture.md) — records the layer split between the core pack, harness adapters, and bootstrap policy.
+- [docs/architecture/HARNESS_BOOTSTRAP_ARCHITECTURE.md](docs/architecture/HARNESS_BOOTSTRAP_ARCHITECTURE.md) — maintainer guide for classifying and changing harness and bootstrap behavior.
 
 ### Session-start auto-sync
 

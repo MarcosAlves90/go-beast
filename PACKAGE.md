@@ -2,8 +2,8 @@
 
 ```
 name:    go-beast
-version: 1.31.0
-date:    2026-06-17
+version: 1.31.1
+date:    2026-06-18
 author:  @cherry-c
 type:    skill-pack
 scope:   full-stack software development lifecycle
@@ -35,7 +35,9 @@ go-beast/
 ├── docs/
 │   └── architecture/
 │       ├── ADR-001-plugin-adapter-bundle.md ← Plugin adapter architecture decision
-│       └── ADR-002-canonical-skills-directory.md ← Canonical skills directory decision
+│       ├── ADR-002-canonical-skills-directory.md ← Canonical skills directory decision
+│       ├── ADR-003-harness-bootstrap-architecture.md ← Harness versus bootstrap architecture decision
+│       └── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Maintainer guide for harness and bootstrap boundaries
 ├── plugins/
 │   └── go-beast/
 │       ├── .codex-plugin/
