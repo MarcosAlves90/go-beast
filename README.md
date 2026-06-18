@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
-**Version 1.33.0** · [Changelog](CHANGELOG.md)
+**Version 1.33.1** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
@@ -262,5 +262,6 @@ Clone the repo and point your agent at `skills/`. Each skill is a self-contained
 
 ## Contribution patterns
 
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for the canonical contributor workflow.
 - Issues: use `.github/ISSUE_TEMPLATE.md`, keep one concrete problem per issue, and list related items explicitly.
 - PRs: use `.github/pull_request_template.md`, keep one concrete problem per PR, and include a GitHub closing keyword such as `Closes #123` when the PR resolves an issue.

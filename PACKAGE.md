@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.33.0
+version: 1.33.1
 date:    2026-06-18
 author:  @cherry-c
 type:    skill-pack
@@ -23,6 +23,7 @@ go-beast/
 ├── AGENTS.md              ← Agent context: conventions, eval usage, adding new beasts
 ├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
 ├── AGENTS.bootstrap.md    ← Optional stricter bootstrap instructions for discovery-first sessions
+├── CONTRIBUTING.md        ← Canonical contributor workflow for issues, PRs, validation, and releases
 ├── README.md              ← Pack index and pipeline map
 ├── PACKAGE.md             ← This file — manifest and metadata
 ├── CHANGELOG.md           ← Version history

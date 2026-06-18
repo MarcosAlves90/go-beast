@@ -97,6 +97,9 @@ If a skill step references `${CLAUDE_SKILL_DIR}/references/<file>.md`, that file
 - Include the problem, root cause, change, validation, and risks or follow-ups.
 - Do not open a PR until the full diff has been reviewed end to end.
 
+See `CONTRIBUTING.md` for the canonical contributor workflow that ties issues,
+PRs, validation, and versioning together.
+
 ### Issue Pattern
 
 - One problem per issue.
@@ -151,6 +154,7 @@ go-beast/
 ├── AGENTS.md              ← This file (context for the repo maintainer agent)
 ├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
 ├── AGENTS.bootstrap.md    ← Optional stricter bootstrap instructions synced when bootstrap mode is enabled
+├── CONTRIBUTING.md        ← Canonical contributor workflow for issues, PRs, validation, and releases
 ├── README.md              ← Pack index, pipeline map, install instructions
 ├── PACKAGE.md             ← Manifest, directory tree, versioning policy
 ├── CHANGELOG.md           ← Version history

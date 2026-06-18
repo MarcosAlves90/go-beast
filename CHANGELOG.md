@@ -9,6 +9,15 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.33.1] - 2026-06-18
+### Added
+
+- `CONTRIBUTING.md` — canonical contributor guide covering issue and PR workflow, validation expectations, common change types, and release/versioning rules for go-beast maintainers.
+
+### Changed
+
+- `README.md`, `PACKAGE.md`, and `AGENTS.md` — now point contributors at the canonical contribution guide and register the new top-level document in the documented repo layout.
+
 ## [1.33.0] - 2026-06-18
 ### Added
 
