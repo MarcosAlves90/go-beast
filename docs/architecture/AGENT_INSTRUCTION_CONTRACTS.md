@@ -184,3 +184,19 @@ existing contract unless the new file represents:
 - a different scope
 - a different activation mode
 - or a different precedence layer
+
+## Relationship to protocols
+
+Instruction contracts and protocols solve different problems:
+
+- instruction contracts define obligations, defaults, and forbidden behavior
+- protocols define the operational sequence for recurring workflow types
+
+Use protocols when the repository needs repeatable execution order for a class
+of tasks such as discovery, implementation, validation, release, or escalation.
+
+Protocols are not a new precedence layer. They operationalize the existing
+instruction files.
+
+The canonical maintainer-facing protocol set lives in
+`docs/architecture/MAINTAINER_PROTOCOLS.md`.

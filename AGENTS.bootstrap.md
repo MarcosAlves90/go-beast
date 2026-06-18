@@ -157,6 +157,19 @@ Respond in the same language the user writes in.
 
 When bootstrap mode blocks implementation, say which gate blocked it.
 
+## Operational Protocols
+
+Bootstrap mode uses the maintainer protocol layer in
+`docs/architecture/MAINTAINER_PROTOCOLS.md`, but with stricter discovery and
+completion expectations.
+
+When bootstrap mode is active:
+
+- the Discovery Protocol is mandatory whenever its trigger conditions hold
+- the Validation Protocol must satisfy the bootstrap completion gate
+- the Blocker/Escalation Protocol must be used instead of improvising past a
+  missing artifact or unproven claim
+
 ## Skills and Workflows
 
 ### go-* Family
