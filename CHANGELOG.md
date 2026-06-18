@@ -9,6 +9,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.32.0] - 2026-06-18
+### Added
+
+- `docs/architecture/AGENT_INSTRUCTION_CONTRACTS.md` — documents how `AGENTS.global.md`, `AGENTS.bootstrap.md`, and repository-local `AGENTS.md` should be layered, and records reusable techniques for writing stronger agent instruction contracts.
+
+### Changed
+
+- `AGENTS.global.md` — restructured the baseline agent contract into explicit precedence, mandatory rules, defaults, investigation requirements, validation requirements, and forbidden claims.
+- `AGENTS.bootstrap.md` — hardened bootstrap mode into a stricter behavioral overlay with explicit precedence, mandatory gates, elevated stop conditions, and a completion gate.
+- `AGENTS.md`, `README.md`, and `PACKAGE.md` — documented the instruction-layer relationship and registered the new architecture guide.
+
 ## [1.31.1] - 2026-06-18
 ### Added
 

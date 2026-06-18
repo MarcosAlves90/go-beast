@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.31.1
+version: 1.32.0
 date:    2026-06-18
 author:  @cherry-c
 type:    skill-pack
@@ -37,6 +37,7 @@ go-beast/
 │       ├── ADR-001-plugin-adapter-bundle.md ← Plugin adapter architecture decision
 │       ├── ADR-002-canonical-skills-directory.md ← Canonical skills directory decision
 │       ├── ADR-003-harness-bootstrap-architecture.md ← Harness versus bootstrap architecture decision
+│       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Maintainer guide for global, bootstrap, and repo-local instruction layering
 │       └── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Maintainer guide for harness and bootstrap boundaries
 ├── plugins/
 │   └── go-beast/
