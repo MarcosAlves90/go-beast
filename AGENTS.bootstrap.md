@@ -20,6 +20,20 @@ When this bootstrap is active:
    `go-eagle` for testing posture, `go-bear` for security-sensitive changes, and
    `go-owl` for docs or release-facing changes.
 
+## Bootstrap Non-Goals
+
+Bootstrap mode is a policy overlay, not a runtime installer.
+
+Enabling bootstrap mode must not by itself:
+
+- install skills or workflows
+- wire or register hooks
+- package plugin bundles
+- mutate agent config outside the explicit harness adapter flows
+
+Those responsibilities belong to the harness adapter layer described by the
+installer, sync hook, hook manifest, and plugin bundle maintenance docs.
+
 ## Priority Order
 
 Evaluate every decision in this sequence. Never improve a lower concern by

@@ -163,7 +163,9 @@ go-beast/
 ├── docs/
 │   └── architecture/
 │       ├── ADR-001-plugin-adapter-bundle.md ← Records the original plugin adapter architecture decision
-│       └── ADR-002-canonical-skills-directory.md ← Records the canonical `skills/` migration decision
+│       ├── ADR-002-canonical-skills-directory.md ← Records the canonical `skills/` migration decision
+│       ├── ADR-003-harness-bootstrap-architecture.md ← Records the harness versus bootstrap layer split
+│       └── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Explains source-of-truth boundaries for maintainers
 ├── workflows/
 │   ├── go-skill-eval.js       ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
 │   ├── go-hook-eval.js        ← Hook eval: test cases across all hooks

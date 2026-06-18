@@ -9,6 +9,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.31.1] - 2026-06-18
+### Added
+
+- `docs/architecture/ADR-003-harness-bootstrap-architecture.md` — records the architectural split between the canonical core pack, optional harness adapters, and optional bootstrap policy.
+- `docs/architecture/HARNESS_BOOTSTRAP_ARCHITECTURE.md` — maintainer-facing reference for ownership boundaries, drift points, and the checklist for adding or changing supported agent surfaces.
+
+### Changed
+
+- `AGENTS.bootstrap.md` — clarified bootstrap non-goals so bootstrap mode cannot be confused with installer, hook wiring, or plugin-packaging behavior.
+- `README.md`, `PACKAGE.md`, and `AGENTS.md` — linked the new architecture docs, updated the documented repo tree, and aligned release metadata with the new patch release.
+
 ## [1.31.0] - 2026-06-17
 ### Added
 
