@@ -9,8 +9,24 @@ export const meta = {
 
 // ─── Infrastructure ────────────────────────────────────────────────────────
 
-const REAL_HOME = args?.home ?? process.env.HOME ?? '/tmp'
-const REPO_ROOT = args?.repoPath ?? process.cwd()
+const ENV_SCHEMA = {
+  type: 'object',
+  required: ['home', 'repo_root'],
+  properties: {
+    home: { type: 'string' },
+    repo_root: { type: 'string' },
+  },
+}
+
+const env = args?.home && args?.repoPath
+  ? { home: args.home, repo_root: args.repoPath }
+  : await agent(
+      'Run the following commands and return the values:\n```bash\necho "$HOME"\ngit rev-parse --show-toplevel\n```\nReturn home (first line) and repo_root (second line).',
+      { label: 'discover-env', phase: 'Hook Tests', schema: ENV_SCHEMA }
+    )
+
+const REAL_HOME = env.home
+const REPO_ROOT = env.repo_root
 const HOOKS_DIR = `${REAL_HOME}/.claude/hooks`
 
 // Isolated home for flag files — avoids writing to ~/.go-beast/ which triggers safety classifier
