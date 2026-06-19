@@ -78,6 +78,12 @@ const TESTS = [
   },
   {
     hook: 'git-strip-coauthored.sh',
+    name: 'ignores Co-Authored-By outside commit command in malformed JSON',
+    input: '{"tool_name":"Bash","note":"Co-Authored-By: Example Agent <agent@example.com>","tool_input":{"command":"git commit -m \\"fix: clean message\\""}',
+    expectExit: 0,
+  },
+  {
+    hook: 'git-strip-coauthored.sh',
     name: 'blocks Co-Authored-By via heredoc (literal newlines)',
     input: jsonWithLiteralNewlines({
       tool_name: 'Bash',

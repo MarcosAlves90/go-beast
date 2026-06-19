@@ -86,7 +86,7 @@ Automated guards that run on agent lifecycle events. The installer symlinks hook
 | Workflow | Purpose |
 |---|---|
 | [go-skill-eval](workflows/go-skill-eval.js) | Evaluates all go-* skills: structural checklist + LLM-as-judge + A/B/C/D adversarial inputs |
-| [go-hook-eval](workflows/go-hook-eval.js) | Tests all hooks: 31 cases covering blockers, observers, anti-drift state, jq fallback, and flag files |
+| [go-hook-eval](workflows/go-hook-eval.js) | Tests all hooks: 32 cases covering blockers, observers, anti-drift state, jq fallback, and flag files |
 | [go-workflow-eval](workflows/go-workflow-eval.js) | Evaluates Workflow scripts: structural checklist + LLM judge for correctness, coverage, and design patterns |
 | [go-deep-analysis](workflows/go-deep-analysis.js) | Deep multi-dimensional codebase analysis: architecture, security, performance, testing, docs gaps, dependency health — one Markdown doc per dimension |
 
