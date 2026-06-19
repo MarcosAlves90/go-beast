@@ -21,7 +21,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- `hooks/git-strip-coauthored.sh` — now extracts and inspects the `tool_input.command` field from malformed hook payloads instead of scanning the entire raw JSON blob, which avoids false positives outside the actual commit command while still blocking `Co-Authored-By` trailers in heredoc and file-based commit messages.
+- `hooks/git-strip-coauthored.sh` — now extracts and inspects the `tool_input.command` field from malformed hook payloads instead of scanning the entire raw JSON blob, which avoids false positives outside the actual commit command while still blocking `Co-Authored-By` trailers in heredoc and file-based commit messages. Also fixed detection when git is invoked with flags between the binary and subcommand (e.g. `git -C /path commit`), which previously bypassed the Co-Authored-By check entirely.
 - `tests/plugin/test-git-strip-coauthored.sh` and `workflows/go-hook-eval.js` — added regression coverage for malformed payloads that carry `Co-Authored-By` text outside the commit command.
 - `hooks/sync-go-beast-skills.sh` — now resolves its real repository path when executed through `~/.claude/hooks` or `~/.codex/hooks` symlinks, preventing SessionStart failures that looked for `scripts/hook-wire.mjs` under the agent config directory.
 - `tests/plugin/test-go-beast-drift-hooks.sh`, `tests/claude-code/test-hook-wire.sh`, and `workflows/go-hook-eval.js` — added regression coverage for completing an active anti-drift task, reopening task state from a new prompt in the same session, and wiring the prompt re-anchor hook for Claude Code.
