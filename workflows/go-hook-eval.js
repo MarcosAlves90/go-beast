@@ -1,13 +1,15 @@
 export const meta = {
   name: 'go-hook-eval',
-  description: 'Tests go-beast hooks with positive, negative, and edge cases (jq fallback, literal newlines)',
+  description: 'Tests go-beast hooks: authoritative shell suites, targeted cases, harness variants, channel separation, adversarial verify',
   phases: [
-    { title: 'Hook Tests', detail: 'Runs all test cases in parallel' },
-    { title: 'Aggregation', detail: 'Consolidates results and generates report' },
+    { title: 'Shell Suite', detail: 'Run authoritative bash test suites (git-strip-coauthored, drift hooks)' },
+    { title: 'Hook Tests', detail: 'Targeted cases with deterministic bash harness' },
+    { title: 'Adversarial Verify', detail: 'Independent re-verification of any failures' },
+    { title: 'Aggregation', detail: 'Consolidate results and write report' },
   ],
 }
 
-// ─── Infrastructure ────────────────────────────────────────────────────────
+// ─── Environment discovery ─────────────────────────────────────────────────
 
 const ENV_SCHEMA = {
   type: 'object',
@@ -21,24 +23,23 @@ const ENV_SCHEMA = {
 const env = args?.home && args?.repoPath
   ? { home: args.home, repo_root: args.repoPath }
   : await agent(
-      'Run the following commands and return the values:\n```bash\necho "$HOME"\ngit rev-parse --show-toplevel\n```\nReturn home (first line) and repo_root (second line).',
-      { label: 'discover-env', phase: 'Hook Tests', schema: ENV_SCHEMA }
+      'Run the following two commands and return the values:\n```bash\necho "$HOME"\ngit rev-parse --show-toplevel\n```\nReturn home (first line) and repo_root (second line).',
+      { label: 'discover-env', phase: 'Shell Suite', schema: ENV_SCHEMA }
     )
 
 const REAL_HOME = env.home
 const REPO_ROOT = env.repo_root
 const HOOKS_DIR = `${REAL_HOME}/.claude/hooks`
 
-// Isolated home for flag files — avoids writing to ~/.go-beast/ which triggers safety classifier
-// Hooks write flags to $HOME/.go-beast/ so we override HOME to a safe /tmp directory
+// Each targeted test gets its own isolated HOME to prevent flag-file contamination.
+// EVAL_HOME is a placeholder replaced per-test with the test's own tmpdir.
 const EVAL_HOME = `/tmp/hook-eval-home`
 
-// Serialize a JS object as JSON with escaped newlines (the format the runtime sends)
-function json(obj) {
-  return JSON.stringify(obj)
-}
+// ─── Payload helpers ───────────────────────────────────────────────────────
 
-// Serialize with LITERAL unescaped newlines — reproduces the original jq bug
+function json(obj) { return JSON.stringify(obj) }
+
+// Serialize with LITERAL unescaped newlines — reproduces the jq-parse-failure path
 function jsonWithLiteralNewlines(obj) {
   return JSON.stringify(obj).replace(/\\n/g, '\n')
 }
@@ -80,7 +81,135 @@ function otherToolInput() {
   return json({ tool_name: 'Read', tool_input: { file_path: '/some/file.ts' } })
 }
 
+// ─── Bash harness builder ─────────────────────────────────────────────────
+//
+// Builds a self-contained bash script that:
+//   1. Creates an isolated HOME dir
+//   2. Runs any test-specific setup
+//   3. Runs the hook, capturing stdout/stderr/exit separately
+//   4. Evaluates ALL conditions deterministically in bash (no agent interpretation)
+//   5. Emits tagged lines: HOOK_EXIT, PASSED, REASON, STDOUT, STDERR
+//
+// The agent running this script only needs to read those tagged lines —
+// it performs no logical interpretation.
+
+function buildHarness({ testHome, testId, cwd, hookPath, inputJson, envVars, setup, expectExit, expectOutput, expectNoOutput, expectFlagAfter, expectNoFlag, expectFlagContent }) {
+  const extraEnv = envVars ? Object.entries(envVars).map(([k, v]) => `${k}='${v}'`).join(' ') : ''
+  // Double-stringify for safe embedding in bash echo "..."
+  // echo "..." processes \" as " and \\" as \" — round-trips valid JSON
+  const inputEscaped = JSON.stringify(inputJson)
+
+  const lines = [
+    'set -uo pipefail',
+    `mkdir -p '${testHome}/.go-beast' '${testHome}/.claude'`,
+  ]
+
+  if (setup) lines.push(setup)
+
+  lines.push(
+    `hook_exit=0`,
+    `tmpstderr='/tmp/hook-stderr-${testId}.txt'`,
+    // Capture stdout; capture exit via || assignment
+    `hook_stdout=$(cd '${cwd}' && echo ${inputEscaped} | HOME='${testHome}' ${extraEnv} bash '${hookPath}' 2>"$tmpstderr") || hook_exit=$?`,
+    `hook_stderr=$(cat "$tmpstderr" 2>/dev/null || true)`,
+    `rm -f "$tmpstderr"`,
+    `passed=true`,
+    `fail_reason=''`,
+  )
+
+  // Exit code
+  lines.push(
+    `if [[ "$hook_exit" -ne ${String(expectExit)} ]]; then`,
+    `  passed=false`,
+    `  fail_reason="exit $hook_exit != expected ${String(expectExit)}"`,
+    `fi`,
+  )
+
+  // Must contain (stdout)
+  if (expectOutput) {
+    lines.push(
+      `if [[ "$passed" == "true" ]]; then`,
+      `  if ! printf '%s' "$hook_stdout" | grep -qF ${JSON.stringify(expectOutput)}; then`,
+      `    passed=false`,
+      `    fail_reason=${JSON.stringify('stdout missing: ' + expectOutput)}`,
+      `  fi`,
+      `fi`,
+    )
+  }
+
+  // Must NOT contain (stdout)
+  if (expectNoOutput) {
+    lines.push(
+      `if [[ "$passed" == "true" ]]; then`,
+      `  if printf '%s' "$hook_stdout" | grep -qF ${JSON.stringify(expectNoOutput)}; then`,
+      `    passed=false`,
+      `    fail_reason=${JSON.stringify('stdout has forbidden: ' + expectNoOutput)}`,
+      `  fi`,
+      `fi`,
+    )
+  }
+
+  // Flag must exist
+  if (expectFlagAfter) {
+    lines.push(
+      `if [[ "$passed" == "true" ]]; then`,
+      `  if [[ ! -e '${expectFlagAfter}' ]]; then`,
+      `    passed=false`,
+      `    fail_reason='flag missing: ${expectFlagAfter}'`,
+      `  fi`,
+      `fi`,
+    )
+    // Flag content
+    if (expectFlagContent) {
+      lines.push(
+        `if [[ "$passed" == "true" ]]; then`,
+        `  if ! grep -qF ${JSON.stringify(expectFlagContent)} '${expectFlagAfter}' 2>/dev/null; then`,
+        `    passed=false`,
+        `    fail_reason=${JSON.stringify('flag content missing: ' + expectFlagContent)}`,
+        `  fi`,
+        `fi`,
+      )
+    }
+  }
+
+  // Flag must NOT exist
+  if (expectNoFlag) {
+    lines.push(
+      `if [[ "$passed" == "true" ]]; then`,
+      `  if [[ -e '${expectNoFlag}' ]]; then`,
+      `    passed=false`,
+      `    fail_reason='unexpected flag: ${expectNoFlag}'`,
+      `  fi`,
+      `fi`,
+    )
+  }
+
+  lines.push(
+    `echo "HOOK_EXIT:$hook_exit"`,
+    `echo "PASSED:$passed"`,
+    `if [[ -n "$fail_reason" ]]; then echo "REASON:$fail_reason"; else echo "REASON:all conditions met"; fi`,
+    'printf \'STDOUT:%s\\n\' "${hook_stdout:0:400}"',
+    'printf \'STDERR:%s\\n\' "${hook_stderr:0:200}"',
+  )
+
+  return lines.join('\n')
+}
+
 // ─── Test case definitions ─────────────────────────────────────────────────
+//
+// Fields:
+//   hook            — filename under ~/.claude/hooks/
+//   name            — test description
+//   input           — JSON string piped to the hook via stdin
+//   expectExit      — required exit code (0, 1, or 2)
+//   expectOutput    — string that MUST appear in stdout
+//   expectNoOutput  — string that must NOT appear in stdout
+//   expectFlagAfter — path (relative to EVAL_HOME) that must exist after hook runs
+//   expectNoFlag    — path (relative to EVAL_HOME) that must NOT exist
+//   expectFlagContent — substring that must appear inside expectFlagAfter file
+//   setup           — bash commands to run before the hook (EVAL_HOME is replaced with testHome)
+//   cwd             — working directory for hook execution (default: REPO_ROOT)
+//   envVars         — extra env vars injected alongside HOME (e.g. GO_BEAST_HARNESS_OVERRIDE)
 
 const TESTS = [
 
@@ -94,13 +223,26 @@ const TESTS = [
   },
   {
     hook: 'git-strip-coauthored.sh',
+    name: 'blocks Co-Authored-By with git -C /path commit (regression: -C flag)',
+    input: bashInput('git -C /tmp/testrepo commit -m "fix: something\\nCo-Authored-By: Claude <noreply@anthropic.com>"'),
+    expectExit: 1,
+    expectOutput: 'Blocked',
+  },
+  {
+    hook: 'git-strip-coauthored.sh',
+    name: 'passes clean commit with git -C /path commit',
+    input: bashInput('git -C /tmp/testrepo commit -m "fix: clean message"'),
+    expectExit: 0,
+  },
+  {
+    hook: 'git-strip-coauthored.sh',
     name: 'ignores Co-Authored-By outside commit command in malformed JSON',
     input: '{"tool_name":"Bash","note":"Co-Authored-By: Example Agent <agent@example.com>","tool_input":{"command":"git commit -m \\"fix: clean message\\""}',
     expectExit: 0,
   },
   {
     hook: 'git-strip-coauthored.sh',
-    name: 'blocks Co-Authored-By via heredoc (literal newlines)',
+    name: 'blocks Co-Authored-By via heredoc (literal newlines in JSON)',
     input: jsonWithLiteralNewlines({
       tool_name: 'Bash',
       tool_input: { command: 'git commit -m "$(cat <<\'EOF\'\nfix: something\nCo-Authored-By: Claude\nEOF\n)"' },
@@ -110,7 +252,7 @@ const TESTS = [
   },
   {
     hook: 'git-strip-coauthored.sh',
-    name: 'blocks Co-Authored-By from commit message file',
+    name: 'blocks Co-Authored-By from commit message file (-F flag)',
     setup: `printf 'fix: something\nCo-Authored-By: Claude <noreply@anthropic.com>\n' > /tmp/hook-eval-coauthored-msg.txt`,
     input: bashInput('git commit -F /tmp/hook-eval-coauthored-msg.txt'),
     expectExit: 1,
@@ -118,7 +260,7 @@ const TESTS = [
   },
   {
     hook: 'git-strip-coauthored.sh',
-    name: 'passes clean commit',
+    name: 'passes clean commit (no Co-Authored-By)',
     input: bashInput('git commit -m "fix: clean message"'),
     expectExit: 0,
   },
@@ -181,7 +323,6 @@ const TESTS = [
   },
 
   // ── code-dedup-check ─────────────────────────────────────────────────────
-  // Note: this hook greps PROJECT_DIR — uses /tmp to avoid collisions
   {
     hook: 'code-dedup-check.sh',
     name: 'passes function with no duplicate in empty project',
@@ -213,7 +354,6 @@ const TESTS = [
   {
     hook: 'code-dedup-check.sh',
     name: 'warns when function already exists in project',
-    // Setup: write a file with the function into /tmp first, then try to add it again
     setup: `mkdir -p /tmp/hook-eval-dup && echo 'export function duplicateFunctionAlpha() { return 1; }' > /tmp/hook-eval-dup/existing.ts`,
     input: writeInput('/tmp/hook-eval-dup/new.ts', 'export function duplicateFunctionAlpha() { return 2; }'),
     expectExit: 1,
@@ -221,7 +361,7 @@ const TESTS = [
     cwd: '/tmp/hook-eval-dup',
   },
 
-  // ── docs-update-flag (git-aware logic) ──────────────────────────────────
+  // ── docs-update-flag ────────────────────────────────────────────────────
   {
     hook: 'docs-update-flag.sh',
     name: 'creates flag for .sh file in git repo',
@@ -282,6 +422,7 @@ const TESTS = [
   {
     hook: 'git-commit-remind.sh',
     name: 'respects stop_hook_active=true',
+    // flag points to a repo that may have changes — but hook must exit 0 regardless
     setup: `echo ${REPO_ROOT} > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
     input: stopInput(true),
     expectExit: 0,
@@ -289,11 +430,20 @@ const TESTS = [
   },
   {
     hook: 'git-commit-remind.sh',
-    name: 'shows reminder when flag exists and repo has changes (exit 2)',
-    setup: `echo ${REPO_ROOT} > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
+    name: 'shows reminder when flag exists and repo has uncommitted changes (exit 2)',
+    // Create a throwaway git repo with an untracked file — guarantees changes exist
+    setup: `rm -rf /tmp/hook-eval-commit-remind-repo && mkdir -p /tmp/hook-eval-commit-remind-repo && git -C /tmp/hook-eval-commit-remind-repo init -q && touch /tmp/hook-eval-commit-remind-repo/untracked.txt && echo /tmp/hook-eval-commit-remind-repo > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
     input: stopInput(false),
     expectExit: 2,
     expectOutput: 'Conventional Commits',
+  },
+  {
+    hook: 'git-commit-remind.sh',
+    name: 'stdout is plain text (no box chars)',
+    setup: `rm -rf /tmp/hook-eval-commit-remind-repo2 && mkdir -p /tmp/hook-eval-commit-remind-repo2 && git -C /tmp/hook-eval-commit-remind-repo2 init -q && touch /tmp/hook-eval-commit-remind-repo2/untracked.txt && echo /tmp/hook-eval-commit-remind-repo2 > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
+    input: stopInput(false),
+    expectExit: 2,
+    expectNoOutput: '╔',
   },
 
   // ── code-verify-flag ─────────────────────────────────────────────────────
@@ -333,15 +483,25 @@ const TESTS = [
     setup: `rm -f ${EVAL_HOME}/.go-beast/docs-update.pending`,
     input: stopInput(false),
     expectExit: 0,
-    expectNoOutput: 'Reminder',
+    // stdout is now plain text — "Documentation review required" is the signal word
+    expectNoOutput: 'Documentation review required',
   },
   {
     hook: 'docs-update-remind.sh',
-    name: 'shows reminder when flag exists (exit 2 — re-triggers Claude)',
+    name: 'shows plain-text reminder when flag exists (exit 2)',
     setup: `echo /tmp > ${EVAL_HOME}/.go-beast/docs-update.pending`,
     input: stopInput(false),
     expectExit: 2,
-    expectOutput: 'Reminder',
+    // Verify the new plain-text output (not the old box format)
+    expectOutput: 'Documentation review required',
+  },
+  {
+    hook: 'docs-update-remind.sh',
+    name: 'stdout has no box chars (channel separation)',
+    setup: `echo /tmp > ${EVAL_HOME}/.go-beast/docs-update.pending`,
+    input: stopInput(false),
+    expectExit: 2,
+    expectNoOutput: '╔',
   },
   {
     hook: 'docs-update-remind.sh',
@@ -349,7 +509,41 @@ const TESTS = [
     setup: `echo /tmp > ${EVAL_HOME}/.go-beast/docs-update.pending`,
     input: stopInput(true),
     expectExit: 0,
-    expectNoOutput: 'Reminder',
+    expectNoOutput: 'Documentation review required',
+  },
+
+  // ── version-bump-remind ──────────────────────────────────────────────────
+  {
+    hook: 'version-bump-remind.sh',
+    name: 'silent when no flag file',
+    setup: `rm -f ${EVAL_HOME}/.go-beast/docs-update.pending`,
+    input: stopInput(false),
+    expectExit: 0,
+    expectNoOutput: 'unreleased content',
+  },
+  {
+    hook: 'version-bump-remind.sh',
+    name: 'shows plain-text reminder when flag and CHANGELOG [Unreleased] exist (exit 2)',
+    setup: `mkdir -p /tmp/hook-eval-vbump && printf '# Changelog\n\n## [Unreleased]\n\n### Fixed\n\n- something\n\n## [1.0.0] - 2026-01-01\n' > /tmp/hook-eval-vbump/CHANGELOG.md && echo /tmp/hook-eval-vbump > ${EVAL_HOME}/.go-beast/docs-update.pending`,
+    input: stopInput(false),
+    expectExit: 2,
+    expectOutput: 'unreleased content',
+  },
+  {
+    hook: 'version-bump-remind.sh',
+    name: 'stdout has no box chars (channel separation)',
+    setup: `mkdir -p /tmp/hook-eval-vbump2 && printf '# Changelog\n\n## [Unreleased]\n\n### Fixed\n\n- something\n\n## [1.0.0] - 2026-01-01\n' > /tmp/hook-eval-vbump2/CHANGELOG.md && echo /tmp/hook-eval-vbump2 > ${EVAL_HOME}/.go-beast/docs-update.pending`,
+    input: stopInput(false),
+    expectExit: 2,
+    expectNoOutput: '╔',
+  },
+  {
+    hook: 'version-bump-remind.sh',
+    name: 'respects stop_hook_active=true',
+    setup: `mkdir -p /tmp/hook-eval-vbump3 && printf '# Changelog\n\n## [Unreleased]\n\n### Fixed\n\n- something\n\n## [1.0.0] - 2026-01-01\n' > /tmp/hook-eval-vbump3/CHANGELOG.md && echo /tmp/hook-eval-vbump3 > ${EVAL_HOME}/.go-beast/docs-update.pending`,
+    input: stopInput(true),
+    expectExit: 0,
+    expectNoOutput: 'unreleased content',
   },
 
   // ── code-verify-run ──────────────────────────────────────────────────────
@@ -363,7 +557,6 @@ const TESTS = [
   {
     hook: 'code-verify-run.sh',
     name: 'exit 0 with stop_hook_active=true (prevents loop)',
-    // No flag — hook exits immediately on stop_hook_active before checking the flag
     input: stopInput(true),
     expectExit: 0,
   },
@@ -372,44 +565,56 @@ const TESTS = [
     name: 'exit 0 with flag pointing to dir with no recognized project',
     setup: `echo /tmp > ${EVAL_HOME}/.go-beast/code-verify.pending`,
     input: stopInput(false),
-    expectExit: 0, // /tmp has no package.json, go.mod, etc — HAS_CHECKS=false → exit 0
+    expectExit: 0,
   },
   {
     hook: 'code-verify-run.sh',
     name: 'exit 1 when tsc reports type errors in flagged project',
-    // Requires tsc on PATH (npx --no-install tsc). Skipped gracefully if tsc unavailable.
     setup: `dir=$(mktemp -d /tmp/hook-eval-ts-XXXXXX) && echo '{"compilerOptions":{"strict":true,"noEmit":true}}' > "$dir/tsconfig.json" && echo 'const x: number = "not a number";' > "$dir/bad.ts" && echo "$dir" > ${EVAL_HOME}/.go-beast/code-verify.pending`,
     input: stopInput(false),
     expectExit: 1,
     expectOutput: 'check',
   },
 
-  // ── go-beast-session-state ──────────────────────────────────────────────
+  // ── go-beast-session-state (claude-code harness) ─────────────────────────
   {
     hook: 'go-beast-session-state.sh',
-    name: 'initializes bootstrap anti-drift state',
+    name: 'initializes bootstrap anti-drift state (claude-code harness)',
     setup: `mkdir -p ${EVAL_HOME}/.go-beast && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled`,
     input: sessionStartInput(),
     expectExit: 0,
     expectFlagAfter: `${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json`,
+    expectFlagContent: '"harness":"claude-code"',
+  },
+  {
+    hook: 'go-beast-session-state.sh',
+    name: 'initializes anti-drift state with codex harness override',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled`,
+    input: sessionStartInput(),
+    expectExit: 0,
+    expectFlagAfter: `${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json`,
+    expectFlagContent: '"harness":"codex"',
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'codex' },
   },
 
-  // ── go-beast-stop-reanchor ──────────────────────────────────────────────
+  // ── go-beast-stop-reanchor ───────────────────────────────────────────────
   {
     hook: 'go-beast-stop-reanchor.sh',
-    name: 'first unanchored bootstrap stop stays passive',
-    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled && cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'JSON'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
-JSON`,
+    name: 'first unanchored bootstrap stop stays passive (exit 0)',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
+STATEEOF`,
     input: stopInputWithMessage('Continuing with the task now.'),
     expectExit: 0,
   },
   {
     hook: 'go-beast-stop-reanchor.sh',
-    name: 'second unanchored bootstrap stop forces re-anchor',
-    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled && cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'JSON'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
-JSON`,
+    name: 'second unanchored bootstrap stop forces re-anchor (exit 2)',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
+STATEEOF`,
     input: stopInputWithMessage('Continuing with the task now.'),
     expectExit: 2,
     expectOutput: 'active beast',
@@ -417,27 +622,44 @@ JSON`,
   {
     hook: 'go-beast-stop-reanchor.sh',
     name: 'anchored bootstrap stop resets drift counter',
-    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled && cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'JSON'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
-JSON`,
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
+STATEEOF`,
     input: stopInputWithMessage('Re-anchor: active beast go-lark, required artifact APPROACH.md, implementation unlocked is false.'),
     expectExit: 0,
   },
   {
     hook: 'go-beast-stop-reanchor.sh',
     name: 'completed bootstrap task does not force re-anchor',
-    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled && cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'JSON'
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
 {"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-lark","required_artifact":"APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
-JSON`,
+STATEEOF`,
     input: stopInputWithMessage('Continuing with a normal summary.'),
     expectExit: 0,
   },
   {
+    hook: 'go-beast-stop-reanchor.sh',
+    name: 'codex harness variant: second unanchored stop forces re-anchor',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
+STATEEOF`,
+    input: stopInputWithMessage('Continuing with the task now.'),
+    expectExit: 2,
+    expectOutput: 'active beast',
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'codex' },
+  },
+
+  // ── go-beast-user-prompt-context ─────────────────────────────────────────
+  {
     hook: 'go-beast-user-prompt-context.sh',
-    name: 'user prompt naming beast reopens completed task',
-    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled && cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'JSON'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-lark","required_artifact":"APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
-JSON`,
+    name: 'user prompt naming beast reopens completed task (claude-code)',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-lark","required_artifact":"APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
+STATEEOF`,
     input: json({
       session_id: 'hook-eval-session',
       cwd: '/tmp/hook-eval-project',
@@ -447,9 +669,92 @@ JSON`,
     expectExit: 0,
     expectOutput: 'go-wren',
   },
+  {
+    hook: 'go-beast-user-prompt-context.sh',
+    name: 'user prompt naming beast reopens completed task (codex harness)',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-lark","required_artifact":"APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
+STATEEOF`,
+    input: json({
+      session_id: 'hook-eval-session',
+      cwd: '/tmp/hook-eval-project',
+      hook_event_name: 'UserPromptSubmit',
+      prompt: 'use go-fox to design the architecture',
+    }),
+    expectExit: 0,
+    expectOutput: 'go-fox',
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'codex' },
+  },
+  {
+    hook: 'go-beast-user-prompt-context.sh',
+    name: 'no beast in prompt still emits re-anchor context',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
+STATEEOF`,
+    input: json({
+      session_id: 'hook-eval-session',
+      cwd: '/tmp/hook-eval-project',
+      prompt: 'what should we do next?',
+    }),
+    expectExit: 0,
+    expectOutput: 'go-beast re-anchor',
+  },
 ]
 
-// ─── Runner ───────────────────────────────────────────────────────────────
+// ─── Phase 1: Authoritative Shell Suites ──────────────────────────────────
+//
+// These scripts are the ground-truth tests maintained alongside the hooks.
+// Passing here is stronger evidence than any workflow-level case.
+
+const SUITE_SCHEMA = {
+  type: 'object',
+  required: ['passed', 'suite', 'output'],
+  properties: {
+    passed: { type: 'boolean' },
+    suite: { type: 'string' },
+    output: { type: 'string' },
+  },
+}
+
+phase('Shell Suite')
+log('Running authoritative bash test suites...')
+
+const suiteResults = await parallel([
+  () => agent(
+    `Run the following bash test script from the repository root and return whether it passed.
+
+\`\`\`bash
+cd '${REPO_ROOT}' && bash tests/plugin/test-git-strip-coauthored.sh 2>&1
+\`\`\`
+
+Return:
+- passed: true if the output contains "STATUS: PASSED" and the script exits 0
+- suite: "test-git-strip-coauthored"
+- output: first 600 chars of combined output`,
+    { label: 'suite::test-git-strip-coauthored', phase: 'Shell Suite', schema: SUITE_SCHEMA }
+  ),
+  () => agent(
+    `Run the following bash test script from the repository root and return whether it passed.
+
+\`\`\`bash
+cd '${REPO_ROOT}' && bash tests/plugin/test-go-beast-drift-hooks.sh 2>&1
+\`\`\`
+
+Return:
+- passed: true if the output contains "STATUS: PASSED" and the script exits 0
+- suite: "test-go-beast-drift-hooks"
+- output: first 600 chars of combined output`,
+    { label: 'suite::test-go-beast-drift-hooks', phase: 'Shell Suite', schema: SUITE_SCHEMA }
+  ),
+])
+
+const suitePassed = suiteResults.filter(Boolean).filter(r => r.passed)
+const suiteFailed = suiteResults.filter(Boolean).filter(r => !r.passed)
+log(`Shell suites: ${suitePassed.length}/${suiteResults.filter(Boolean).length} passed`)
+
+// ─── Phase 2: Targeted Hook Tests ─────────────────────────────────────────
 
 const TEST_SCHEMA = {
   type: 'object',
@@ -464,57 +769,55 @@ const TEST_SCHEMA = {
 }
 
 phase('Hook Tests')
-log(`Running ${TESTS.length} test cases in parallel...`)
+log(`Running ${TESTS.length} targeted test cases in parallel...`)
 
-const results = await parallel(
+const testResults = await parallel(
   TESTS.map(t => async () => {
-    // Each test gets its own isolated home directory — no flag contamination between parallel tests
-    const testId   = `${t.hook.replace('.sh','')}-${t.name.replace(/[^a-z0-9]/gi,'-').slice(0,20)}`
+    const testId = `${t.hook.replace('.sh', '')}-${t.name.replace(/[^a-z0-9]/gi, '-').slice(0, 24)}`
     const testHome = `/tmp/hook-eval-${testId}`
-    const ensureTestHome = `mkdir -p ${testHome}/.go-beast ${testHome}/.claude`
-
-    // Replace EVAL_HOME placeholder in setup with this test's isolated testHome
-    const rawSetup = t.setup ? t.setup.replaceAll(EVAL_HOME, testHome) : ''
-    const setupCmd = rawSetup ? `${rawSetup} && ` : ''
     const cwd = t.cwd ?? REPO_ROOT
+    const hookPath = `${HOOKS_DIR}/${t.hook}`
 
-    // Re-map flag paths for this test's isolated home
-    const remapFlag = (f) => f ? f.replace(`${EVAL_HOME}/.go-beast/`, `${testHome}/.go-beast/`) : f
+    // Replace EVAL_HOME placeholder in setup and flag paths
+    const rawSetup = t.setup ? t.setup.replaceAll(EVAL_HOME, testHome) : ''
+    const remapFlag = (f) => f ? f.replace(`${EVAL_HOME}/.go-beast/`, `${testHome}/.go-beast/`) : undefined
     const expectFlagAfter = remapFlag(t.expectFlagAfter)
     const expectNoFlag    = remapFlag(t.expectNoFlag)
 
-    const prompt = `CONTEXT: This is a go-beast hook integration test. You are running a controlled test of a shell script hook. The hook reads JSON from stdin and exits immediately. Each test runs in its own isolated temp directory (${testHome}) so tests cannot interfere with each other.
+    const script = buildHarness({
+      testHome,
+      testId,
+      cwd,
+      hookPath,
+      inputJson: t.input,
+      envVars: t.envVars,
+      setup: rawSetup || undefined,
+      expectExit: t.expectExit,
+      expectOutput: t.expectOutput,
+      expectNoOutput: t.expectNoOutput,
+      expectFlagAfter,
+      expectNoFlag,
+      expectFlagContent: t.expectFlagContent,
+    })
+
+    const prompt = `You are running a go-beast hook integration test. The hooks are shell scripts designed to run inside Claude Code and Codex agent harnesses.
 
 TEST: ${t.hook} — ${t.name}
 
-STEP 1 — Create isolated test environment and run any test-specific setup:
+Run this exact bash script as a SINGLE Bash tool call. All pass/fail logic is encoded in the script — you only need to read the tagged output lines and return the JSON schema.
+
 \`\`\`bash
-${ensureTestHome}
-${setupCmd ? setupCmd.replace(/ && $/, '') : 'true'}
+${script}
 \`\`\`
 
-STEP 2 — Execute the hook with isolated HOME=${testHome} (flag files go to ${testHome}/.go-beast/, not ~/.go-beast/):
-\`\`\`bash
-cd ${cwd} && echo ${JSON.stringify(t.input)} | HOME=${testHome} bash ${HOOKS_DIR}/${t.hook}; echo "EXIT_CODE:$?"
-\`\`\`
+Parse the output lines:
+- HOOK_EXIT:N → exit_code (number)
+- PASSED:true|false → passed (boolean)
+- REASON:text → detail (string)
+- STDOUT:text → stdout (string)
+- STDERR:text → stderr (string)
 
-STEP 3 — Verify flag file state (if applicable):
-${expectFlagAfter ? `\`\`\`bash\ntest -e ${expectFlagAfter} && echo "FLAG_EXISTS" || echo "FLAG_ABSENT"\n\`\`\`` : '(skip)'}
-${expectNoFlag ? `\`\`\`bash\ntest -e ${expectNoFlag} && echo "FLAG_EXISTS" || echo "FLAG_ABSENT"\n\`\`\`` : '(skip)'}
-
-VERIFY these conditions and return JSON:
-- expected exit_code: ${t.expectExit}
-- output must contain: ${t.expectOutput ?? '(none)'}
-- output must NOT contain: ${t.expectNoOutput ?? '(none)'}
-- flag must exist: ${expectFlagAfter ?? '(skip)'}
-- flag must NOT exist: ${expectNoFlag ?? '(skip)'}
-
-Return ONLY:
-- passed: true only if ALL conditions satisfied
-- exit_code: numeric exit code from "EXIT_CODE:N"
-- stdout: first 300 chars of hook stdout
-- stderr: first 200 chars of stderr
-- detail: one sentence — why passed or which condition failed`
+Return the schema. Do not add interpretation — trust the PASSED line from the script.`
 
     const result = await agent(prompt, {
       label: `${t.hook}::${t.name}`,
@@ -526,14 +829,94 @@ Return ONLY:
   })
 )
 
-// ─── Aggregation ──────────────────────────────────────────────────────────
+// ─── Phase 3: Adversarial Verify ─────────────────────────────────────────
+//
+// For every failed test, an independent agent re-runs the exact same script
+// from scratch to confirm the failure is real (not an agent misread).
+
+const VERIFY_SCHEMA = {
+  type: 'object',
+  required: ['confirmed_failure', 'exit_code', 'stdout', 'detail'],
+  properties: {
+    confirmed_failure: { type: 'boolean' },
+    exit_code: { type: 'number' },
+    stdout: { type: 'string' },
+    detail: { type: 'string' },
+  },
+}
+
+const failures = testResults.filter(Boolean).filter(r => r.result?.passed === false)
+
+phase('Adversarial Verify')
+
+const adversarialResults = failures.length > 0
+  ? await parallel(
+      failures.map(({ test: t, result: firstResult }) => async () => {
+        const testId = `adv-${t.hook.replace('.sh', '')}-${t.name.replace(/[^a-z0-9]/gi, '-').slice(0, 20)}`
+        const testHome = `/tmp/hook-eval-${testId}`
+        const cwd = t.cwd ?? REPO_ROOT
+        const hookPath = `${HOOKS_DIR}/${t.hook}`
+        const rawSetup = t.setup ? t.setup.replaceAll(EVAL_HOME, testHome) : ''
+        const remapFlag = (f) => f ? f.replace(`${EVAL_HOME}/.go-beast/`, `${testHome}/.go-beast/`) : undefined
+
+        const script = buildHarness({
+          testHome,
+          testId,
+          cwd,
+          hookPath,
+          inputJson: t.input,
+          envVars: t.envVars,
+          setup: rawSetup || undefined,
+          expectExit: t.expectExit,
+          expectOutput: t.expectOutput,
+          expectNoOutput: t.expectNoOutput,
+          expectFlagAfter: remapFlag(t.expectFlagAfter),
+          expectNoFlag: remapFlag(t.expectNoFlag),
+          expectFlagContent: t.expectFlagContent,
+        })
+
+        const result = await agent(
+          `ADVERSARIAL VERIFICATION: A prior agent reported this hook test FAILED. Re-run the exact script independently to confirm whether the failure is real.
+
+Context: ${t.hook} — ${t.name}
+Prior agent reported: exit=${firstResult?.exit_code}, reason="${firstResult?.detail}"
+
+Run this bash script fresh — do NOT assume the prior agent's result:
+
+\`\`\`bash
+${script}
+\`\`\`
+
+Return:
+- confirmed_failure: true if PASSED line says "false" (failure confirmed), false if the re-run now passes
+- exit_code: the HOOK_EXIT number
+- stdout: STDOUT line content
+- detail: one sentence — does this confirm the failure or contradict it?`,
+          {
+            label: `adversarial::${t.hook}::${t.name}`,
+            phase: 'Adversarial Verify',
+            schema: VERIFY_SCHEMA,
+          }
+        )
+
+        return { test: t, firstResult, adversarial: result }
+      })
+    )
+  : []
+
+log(`Adversarial verify: ${adversarialResults.filter(Boolean).length} failures re-checked`)
+
+// ─── Phase 4: Aggregation ─────────────────────────────────────────────────
 
 phase('Aggregation')
-log('Consolidating results...')
 
-const valid = results.filter(Boolean)
+const valid = testResults.filter(Boolean)
 const passed = valid.filter(r => r.result?.passed === true)
 const failed = valid.filter(r => r.result?.passed === false)
+
+// Confirmed vs spurious (adversarial said it actually passes)
+const confirmedFailures = adversarialResults.filter(Boolean).filter(r => r.adversarial?.confirmed_failure === true)
+const spuriousFailures  = adversarialResults.filter(Boolean).filter(r => r.adversarial?.confirmed_failure === false)
 
 // Group by hook
 const byHook = {}
@@ -547,17 +930,33 @@ for (const r of valid) {
 
 const lines = []
 lines.push(`# hook-eval Report\n`)
-lines.push(`**Hooks tested:** ${Object.keys(byHook).length} | **Total cases:** ${valid.length} | **Pass:** ${passed.length} | **Fail:** ${failed.length}\n`)
+
+// Suite results
+lines.push(`## 0. Shell Suite Results\n`)
+lines.push(`| Suite | Status | Output |`)
+lines.push(`|---|---|---|`)
+for (const r of suiteResults.filter(Boolean)) {
+  const status = r.passed ? '✅ PASSED' : '❌ FAILED'
+  lines.push(`| ${r.suite} | ${status} | ${(r.output ?? '').slice(0, 120).replace(/\n/g, ' ')} |`)
+}
+lines.push('')
+
+// Summary
+const totalSuites = suiteResults.filter(Boolean).length
+const suitePassCount = suitePassed.length
+lines.push(`**Shell suites:** ${suitePassCount}/${totalSuites} | **Targeted cases:** ${valid.length} | **Pass:** ${passed.length} | **Fail:** ${failed.length} | **Confirmed failures:** ${confirmedFailures.length} | **Spurious (adversarial cleared):** ${spuriousFailures.length}\n`)
 lines.push(`---\n`)
 
 lines.push(`## 1. Results per Case\n`)
-lines.push(`| Hook | Case | Status | Exit | Detail |`)
-lines.push(`|---|---|---|---|---|`)
+lines.push(`| Hook | Case | Status | Exit | Adversarial | Detail |`)
+lines.push(`|---|---|---|---|---|---|`)
 for (const r of valid) {
   const status = r.result?.passed ? '✅' : '❌'
   const exit = r.result?.exit_code ?? '?'
-  const detail = (r.result?.detail ?? '').slice(0, 80)
-  lines.push(`| ${r.test.hook} | ${r.test.name} | ${status} | ${exit} | ${detail} |`)
+  const detail = (r.result?.detail ?? '').slice(0, 70)
+  const advEntry = adversarialResults.find(a => a?.test === r.test)
+  const adv = advEntry ? (advEntry.adversarial?.confirmed_failure ? '🔴 confirmed' : '🟡 spurious') : '—'
+  lines.push(`| ${r.test.hook} | ${r.test.name} | ${status} | ${exit} | ${adv} | ${detail} |`)
 }
 
 lines.push(`\n## 2. Summary per Hook\n`)
@@ -571,39 +970,56 @@ for (const [hook, s] of Object.entries(byHook)) {
 if (failed.length > 0) {
   lines.push(`\n## 3. Failure Details\n`)
   for (const r of failed) {
-    lines.push(`### ❌ ${r.test.hook} — ${r.test.name}`)
+    const adv = adversarialResults.find(a => a?.test === r.test)
+    const advNote = adv
+      ? (adv.adversarial?.confirmed_failure ? ' **[adversarially confirmed]**' : ' **[adversarial re-run PASSED — may be spurious]**')
+      : ''
+    lines.push(`### ❌ ${r.test.hook} — ${r.test.name}${advNote}`)
     lines.push(`- **Expected exit:** ${r.test.expectExit} | **Got:** ${r.result?.exit_code ?? '?'}`)
     lines.push(`- **Detail:** ${r.result?.detail ?? 'n/a'}`)
     if (r.result?.stdout) lines.push(`- **Stdout:** \`${r.result.stdout.slice(0, 200)}\``)
     if (r.result?.stderr) lines.push(`- **Stderr:** \`${r.result.stderr.slice(0, 200)}\``)
+    if (adv?.adversarial) {
+      lines.push(`- **Adversarial re-run exit:** ${adv.adversarial.exit_code}`)
+      lines.push(`- **Adversarial detail:** ${adv.adversarial.detail}`)
+    }
     lines.push('')
   }
 }
 
 lines.push(`\n## 4. Coverage\n`)
-lines.push(`| Test case | Coverage |`)
+lines.push(`| Dimension | Cases |`)
 lines.push(`|---|---|`)
-lines.push(`| Correct blocker (exit 1 expected) | ${valid.filter(r => r.test.expectExit === 1).length} cases |`)
-lines.push(`| Correct pass-through (exit 0 expected) | ${valid.filter(r => r.test.expectExit === 0).length} cases |`)
-lines.push(`| jq fallback (literal newlines) | ${valid.filter(r => r.test.name.includes('literal newlines')).length} cases |`)
-lines.push(`| Flag file check | ${valid.filter(r => r.test.expectFlagAfter || r.test.expectNoFlag).length} cases |`)
-lines.push(`| stop_hook_active | ${valid.filter(r => r.test.name.includes('stop_hook_active')).length} cases |`)
+lines.push(`| Correct blocker (exit 1 expected) | ${valid.filter(r => r.test.expectExit === 1).length} |`)
+lines.push(`| Re-trigger agent (exit 2 expected) | ${valid.filter(r => r.test.expectExit === 2).length} |`)
+lines.push(`| Correct pass-through (exit 0 expected) | ${valid.filter(r => r.test.expectExit === 0).length} |`)
+lines.push(`| Literal newlines in JSON (jq fallback path) | ${valid.filter(r => r.test.name.includes('literal newlines')).length} |`)
+lines.push(`| Flag file existence check | ${valid.filter(r => r.test.expectFlagAfter || r.test.expectNoFlag).length} |`)
+lines.push(`| Flag file content check | ${valid.filter(r => r.test.expectFlagContent).length} |`)
+lines.push(`| stop_hook_active guard | ${valid.filter(r => r.test.input.includes('"stop_hook_active":true')).length} |`)
+lines.push(`| Channel separation (no box chars on stdout) | ${valid.filter(r => r.test.expectNoOutput === '╔').length} |`)
+lines.push(`| Codex harness variant | ${valid.filter(r => r.test.envVars?.GO_BEAST_HARNESS_OVERRIDE === 'codex').length} |`)
+lines.push(`| git -C /path flag regression | ${valid.filter(r => r.test.name.includes('-C flag') || r.test.name.includes('-C /path')).length} |`)
+lines.push(`| Adversarially verified failures | ${adversarialResults.filter(Boolean).length} |`)
 
 const reportContent = lines.join('\n')
+const reportPath = `${REPO_ROOT}/workflows/go-workflow-eval-reports/hook-eval-report.md`
 
 await agent(
-  `Save the following Markdown content to the file ~/.claude/workflows/hook-eval/reports/report.md (create directories if needed). Use the Write tool to write the file.
+  `Save the following Markdown content to the file '${reportPath}' (create directories if needed). Use the Write tool.
 
 CONTENT:
 ${reportContent}`,
   { label: 'save-report', phase: 'Aggregation' }
 )
 
-log('Report saved to ~/.claude/workflows/hook-eval/reports/report.md')
+log(`Report saved to ${reportPath}`)
 
 return {
-  total: valid.length,
-  passed: passed.length,
-  failed: failed.length,
+  suites: { total: totalSuites, passed: suitePassCount, failed: suiteFailed.length },
+  cases: { total: valid.length, passed: passed.length, failed: failed.length },
+  confirmedFailures: confirmedFailures.length,
+  spuriousFailures: spuriousFailures.length,
   failedCases: failed.map(r => `${r.test.hook}::${r.test.name}`),
+  suiteFailures: suiteFailed.map(r => r.suite),
 }
