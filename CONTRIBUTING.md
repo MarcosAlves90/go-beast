@@ -151,6 +151,7 @@ Canonical version source:
 - `package.json` is the canonical release version.
 - `README.md`, `PACKAGE.md`, and the latest released section in
   `CHANGELOG.md` must match it.
+- `release-certificate.json` records the release attestation for each cut.
 
 Release commands:
 
@@ -159,6 +160,7 @@ npm run release:version:check
 node scripts/release-version.mjs release --bump patch
 node scripts/release-version.mjs release --bump minor
 node scripts/release-version.mjs release --bump major
+node scripts/release-version.mjs publish
 ```
 
 SemVer policy:

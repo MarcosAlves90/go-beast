@@ -2,6 +2,8 @@
 
 import fs from 'fs'
 import path from 'path'
+import crypto from 'crypto'
+import { execFileSync } from 'child_process'
 
 const REPO = path.resolve(import.meta.dirname, '..')
 const CHANGELOG_PATH = path.join(REPO, 'CHANGELOG.md')
@@ -10,6 +12,7 @@ const PACKAGE_MD_PATH = path.join(REPO, 'PACKAGE.md')
 const PACKAGE_JSON_PATH = path.join(REPO, 'package.json')
 const CODEX_PLUGIN_PATH = path.join(REPO, 'plugins', 'go-beast', '.codex-plugin', 'plugin.json')
 const CLAUDE_PLUGIN_PATH = path.join(REPO, 'plugins', 'go-beast', '.claude-plugin', 'plugin.json')
+const RELEASE_CERT_PATH = path.join(REPO, 'release-certificate.json')
 
 function read(filePath) {
   return fs.readFileSync(filePath, 'utf8')
@@ -19,10 +22,23 @@ function write(filePath, content) {
   fs.writeFileSync(filePath, content)
 }
 
+function exists(filePath) {
+  try {
+    fs.accessSync(filePath, fs.constants.F_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function readJson(filePath) {
+  return JSON.parse(read(filePath))
+}
+
 function parseArgs(argv) {
   const args = { command: 'check', bump: '', date: '', version: '' }
   const [command, ...rest] = argv
-  if (command === 'check' || command === 'release') args.command = command
+  if (command === 'check' || command === 'release' || command === 'publish') args.command = command
 
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i]
@@ -43,6 +59,26 @@ function todayUtc() {
   return new Date().toISOString().slice(0, 10)
 }
 
+function nowUtc() {
+  return new Date().toISOString()
+}
+
+function sha256(content) {
+  return crypto.createHash('sha256').update(content).digest('hex')
+}
+
+function git(args, options = {}) {
+  return execFileSync('git', args, { cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...options }).trim()
+}
+
+function gitMaybe(args) {
+  try {
+    return git(args)
+  } catch {
+    return ''
+  }
+}
+
 function parseSemver(version) {
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version)
   if (!match) fail(`Invalid SemVer version: ${version}`)
@@ -58,12 +94,13 @@ function bumpVersion(currentVersion, bump) {
 }
 
 function loadState() {
-  const packageJson = JSON.parse(read(PACKAGE_JSON_PATH))
-  const codexPlugin = JSON.parse(read(CODEX_PLUGIN_PATH))
-  const claudePlugin = JSON.parse(read(CLAUDE_PLUGIN_PATH))
+  const packageJson = readJson(PACKAGE_JSON_PATH)
+  const codexPlugin = readJson(CODEX_PLUGIN_PATH)
+  const claudePlugin = readJson(CLAUDE_PLUGIN_PATH)
   const readme = read(README_PATH)
   const packageMd = read(PACKAGE_MD_PATH)
   const changelog = read(CHANGELOG_PATH)
+  const releaseCertificate = exists(RELEASE_CERT_PATH) ? readJson(RELEASE_CERT_PATH) : null
 
   const packageJsonVersion = packageJson.version
   const readmeVersion = /\*\*Version ([0-9]+\.[0-9]+\.[0-9]+)\*\*/.exec(readme)?.[1] ?? ''
@@ -83,6 +120,7 @@ function loadState() {
     packageMdVersion,
     changelog,
     latestReleasedVersion,
+    releaseCertificate,
   }
 }
 
@@ -109,6 +147,53 @@ function unreleasedHasContent(changelog) {
     .some(line => line.trim() !== '')
 }
 
+function releasedVersionDate(changelog) {
+  const match = /^## \[([0-9]+\.[0-9]+\.[0-9]+)\] - ([0-9]{4}-[0-9]{2}-[0-9]{2})$/m.exec(changelog)
+  if (!match) return { version: '', date: '' }
+  return { version: match[1], date: match[2] }
+}
+
+function releaseSurfaceHashes() {
+  const files = {
+    'package.json': PACKAGE_JSON_PATH,
+    'README.md': README_PATH,
+    'PACKAGE.md': PACKAGE_MD_PATH,
+    'CHANGELOG.md': CHANGELOG_PATH,
+    'plugins/go-beast/.codex-plugin/plugin.json': CODEX_PLUGIN_PATH,
+    'plugins/go-beast/.claude-plugin/plugin.json': CLAUDE_PLUGIN_PATH,
+  }
+
+  return Object.fromEntries(Object.entries(files).map(([label, filePath]) => [label, sha256(read(filePath))]))
+}
+
+function buildReleaseCertificate(version, date) {
+  return {
+    version,
+    tag: `v${version}`,
+    date,
+    canonicalVersionSource: 'package.json',
+    generatedBy: 'scripts/release-version.mjs',
+    generatedAt: nowUtc(),
+    surfaces: releaseSurfaceHashes(),
+  }
+}
+
+function certificateMatches(state, certificate) {
+  if (!certificate) return false
+  const expected = buildReleaseCertificate(state.packageJsonVersion, releasedVersionDate(state.changelog).date || certificate.date)
+  return certificate.version === expected.version &&
+    certificate.tag === expected.tag &&
+    certificate.date === expected.date &&
+    certificate.canonicalVersionSource === expected.canonicalVersionSource &&
+    certificate.generatedBy === expected.generatedBy &&
+    JSON.stringify(certificate.surfaces) === JSON.stringify(expected.surfaces)
+}
+
+function isReleasedState(state) {
+  const latest = releasedVersionDate(state.changelog)
+  return !unreleasedHasContent(state.changelog) && latest.version === state.packageJsonVersion
+}
+
 function check() {
   const state = loadState()
   const errors = []
@@ -133,6 +218,14 @@ function check() {
 
   if (state.claudePluginVersion !== state.packageJsonVersion) {
     errors.push(`plugins/go-beast/.claude-plugin/plugin.json version (${state.claudePluginVersion || 'missing'}) does not match package.json (${state.packageJsonVersion})`)
+  }
+
+  if (isReleasedState(state)) {
+    if (!state.releaseCertificate) {
+      errors.push('release-certificate.json is missing for the released version')
+    } else if (!certificateMatches(state, state.releaseCertificate)) {
+      errors.push('release-certificate.json does not match the released version surfaces')
+    }
   }
 
   if (errors.length > 0) {
@@ -200,12 +293,59 @@ function release({ bump, version, date }) {
   write(README_PATH, replaceReadmeVersion(state.readme, nextVersion))
   write(PACKAGE_MD_PATH, replacePackageMd(state.packageMd, nextVersion, nextDate))
   write(CHANGELOG_PATH, nextChangelog)
+  write(RELEASE_CERT_PATH, `${JSON.stringify(buildReleaseCertificate(nextVersion, nextDate), null, 2)}\n`)
 
   process.stdout.write(JSON.stringify({
     ok: true,
     releasedVersion: nextVersion,
     date: nextDate,
   }, null, 2) + '\n')
+}
+
+function publish() {
+  const state = loadState()
+  const { version, date } = releasedVersionDate(state.changelog)
+  if (!version || !date) {
+    fail('publish requires a released changelog section to exist')
+  }
+
+  if (unreleasedHasContent(state.changelog)) {
+    fail('publish requires an empty [Unreleased] section')
+  }
+
+  if (!state.releaseCertificate) {
+    fail('publish requires release-certificate.json')
+  }
+
+  if (!certificateMatches(state, state.releaseCertificate)) {
+    fail('publish requires a release certificate that matches the current release surfaces')
+  }
+
+  const tagName = `v${version}`
+  const dirty = git(['status', '--porcelain'])
+  if (dirty) {
+    fail('publish requires a clean working tree')
+  }
+
+  const existingTag = gitMaybe(['rev-list', '-n', '1', tagName])
+  const head = git(['rev-parse', 'HEAD'])
+  if (existingTag) {
+    if (existingTag !== head) {
+      fail(`tag already exists on a different commit: ${tagName}`)
+    }
+    process.stdout.write(JSON.stringify({ ok: true, tag: tagName, status: 'already-exists' }, null, 2) + '\n')
+    return
+  }
+
+  const message = [
+    `go-beast ${version}`,
+    '',
+    `Release certificate: release-certificate.json`,
+    `Date: ${date}`,
+  ].join('\n')
+
+  git(['tag', '-a', tagName, '-m', message])
+  process.stdout.write(JSON.stringify({ ok: true, tag: tagName, status: 'created' }, null, 2) + '\n')
 }
 
 function main() {
@@ -220,6 +360,11 @@ function main() {
       fail('release requires --bump <patch|minor|major> or --version <x.y.z>')
     }
     release(args)
+    return
+  }
+
+  if (args.command === 'publish') {
+    publish()
     return
   }
 
