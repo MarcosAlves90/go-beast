@@ -16,11 +16,15 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - `CONTRIBUTING.md`, `README.md`, and `docs/architecture/RELEASE_VERSIONING_APPROACH.md` — clarified the draft-release finalization flow, the immutable release attestation, and the `release-certificate.sigstore.json` asset.
+- `hooks/go-beast-drift-lib.sh`, `hooks/go-beast-stop-reanchor.sh`, `hooks/go-beast-user-prompt-context.sh`, and `hooks/manifest.json` — added task-state tracking so a completed task stops re-triggering bootstrap re-anchor loops while a new prompt that names a `go-*` beast reopens the same session as an active task across Claude Code and Codex.
+- `docs/architecture/CONTRACTS.md` — documented `task_state` and the distinction between completing a task and ending a session.
 
 ### Fixed
 
-- `hooks/git-strip-coauthored.sh` — now extracts and inspects the `tool_input.command` field from malformed hook payloads instead of scanning the entire raw JSON blob, which avoids false positives outside the actual commit command while still blocking `Co-Authored-By` trailers in heredoc and file-based commit messages.
+- `hooks/git-strip-coauthored.sh` — now extracts and inspects the `tool_input.command` field from malformed hook payloads instead of scanning the entire raw JSON blob, which avoids false positives outside the actual commit command while still blocking `Co-Authored-By` trailers in heredoc and file-based commit messages. Also fixed detection when git is invoked with flags between the binary and subcommand (e.g. `git -C /path commit`), which previously bypassed the Co-Authored-By check entirely.
 - `tests/plugin/test-git-strip-coauthored.sh` and `workflows/go-hook-eval.js` — added regression coverage for malformed payloads that carry `Co-Authored-By` text outside the commit command.
+- `hooks/sync-go-beast-skills.sh` — now resolves its real repository path when executed through `~/.claude/hooks` or `~/.codex/hooks` symlinks, preventing SessionStart failures that looked for `scripts/hook-wire.mjs` under the agent config directory.
+- `tests/plugin/test-go-beast-drift-hooks.sh`, `tests/claude-code/test-hook-wire.sh`, and `workflows/go-hook-eval.js` — added regression coverage for completing an active anti-drift task, reopening task state from a new prompt in the same session, and wiring the prompt re-anchor hook for Claude Code.
 
 ## [1.38.0] - 2026-06-19
 

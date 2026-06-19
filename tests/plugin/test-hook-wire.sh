@@ -99,4 +99,22 @@ assert_contains \
   "\"status\": \"warn\"" \
   "reports preserved external hook during sync"
 
+SYNC_HOME="$(mktemp -d)"
+mkdir -p "$SYNC_HOME/.claude/hooks"
+ln -s "$REPO_ROOT/hooks/sync-go-beast-skills.sh" "$SYNC_HOME/.claude/hooks/sync-go-beast-skills.sh"
+
+printf '%s' '{"session_id":"sync-test","cwd":"/tmp/project","source":"startup"}' \
+  | HOME="$SYNC_HOME" bash "$SYNC_HOME/.claude/hooks/sync-go-beast-skills.sh" \
+  > "$SYNC_HOME/sync.out" 2>&1
+
+assert_contains \
+  "$SYNC_HOME/.claude/CLAUDE.md" \
+  "Engineering Agent Guidelines" \
+  "sync hook resolves repo root when executed through symlink"
+
+assert_contains \
+  "$SYNC_HOME/.codex/AGENTS.md" \
+  "Engineering Agent Guidelines" \
+  "sync hook writes Codex global instructions from symlink execution"
+
 echo "STATUS: PASSED"

@@ -9,7 +9,7 @@
     },
     {
       "name": "go-beast-user-prompt-context.sh",
-      "targets": ["codex"],
+      "targets": ["claude-code", "codex"],
       "event": "UserPromptSubmit",
       "statusMessage": "Re-anchoring go-beast context"
     },

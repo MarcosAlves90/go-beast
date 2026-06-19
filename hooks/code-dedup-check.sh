@@ -124,11 +124,10 @@ while IFS= read -r name; do
 done <<< "$new_names"
 
 if [[ -n "$FOUND" ]]; then
-  echo "⚠ Possible duplicate code — the following identifiers already exist in the project:"
-  echo ""
+  echo "code-dedup-check: possible duplicate identifiers detected" >&2
+  echo "Possible duplicate code — the following identifiers already exist in the project:"
   printf '%b' "$FOUND"
-  echo "Before creating new code, check whether the existing one can be reused or modified."
-  echo "If the duplication is intentional (override, isolated test, different namespace), proceed normally."
+  echo "Check whether the existing one can be reused. If duplication is intentional, proceed normally."
   exit 1
 fi
 

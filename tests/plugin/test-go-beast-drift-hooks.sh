@@ -26,6 +26,7 @@ printf '%s' "$SESSION_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" bash "$HOOK_HOME/
 STATE_FILE="$STATE_DIR/anti-drift/sess-1.json"
 assert_contains "$STATE_FILE" '"mode":"bootstrap"' "session-state initializes bootstrap mode"
 assert_contains "$STATE_FILE" '"harness":"claude-code"' "session-state records harness from symlink path"
+assert_contains "$STATE_FILE" '"task_state":"active"' "session-state initializes active task state"
 
 cat > "$STATE_FILE" <<'JSON'
 {
@@ -37,6 +38,8 @@ cat > "$STATE_FILE" <<'JSON'
   "active_beast": "go-hawk",
   "required_artifact": "REQUIREMENTS.md",
   "implementation_unlocked": false,
+  "task_state": "active",
+  "task_id": "task-1",
   "unanchored_stop_count": 0,
   "last_reanchor_reason": "",
   "updated_at": "2026-06-19T00:00:00Z"
@@ -86,5 +89,32 @@ printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":fals
 assert_contains "$STATE_FILE" '"active_beast": "go-lark"' "stop hook refreshes active beast from anchored reply"
 assert_contains "$STATE_FILE" '"required_artifact": "APPROACH.md"' "stop hook refreshes required artifact from anchored reply"
 assert_contains "$STATE_FILE" '"unanchored_stop_count": 0' "stop hook resets drift counter after anchored reply"
+
+printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":false,"last_assistant_message":"Re-anchor: active beast go-lark, required artifact APPROACH.md, implementation unlocked is true. Task state: complete."}' \
+  | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" \
+  > "$TEST_HOME/stop-complete.out" 2>&1
+
+assert_contains "$STATE_FILE" '"task_state": "complete"' "stop hook marks anchored completed task as complete"
+
+set +e
+printf '%s' "$STOP_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" > "$TEST_HOME/stop-after-complete.out" 2>&1
+AFTER_COMPLETE_EXIT=$?
+set -e
+
+if [[ "$AFTER_COMPLETE_EXIT" -ne 0 ]]; then
+  echo "[FAIL] stop hook does not re-anchor completed task"
+  echo "Expected: 0"
+  echo "Actual:   $AFTER_COMPLETE_EXIT"
+  exit 1
+fi
+echo "[PASS] stop hook does not re-anchor completed task"
+
+printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","prompt":"use go-wren to change the hook"}' \
+  | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-user-prompt-context.sh" \
+  > "$TEST_HOME/prompt-new-task-output.json"
+
+assert_contains "$STATE_FILE" '"task_state": "active"' "user-prompt hook reopens task state when prompt names a beast"
+assert_contains "$STATE_FILE" '"active_beast": "go-wren"' "user-prompt hook records the new active beast"
+assert_contains "$TEST_HOME/prompt-new-task-output.json" 'go-wren' "user-prompt hook emits new active beast context"
 
 echo "STATUS: PASSED"

@@ -38,8 +38,10 @@
   "mode": "baseline|bootstrap",
   "session_id": "<opaque>",
   "task_id": "<opaque or absent>",
+  "task_state": "active|complete|idle",
   "active_beast": "go-mole|go-hawk|go-lark|...",
   "required_artifact": "REQUIREMENTS.md|APPROACH.md|HOOK CONTRACT|...",
+  "implementation_unlocked": false,
   "severity_mode": "remind|reanchor|block",
   "last_reanchor_reason": "<short code or absent>"
 }
@@ -49,6 +51,10 @@
 
 - Do not store full prompt text by default.
 - Do not store repository secrets or arbitrary tool payloads.
+- Treat `task_state: complete` as the end of the current task, not the end of
+  the session.
+- A new prompt that declares a `go-*` beast may reopen the same session with a
+  new active task and reset the drift counter.
 - State updates must be atomic enough to avoid partial writes becoming policy
   truth.
 
@@ -66,8 +72,8 @@
 
 ### Inputs
 
-- hook event payload (`PreToolUse`, `PostToolUse`, `Stop`, optionally
-  `UserPromptSubmit` in Codex)
+- hook event payload (`PreToolUse`, `PostToolUse`, `Stop`,
+  `UserPromptSubmit`, and related supported lifecycle events)
 - current session/task state
 - runtime policy subset
 

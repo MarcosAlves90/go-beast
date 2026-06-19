@@ -4,7 +4,13 @@
 
 rm -f /tmp/.go-rhino-active
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+while [[ -L "$SCRIPT_PATH" ]]; do
+  SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+  SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
+  [[ "$SCRIPT_PATH" != /* ]] && SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
+done
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 GO_BEAST_DIR="${GO_BEAST_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 CLAUDE_WORKFLOWS_DIR="$HOME/.claude/workflows"

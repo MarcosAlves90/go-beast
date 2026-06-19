@@ -72,6 +72,8 @@ gb_default_state_json() {
       active_beast: "",
       required_artifact: "",
       implementation_unlocked: false,
+      task_id: "",
+      task_state: "active",
       unanchored_stop_count: 0,
       last_reanchor_reason: "",
       updated_at: $now
@@ -113,6 +115,15 @@ gb_extract_beast() {
 gb_extract_artifact() {
   local text="${1:-}"
   printf '%s\n' "$text" | grep -Eo 'REQUIREMENTS\.md|APPROACH\.md|STACK\.md|ADR\.md|DIAGRAM\.md|CONTRACTS\.md|CHANGELOG\.md|AGENTS\.md|SECURITY_REVIEW|TEST_PLAN' | head -n 1 || true
+}
+
+gb_extract_task_state() {
+  local text="${1:-}"
+  if printf '%s\n' "$text" | grep -Eqi 'task state:[[:space:]]*complete|task_state[[:space:]]*[:=][[:space:]]*complete'; then
+    printf 'complete\n'
+  elif printf '%s\n' "$text" | grep -Eqi 'task state:[[:space:]]*active|task_state[[:space:]]*[:=][[:space:]]*active'; then
+    printf 'active\n'
+  fi
 }
 
 gb_message_is_anchored() {
