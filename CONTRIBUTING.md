@@ -152,6 +152,8 @@ Canonical version source:
 - `README.md`, `PACKAGE.md`, and the latest released section in
   `CHANGELOG.md` must match it.
 - `release-certificate.json` records the release attestation for each cut.
+- `release-certificate.json.sha256` is uploaded alongside the GitHub Release
+  as the integrity checksum for that attestation.
 
 Release commands:
 
@@ -162,6 +164,9 @@ node scripts/release-version.mjs release --bump minor
 node scripts/release-version.mjs release --bump major
 node scripts/release-version.mjs publish
 ```
+
+Set `GH_BIN` to point the publish step at the GitHub CLI binary you want to
+use when you do not want to use the ambient `gh` binary.
 
 SemVer policy:
 

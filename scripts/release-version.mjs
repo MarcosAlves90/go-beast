@@ -2,6 +2,7 @@
 
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 import crypto from 'crypto'
 import { execFileSync } from 'child_process'
 
@@ -13,6 +14,7 @@ const PACKAGE_JSON_PATH = path.join(REPO, 'package.json')
 const CODEX_PLUGIN_PATH = path.join(REPO, 'plugins', 'go-beast', '.codex-plugin', 'plugin.json')
 const CLAUDE_PLUGIN_PATH = path.join(REPO, 'plugins', 'go-beast', '.claude-plugin', 'plugin.json')
 const RELEASE_CERT_PATH = path.join(REPO, 'release-certificate.json')
+const GH_BIN = process.env.GH_BIN || 'gh'
 
 function read(filePath) {
   return fs.readFileSync(filePath, 'utf8')
@@ -74,6 +76,18 @@ function git(args, options = {}) {
 function gitMaybe(args) {
   try {
     return git(args)
+  } catch {
+    return ''
+  }
+}
+
+function gh(args, options = {}) {
+  return execFileSync(GH_BIN, args, { cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...options }).trim()
+}
+
+function ghMaybe(args) {
+  try {
+    return gh(args)
   } catch {
     return ''
   }
@@ -164,6 +178,22 @@ function releaseSurfaceHashes() {
   }
 
   return Object.fromEntries(Object.entries(files).map(([label, filePath]) => [label, sha256(read(filePath))]))
+}
+
+function releaseCertificateChecksum() {
+  return sha256(read(RELEASE_CERT_PATH))
+}
+
+function changelogSectionForVersion(changelog, version) {
+  const headerPattern = new RegExp(`^## \\[${version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$`, 'm')
+  const match = headerPattern.exec(changelog)
+  if (!match) fail(`CHANGELOG.md does not contain a released section for ${version}`)
+
+  const start = match.index + match[0].length
+  const afterStart = changelog.slice(start)
+  const nextHeaderMatch = /^## \[[0-9]+\.[0-9]+\.[0-9]+\] - /m.exec(afterStart)
+  const end = nextHeaderMatch ? start + nextHeaderMatch.index : changelog.length
+  return changelog.slice(start, end).replace(/^\n+/, '').trimEnd()
 }
 
 function buildReleaseCertificate(version, date) {
@@ -329,23 +359,55 @@ function publish() {
 
   const existingTag = gitMaybe(['rev-list', '-n', '1', tagName])
   const head = git(['rev-parse', 'HEAD'])
+  let tagStatus = 'already-exists'
   if (existingTag) {
     if (existingTag !== head) {
       fail(`tag already exists on a different commit: ${tagName}`)
     }
-    process.stdout.write(JSON.stringify({ ok: true, tag: tagName, status: 'already-exists' }, null, 2) + '\n')
-    return
+  } else {
+    const message = [
+      `go-beast ${version}`,
+      '',
+      `Release certificate: release-certificate.json`,
+      `Date: ${date}`,
+    ].join('\n')
+
+    git(['tag', '-a', tagName, '-m', message])
+    tagStatus = 'created'
   }
 
-  const message = [
-    `go-beast ${version}`,
-    '',
-    `Release certificate: release-certificate.json`,
-    `Date: ${date}`,
-  ].join('\n')
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'go-beast-release-notes-'))
+  const notesPath = path.join(tmpDir, 'notes.md')
+  const checksumPath = path.join(tmpDir, 'release-certificate.json.sha256')
+  const notes = changelogSectionForVersion(state.changelog, version)
+  write(notesPath, `${notes}\n`)
+  write(checksumPath, `${releaseCertificateChecksum()}  release-certificate.json\n`)
 
-  git(['tag', '-a', tagName, '-m', message])
-  process.stdout.write(JSON.stringify({ ok: true, tag: tagName, status: 'created' }, null, 2) + '\n')
+  try {
+    const releaseExists = ghMaybe(['release', 'view', tagName, '--json', 'tagName']) !== ''
+    if (releaseExists) {
+      gh(['release', 'upload', tagName, RELEASE_CERT_PATH, checksumPath, '--clobber'])
+      process.stdout.write(JSON.stringify({
+        ok: true,
+        tag: tagName,
+        tagStatus,
+        status: 'updated',
+      }, null, 2) + '\n')
+      return
+    }
+
+    gh(['release', 'create', tagName, RELEASE_CERT_PATH, checksumPath, '--title', `go-beast ${version}`, '--notes-file', notesPath])
+    process.stdout.write(JSON.stringify({
+      ok: true,
+      tag: tagName,
+      tagStatus,
+      status: 'created',
+    }, null, 2) + '\n')
+  } catch (error) {
+    fail(`publish requires GitHub CLI access via ${GH_BIN}: ${error.stderr?.toString?.() || error.message}`)
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  }
 }
 
 function main() {

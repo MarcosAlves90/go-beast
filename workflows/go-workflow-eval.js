@@ -10,8 +10,7 @@ export const meta = {
 }
 
 // args.workflows — array of names to filter, e.g. ['go-skill-eval']. Default: all.
-// args.repoPath  — absolute path to go-beast repo root. Falls back to args.home derivation.
-// args.home      — home directory, used to derive default repoPath.
+// args.repoPath  — absolute path to go-beast repo root. Falls back to process.cwd().
 
 const WORKFLOWS = {
   'go-skill-eval': {
@@ -85,13 +84,7 @@ if (RUNS.length === 0) {
   return { total: 0, results: [] }
 }
 
-const REPO = args?.repoPath
-  ?? (args?.home ? `${args.home}/Documents/@cherry-c/go-beast` : null)
-
-if (!REPO) {
-  log('ERROR: pass args.repoPath or args.home')
-  return { error: 'args.repoPath required' }
-}
+const REPO = args?.repoPath ?? process.cwd()
 
 phase('Source Collection')
 log(`Reading ${RUNS.length} workflow source file(s)...`)

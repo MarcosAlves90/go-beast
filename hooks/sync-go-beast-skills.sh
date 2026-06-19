@@ -4,7 +4,8 @@
 
 rm -f /tmp/.go-rhino-active
 
-GO_BEAST_DIR="${GO_BEAST_DIR:-$HOME/Documents/@cherry-c/go-beast}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GO_BEAST_DIR="${GO_BEAST_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 CLAUDE_WORKFLOWS_DIR="$HOME/.claude/workflows"
 CODEX_SKILLS_DIR="$HOME/.codex/skills"
