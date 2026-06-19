@@ -219,7 +219,7 @@ const TESTS = [
     name: 'blocks Co-Authored-By in commit (valid JSON)',
     input: bashInput('git commit -m "fix: something\\nCo-Authored-By: Claude <noreply@anthropic.com>"'),
     expectExit: 1,
-    expectOutput: 'Co-Authored-By',
+    expectOutput: 'Blocked',
   },
   {
     hook: 'git-strip-coauthored.sh',
@@ -248,7 +248,7 @@ const TESTS = [
       tool_input: { command: 'git commit -m "$(cat <<\'EOF\'\nfix: something\nCo-Authored-By: Claude\nEOF\n)"' },
     }),
     expectExit: 1,
-    expectOutput: 'Co-Authored-By',
+    expectOutput: 'Blocked',
   },
   {
     hook: 'git-strip-coauthored.sh',
@@ -256,7 +256,7 @@ const TESTS = [
     setup: `printf 'fix: something\nCo-Authored-By: Claude <noreply@anthropic.com>\n' > /tmp/hook-eval-coauthored-msg.txt`,
     input: bashInput('git commit -F /tmp/hook-eval-coauthored-msg.txt'),
     expectExit: 1,
-    expectOutput: 'Co-Authored-By',
+    expectOutput: 'Blocked',
   },
   {
     hook: 'git-strip-coauthored.sh',

@@ -113,12 +113,10 @@ fi
 
 # ── Report violations ────────────────────────────────────────────────────────
 if [[ -n "$VIOLATIONS" ]]; then
-  echo "🚫 Blocked: sensitive files or build artifacts detected for commit/staging:"
-  echo ""
+  echo "git-commit-guard: blocked — sensitive or artifact files detected" >&2
+  echo "Blocked: sensitive files or build artifacts detected for commit/staging:"
   printf '%b' "$VIOLATIONS"
-  echo ""
-  echo "These files must not be committed."
-  echo "Add them to .gitignore and remove from staging with:  git reset HEAD <file>"
+  echo "Add them to .gitignore and remove from staging with: git reset HEAD <file>"
   exit 1
 fi
 

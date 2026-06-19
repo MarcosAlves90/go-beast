@@ -56,6 +56,9 @@ SHORT_DIR=$(echo "$PROJECT_DIR" | sed "s|$HOME|~|")
 VERSION_HINT=""
 [[ -n "$CURRENT_VERSION" ]] && VERSION_HINT=" (current: $CURRENT_VERSION)"
 
+# stderr → terminal (one concise line)
+echo "version-bump-remind: CHANGELOG.md has [Unreleased] content in ${SHORT_DIR}${VERSION_HINT}" >&2
+
 # stdout → the agent (plain text)
 echo "CHANGELOG.md has unreleased content in: $PROJECT_DIR${VERSION_HINT:+ Current version: $CURRENT_VERSION.}"
 echo "Ask the user if they want to cut a release before ending the session: run release-version.mjs with the appropriate SemVer bump, then publish the git tag and certificate."

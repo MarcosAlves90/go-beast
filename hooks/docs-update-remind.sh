@@ -44,6 +44,9 @@ done
 
 SHORT_DIR=$(echo "$PROJECT_DIR" | sed "s|$HOME|~|")
 
+# stderr → terminal (one concise line)
+echo "docs-update-remind: documentation review required for ${SHORT_DIR}" >&2
+
 # stdout → the agent (plain text)
 echo "Documentation review required. Source files were modified in: $PROJECT_DIR"
 [[ -n "$DOC_HINTS" ]] && echo "Detected documentation files: $DOC_HINTS"

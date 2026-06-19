@@ -34,6 +34,9 @@ fi
 CHANGED_FILES=$(git -C "$PROJECT_DIR" status --short 2>/dev/null | head -10)
 SHORT_DIR=$(echo "$PROJECT_DIR" | sed "s|$HOME|~|")
 
+# stderr → terminal (one concise line)
+echo "git-commit-remind: uncommitted changes in ${SHORT_DIR}" >&2
+
 # stdout → the agent (plain text)
 echo "Uncommitted changes detected in: $PROJECT_DIR"
 echo "Modified files:"

@@ -63,9 +63,8 @@ echo "$command" | grep -qE '(^|;|&&|\|\|)[[:space:]]*git([[:space:]]+[^|&;]+)?[[
 message_file=$(extract_commit_message_file "$command")
 if [[ -n "$message_file" && -f "$message_file" ]]; then
   grep -iqE 'co-authored' "$message_file" && {
-    echo "🚫 Blocked: commit message contains a 'Co-Authored-By' tag."
-    echo ""
-    echo "Remove all 'Co-Authored-By: ...' lines from the message and resend the commit."
+    echo "git-strip-coauthored: blocked — Co-Authored-By in commit message" >&2
+    echo "Blocked: commit message contains a Co-Authored-By tag. Remove it and resend the commit."
     exit 1
   }
 fi
@@ -73,7 +72,6 @@ fi
 # Detect Co-Authored-By in the message (case-insensitive, covers variants)
 echo "$command" | grep -iqE 'co-authored' || exit 0
 
-echo "🚫 Blocked: commit message contains a 'Co-Authored-By' tag."
-echo ""
-echo "Remove all 'Co-Authored-By: ...' lines from the message and resend the commit."
+echo "git-strip-coauthored: blocked — Co-Authored-By in commit message" >&2
+echo "Blocked: commit message contains a Co-Authored-By tag. Remove it and resend the commit."
 exit 1
