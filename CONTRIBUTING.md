@@ -118,8 +118,8 @@ Examples:
 
 1. Review `README.md`, `PACKAGE.md`, `CHANGELOG.md`, and relevant architecture
    docs together.
-2. If `[Unreleased]` content is being released, bump version metadata
-   consistently.
+2. If `[Unreleased]` content is being released, use the release-version
+   workflow to cut the release and synchronize version metadata.
 3. Do not leave docs partially updated across duplicated entry points.
 
 ## Validation expectations
@@ -145,6 +145,21 @@ GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-marten
 ## Release and versioning
 
 Update [CHANGELOG.md](CHANGELOG.md) before bumping version metadata.
+
+Canonical version source:
+
+- `package.json` is the canonical release version.
+- `README.md`, `PACKAGE.md`, and the latest released section in
+  `CHANGELOG.md` must match it.
+
+Release commands:
+
+```bash
+npm run release:version:check
+node scripts/release-version.mjs release --bump patch
+node scripts/release-version.mjs release --bump minor
+node scripts/release-version.mjs release --bump major
+```
 
 SemVer policy:
 

@@ -14,6 +14,8 @@ scope:   full-stack software development lifecycle
 Agent-specific adapters, plugin manifests, hook integrations, and live harness
 tests are optional layers around the core `skills/go-*` directories.
 
+Canonical release version source: `package.json`
+
 ---
 
 ## Contents
@@ -44,6 +46,7 @@ go-beast/
 │       ├── STACK.md       ← Task-scoped stack selection and architecture notes
 │       ├── DIAGRAM.md     ← Task-scoped architecture diagram
 │       ├── CONTRACTS.md   ← Task-scoped interface and runtime contracts
+│       ├── RELEASE_VERSIONING_APPROACH.md ← Task-scoped release/versioning approach comparison and selection
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Maintainer guide for global, bootstrap, and repo-local instruction layering
 │       ├── MAINTAINER_PROTOCOLS.md ← Maintainer protocol layer for recurring AI workflows
 │       └── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Maintainer guide for harness and bootstrap boundaries
@@ -63,12 +66,13 @@ go-beast/
 ├── scripts/
 │   ├── hook-wire.mjs          ← Shared hook manifest wiring helper for config and symlinks
 │   ├── install.mjs            ← Cross-platform installer (Node.js 18+, no deps)
+│   ├── release-version.mjs    ← Canonical release/versioning contract: check and cut releases from package.json
 │   └── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
 ├── tests/
 │   ├── helpers.sh             ← Shared shell assertions for integration tests
 │   ├── claude-code/           ← Claude Code real-session integration tests
 │   ├── codex/                 ← Codex real-session integration tests
-│   └── plugin/                ← Plugin bundle checks
+│   └── plugin/                ← Plugin bundle and shell integration checks
 └── hooks/
     ├── manifest.json             ← Shared hook manifest for Claude Code and Codex
     ├── sync-go-beast-skills.sh    ← SessionStart: syncs skills/workflows/hooks/global instructions
