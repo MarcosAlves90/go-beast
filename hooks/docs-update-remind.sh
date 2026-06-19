@@ -44,30 +44,7 @@ done
 
 SHORT_DIR=$(echo "$PROJECT_DIR" | sed "s|$HOME|~|")
 
-# stderr → terminal (box display for the human)
-{
-  echo ""
-  echo "╔══════════════════════════════════════════════════════════╗"
-  echo "║  📝  Reminder: review documentation                     ║"
-  echo "╟──────────────────────────────────────────────────────────╢"
-  echo "║  Source files were modified in:                         ║"
-  printf "║  %-44s║\n" "${SHORT_DIR}"
-  if [[ -n "$DOC_HINTS" ]]; then
-    echo "║                                                          ║"
-    printf "║  Detected docs: %-42s║\n" "${DOC_HINTS}"
-  fi
-  echo "║                                                          ║"
-  echo "║  Update before closing:                                 ║"
-  echo "║  • README (usage, examples, configuration)              ║"
-  echo "║  • JSDoc/docstrings on modified functions               ║"
-  echo "║  • CHANGELOG if this is a notable change                ║"
-  if [[ "$HAS_VERSIONING" == "true" ]]; then
-    echo "║  • Version in PACKAGE.md/package.json and README        ║"
-  fi
-  echo "╚══════════════════════════════════════════════════════════╝"
-} >&2
-
-# stdout → the agent (plain text, no decoration)
+# stdout → the agent (plain text)
 echo "Documentation review required. Source files were modified in: $PROJECT_DIR"
 [[ -n "$DOC_HINTS" ]] && echo "Detected documentation files: $DOC_HINTS"
 echo "Review and update as needed: README, CHANGELOG (if this is a notable change), JSDoc/docstrings on modified functions."
