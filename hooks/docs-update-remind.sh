@@ -42,33 +42,35 @@ for vfile in PACKAGE.md package.json pyproject.toml Cargo.toml go.mod; do
   fi
 done
 
-# Build the message (stdout → the agent as system-reminder; stderr → terminal for the user)
-MSG=""
-MSG+=$'\n'
-MSG+="╔══════════════════════════════════════════════════════════╗"$'\n'
-MSG+="║  📝  Reminder: review documentation                     ║"$'\n'
-MSG+="╟──────────────────────────────────────────────────────────╢"$'\n'
-MSG+="║  Source files were modified in:                         ║"$'\n'
 SHORT_DIR=$(echo "$PROJECT_DIR" | sed "s|$HOME|~|")
-MSG+="║  ${SHORT_DIR}$(printf '%*s' $((44 - ${#SHORT_DIR})) '')║"$'\n'
-if [[ -n "$DOC_HINTS" ]]; then
-  MSG+="║                                                          ║"$'\n'
-  MSG+="║  Detected docs: ${DOC_HINTS}$(printf '%*s' $((42 - ${#DOC_HINTS})) '')║"$'\n'
-fi
-MSG+="║                                                          ║"$'\n'
-MSG+="║  Update before closing:                                 ║"$'\n'
-MSG+="║  • README (usage, examples, configuration)              ║"$'\n'
-MSG+="║  • JSDoc/docstrings on modified functions               ║"$'\n'
-MSG+="║  • CHANGELOG if this is a notable change                ║"$'\n'
-if [[ "$HAS_VERSIONING" == "true" ]]; then
-  MSG+="║  • Version in PACKAGE.md/package.json and README        ║"$'\n'
-fi
-MSG+="╚══════════════════════════════════════════════════════════╝"$'\n'
 
-# stdout → the agent (system-reminder via exit 2)
-echo "$MSG"
-# stderr → terminal (visible to the user)
-echo "$MSG" >&2
+# stderr → terminal (box display for the human)
+{
+  echo ""
+  echo "╔══════════════════════════════════════════════════════════╗"
+  echo "║  📝  Reminder: review documentation                     ║"
+  echo "╟──────────────────────────────────────────────────────────╢"
+  echo "║  Source files were modified in:                         ║"
+  printf "║  %-44s║\n" "${SHORT_DIR}"
+  if [[ -n "$DOC_HINTS" ]]; then
+    echo "║                                                          ║"
+    printf "║  Detected docs: %-42s║\n" "${DOC_HINTS}"
+  fi
+  echo "║                                                          ║"
+  echo "║  Update before closing:                                 ║"
+  echo "║  • README (usage, examples, configuration)              ║"
+  echo "║  • JSDoc/docstrings on modified functions               ║"
+  echo "║  • CHANGELOG if this is a notable change                ║"
+  if [[ "$HAS_VERSIONING" == "true" ]]; then
+    echo "║  • Version in PACKAGE.md/package.json and README        ║"
+  fi
+  echo "╚══════════════════════════════════════════════════════════╝"
+} >&2
 
-# exit 2 re-triggers the agent with stdout as mandatory feedback.
+# stdout → the agent (plain text, no decoration)
+echo "Documentation review required. Source files were modified in: $PROJECT_DIR"
+[[ -n "$DOC_HINTS" ]] && echo "Detected documentation files: $DOC_HINTS"
+echo "Review and update as needed: README, CHANGELOG (if this is a notable change), JSDoc/docstrings on modified functions."
+[[ "$HAS_VERSIONING" == "true" ]] && echo "Also check whether the version in package.json/PACKAGE.md needs a bump."
+
 exit 2

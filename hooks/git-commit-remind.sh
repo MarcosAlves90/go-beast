@@ -34,28 +34,26 @@ fi
 CHANGED_FILES=$(git -C "$PROJECT_DIR" status --short 2>/dev/null | head -10)
 SHORT_DIR=$(echo "$PROJECT_DIR" | sed "s|$HOME|~|")
 
-MSG=""
-MSG+=$'\n'
-MSG+="╔══════════════════════════════════════════════════════════╗"$'\n'
-MSG+="║  🔀  Reminder: uncommitted changes detected             ║"$'\n'
-MSG+="╟──────────────────────────────────────────────────────────╢"$'\n'
-# Truncate path if too long for the box (max 46 chars)
-DISPLAY_DIR="${SHORT_DIR:0:46}"
-MSG+="║  Project: ${DISPLAY_DIR}$(printf '%*s' $((48 - ${#DISPLAY_DIR})) '')║"$'\n'
-MSG+="║                                                          ║"$'\n'
-MSG+="║  Modified files:                                        ║"$'\n'
-while IFS= read -r line; do
-  DISPLAY_LINE="${line:0:50}"
-  MSG+="║    ${DISPLAY_LINE}$(printf '%*s' $((54 - ${#DISPLAY_LINE})) '')║"$'\n'
-done <<< "$CHANGED_FILES"
-MSG+="║                                                          ║"$'\n'
-MSG+="╚══════════════════════════════════════════════════════════╝"$'\n'
+# stderr → terminal (box display for the human)
+{
+  echo ""
+  echo "╔══════════════════════════════════════════════════════════╗"
+  echo "║  🔀  Reminder: uncommitted changes detected             ║"
+  echo "╟──────────────────────────────────────────────────────────╢"
+  printf "║  Project: %-48s║\n" "${SHORT_DIR:0:48}"
+  echo "║                                                          ║"
+  echo "║  Modified files:                                        ║"
+  while IFS= read -r line; do
+    printf "║    %-54s║\n" "${line:0:54}"
+  done <<< "$CHANGED_FILES"
+  echo "║                                                          ║"
+  echo "╚══════════════════════════════════════════════════════════╝"
+} >&2
 
-# stdout → the agent (system-reminder via exit 2)
-echo "$MSG"
+# stdout → the agent (plain text, no decoration)
+echo "Uncommitted changes detected in: $PROJECT_DIR"
+echo "Modified files:"
+echo "$CHANGED_FILES"
 echo "Ask the user if they want to commit and/or push these changes before ending the session. If committing, use Conventional Commits: type(scope): summary."
-
-# stderr → terminal (visible to the user)
-echo "$MSG" >&2
 
 exit 2

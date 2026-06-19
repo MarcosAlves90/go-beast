@@ -56,23 +56,24 @@ SHORT_DIR=$(echo "$PROJECT_DIR" | sed "s|$HOME|~|")
 VERSION_HINT=""
 [[ -n "$CURRENT_VERSION" ]] && VERSION_HINT=" (current: $CURRENT_VERSION)"
 
-MSG=""
-MSG+=$'\n'
-MSG+="╔══════════════════════════════════════════════════════════╗"$'\n'
-MSG+="║  🏷️   Reminder: version bump needed                     ║"$'\n'
-MSG+="╟──────────────────────────────────────────────────────────╢"$'\n'
-MSG+="║  CHANGELOG.md has [Unreleased] content in:             ║"$'\n'
-DISPLAY_DIR="${SHORT_DIR:0:46}"
-MSG+="║  ${DISPLAY_DIR}$(printf '%*s' $((48 - ${#DISPLAY_DIR})) '')║"$'\n'
-MSG+="║                                                          ║"$'\n'
-MSG+="║  Before closing, cut the release${VERSION_HINT}:$(printf '%*s' $((25 - ${#VERSION_HINT})) '')║"$'\n'
-MSG+="║  1. Run release-version.mjs with the SemVer bump        ║"$'\n'
-MSG+="║  2. Re-run release-version.mjs check                    ║"$'\n'
-MSG+="║  3. Publish the git tag and certificate                 ║"$'\n'
-MSG+="╚══════════════════════════════════════════════════════════╝"$'\n'
+# stderr → terminal (box display for the human)
+{
+  echo ""
+  echo "╔══════════════════════════════════════════════════════════╗"
+  echo "║  🏷️   Reminder: version bump needed                     ║"
+  echo "╟──────────────────────────────────────────────────────────╢"
+  echo "║  CHANGELOG.md has [Unreleased] content in:             ║"
+  printf "║  %-48s║\n" "${SHORT_DIR:0:48}"
+  echo "║                                                          ║"
+  printf "║  Before closing, cut the release%-25s║\n" "${VERSION_HINT}:"
+  echo "║  1. Run release-version.mjs with the SemVer bump        ║"
+  echo "║  2. Re-run release-version.mjs check                    ║"
+  echo "║  3. Publish the git tag and certificate                 ║"
+  echo "╚══════════════════════════════════════════════════════════╝"
+} >&2
 
-echo "$MSG"
-echo "Ask the user if they want to run the release-version workflow and publish the release tag before ending the session."
-echo "$MSG" >&2
+# stdout → the agent (plain text, no decoration)
+echo "CHANGELOG.md has unreleased content in: $PROJECT_DIR${VERSION_HINT:+ Current version: $CURRENT_VERSION.}"
+echo "Ask the user if they want to cut a release before ending the session: run release-version.mjs with the appropriate SemVer bump, then publish the git tag and certificate."
 
 exit 2
