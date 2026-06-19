@@ -2,8 +2,8 @@
 
 ```
 name:    go-beast
-version: 1.33.1
-date:    2026-06-18
+version: 1.34.0
+date:    2026-06-19
 author:  @cherry-c
 type:    skill-pack
 scope:   full-stack software development lifecycle

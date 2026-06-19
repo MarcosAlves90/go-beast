@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.34.0] - 2026-06-19
+
 ### Fixed
 
 - `hooks/git-strip-coauthored.sh` — now inspects commit message files passed via `git commit -F <path>` or `--file=<path>` so `Co-Authored-By` trailers are blocked even when the message is not inlined in the shell command.
