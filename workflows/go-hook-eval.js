@@ -70,6 +70,14 @@ const TESTS = [
   },
   {
     hook: 'git-strip-coauthored.sh',
+    name: 'blocks Co-Authored-By from commit message file',
+    setup: `printf 'fix: something\nCo-Authored-By: Claude <noreply@anthropic.com>\n' > /tmp/hook-eval-coauthored-msg.txt`,
+    input: bashInput('git commit -F /tmp/hook-eval-coauthored-msg.txt'),
+    expectExit: 1,
+    expectOutput: 'Co-Authored-By',
+  },
+  {
+    hook: 'git-strip-coauthored.sh',
     name: 'passes clean commit',
     input: bashInput('git commit -m "fix: clean message"'),
     expectExit: 0,
