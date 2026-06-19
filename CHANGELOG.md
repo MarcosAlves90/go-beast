@@ -11,6 +11,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `hooks/git-strip-coauthored.sh` — now inspects commit message files passed via `git commit -F <path>` or `--file=<path>` so `Co-Authored-By` trailers are blocked even when the message is not inlined in the shell command.
+- `workflows/go-hook-eval.js` — added coverage for `git-strip-coauthored.sh` when the commit message comes from a file.
 - `scripts/hook-wire.mjs` and `scripts/install.mjs` — reinstallation now removes and rewires go-beast-managed hook symlinks and hook-config entries for the selected hooks before adding them back, while preserving hooks that were never managed by go-beast.
 - `tests/plugin/test-hook-wire.sh` — added regression coverage for the reinstall case: refresh previously wired go-beast hooks and preserve external hook entries.
 
