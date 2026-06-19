@@ -44,12 +44,12 @@ done < "$CHANGELOG"
 
 [[ "$has_unreleased_content" == "false" ]] && exit 0
 
-# Detect current version from PACKAGE.md or package.json
+# Detect current canonical version from package.json first, then fall back to PACKAGE.md
 CURRENT_VERSION=""
-if [[ -f "$PROJECT_DIR/PACKAGE.md" ]]; then
-  CURRENT_VERSION=$(grep -E '^version:' "$PROJECT_DIR/PACKAGE.md" | head -1 | sed 's/version:[[:space:]]*//')
-elif [[ -f "$PROJECT_DIR/package.json" ]]; then
+if [[ -f "$PROJECT_DIR/package.json" ]]; then
   CURRENT_VERSION=$(jq -r '.version // empty' "$PROJECT_DIR/package.json" 2>/dev/null || echo "")
+elif [[ -f "$PROJECT_DIR/PACKAGE.md" ]]; then
+  CURRENT_VERSION=$(grep -E '^version:' "$PROJECT_DIR/PACKAGE.md" | head -1 | sed 's/version:[[:space:]]*//')
 fi
 
 SHORT_DIR=$(echo "$PROJECT_DIR" | sed "s|$HOME|~|")
@@ -65,14 +65,14 @@ MSG+="║  CHANGELOG.md has [Unreleased] content in:             ║"$'\n'
 DISPLAY_DIR="${SHORT_DIR:0:46}"
 MSG+="║  ${DISPLAY_DIR}$(printf '%*s' $((48 - ${#DISPLAY_DIR})) '')║"$'\n'
 MSG+="║                                                          ║"$'\n'
-MSG+="║  Before closing, bump the version${VERSION_HINT}:$(printf '%*s' $((23 - ${#VERSION_HINT})) '')║"$'\n'
-MSG+="║  1. Move [Unreleased] → [x.y.z] - YYYY-MM-DD           ║"$'\n'
-MSG+="║  2. Update version in PACKAGE.md (or package.json)      ║"$'\n'
-MSG+="║  3. Update version badge in README.md                   ║"$'\n'
+MSG+="║  Before closing, cut the release${VERSION_HINT}:$(printf '%*s' $((25 - ${#VERSION_HINT})) '')║"$'\n'
+MSG+="║  1. Run release-version.mjs with the SemVer bump        ║"$'\n'
+MSG+="║  2. Re-run release-version.mjs check                    ║"$'\n'
+MSG+="║  3. Review CHANGELOG/README/PACKAGE sync                ║"$'\n'
 MSG+="╚══════════════════════════════════════════════════════════╝"$'\n'
 
 echo "$MSG"
-echo "Ask the user if they want to bump the version and close the [Unreleased] section before ending the session."
+echo "Ask the user if they want to run the release-version workflow before ending the session."
 echo "$MSG" >&2
 
 exit 2

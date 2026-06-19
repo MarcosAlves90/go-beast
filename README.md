@@ -78,7 +78,7 @@ Automated guards that run on agent lifecycle events. The installer symlinks hook
 | `docs-update-remind.sh` | `Stop` | Blocks session close until README, docstrings, and CHANGELOG are reviewed |
 | `git-commit-remind-flag.sh` | `PostToolUse (Edit/Write/MultiEdit)` | Flags the git repo when files are modified |
 | `git-commit-remind.sh` | `Stop` | Reminds the agent to ask about committing/pushing uncommitted changes and to use Conventional Commits |
-| `version-bump-remind.sh` | `Stop` | Reminds the agent to bump version when CHANGELOG.md has `[Unreleased]` content |
+| `version-bump-remind.sh` | `Stop` | Reminds the agent to run the release-version workflow when CHANGELOG.md has `[Unreleased]` content |
 
 
 ## Workflows `[Claude Code]`
@@ -182,7 +182,9 @@ Structural and repo-local checks:
 
 ```bash
 npm run sync:plugin-skills
+npm run release:version:check
 npm run test:plugin
+npm run test:plugin:release-version
 ```
 
 Live harness tests are opt-in because they require a working local harness

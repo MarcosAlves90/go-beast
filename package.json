@@ -5,7 +5,9 @@
   "type": "module",
   "description": "Agent-agnostic go-* skill pack with hooks, workflows, and plugin adapter bundles for coding agents.",
   "scripts": {
+    "release:version:check": "node scripts/release-version.mjs check",
     "sync:plugin-skills": "node scripts/sync-plugin-skills.mjs",
+    "test:plugin:release-version": "bash tests/plugin/test-release-version.sh",
     "test:plugin:drift-hooks": "bash tests/plugin/test-go-beast-drift-hooks.sh",
     "test:plugin": "bash tests/plugin/test-plugin-bundle.sh",
     "test:claude:hook-wire": "bash tests/claude-code/test-hook-wire.sh",
