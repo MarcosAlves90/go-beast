@@ -66,10 +66,12 @@ automation conventional, and lets `README.md`, `PACKAGE.md`, and
 `CHANGELOG.md` become clearly derived or validated surfaces instead of
 maintainer memory checks.
 
-The selected implementation also adds a release certificate file for each cut
-and a separate publish step that creates the annotated git tag after the release
-commit exists. That keeps the version bump, the attestation, and the git tag
-each explicit without forcing the release script to guess about commit state.
+The selected implementation also adds a release certificate file for each cut,
+a checksum asset, and a separate publish step that creates the annotated git
+tag after the release commit exists. Publish uploads the certificate and its
+checksum as GitHub Release assets. That keeps the version bump, the attestation,
+the release asset, and the git tag each explicit without forcing the release
+script to guess about commit state.
 
 **Key risk:** the repo still needs explicit policy for how `CHANGELOG.md`
 release sections are cut, or the automation could sync version numbers while

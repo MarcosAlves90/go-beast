@@ -194,6 +194,11 @@ node scripts/release-version.mjs release --bump <patch|minor|major>
 node scripts/release-version.mjs publish
 ```
 
+`publish` creates the annotated git tag and uploads both
+`release-certificate.json` and `release-certificate.json.sha256` to the GitHub
+Release. Set `GH_BIN` to a scoped wrapper such as `gh-cherry` if you want the
+publish step to use isolated GitHub CLI credentials.
+
 Live harness tests are opt-in because they require a working local harness
 environment:
 

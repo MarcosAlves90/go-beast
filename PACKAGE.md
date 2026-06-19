@@ -16,6 +16,7 @@ tests are optional layers around the core `skills/go-*` directories.
 
 Canonical release version source: `package.json`
 Release certificate: `release-certificate.json`
+Release checksum: `release-certificate.json.sha256`
 
 ---
 
