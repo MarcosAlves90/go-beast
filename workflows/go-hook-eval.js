@@ -42,6 +42,23 @@ function stopInput(stopHookActive = false) {
   return json({ stop_hook_active: stopHookActive })
 }
 
+function stopInputWithMessage(message, stopHookActive = false) {
+  return json({
+    session_id: 'hook-eval-session',
+    cwd: '/tmp/hook-eval-project',
+    stop_hook_active: stopHookActive,
+    last_assistant_message: message,
+  })
+}
+
+function sessionStartInput() {
+  return json({
+    session_id: 'hook-eval-session',
+    cwd: '/tmp/hook-eval-project',
+    source: 'startup',
+  })
+}
+
 function otherToolInput() {
   return json({ tool_name: 'Read', tool_input: { file_path: '/some/file.ts' } })
 }
@@ -342,6 +359,46 @@ const TESTS = [
     input: stopInput(false),
     expectExit: 1,
     expectOutput: 'check',
+  },
+
+  // ── go-beast-session-state ──────────────────────────────────────────────
+  {
+    hook: 'go-beast-session-state.sh',
+    name: 'initializes bootstrap anti-drift state',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled`,
+    input: sessionStartInput(),
+    expectExit: 0,
+    expectFlagAfter: `${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json`,
+  },
+
+  // ── go-beast-stop-reanchor ──────────────────────────────────────────────
+  {
+    hook: 'go-beast-stop-reanchor.sh',
+    name: 'first unanchored bootstrap stop stays passive',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled && cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'JSON'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
+JSON`,
+    input: stopInputWithMessage('Continuing with the task now.'),
+    expectExit: 0,
+  },
+  {
+    hook: 'go-beast-stop-reanchor.sh',
+    name: 'second unanchored bootstrap stop forces re-anchor',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled && cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'JSON'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
+JSON`,
+    input: stopInputWithMessage('Continuing with the task now.'),
+    expectExit: 2,
+    expectOutput: 'active beast',
+  },
+  {
+    hook: 'go-beast-stop-reanchor.sh',
+    name: 'anchored bootstrap stop resets drift counter',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled && cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'JSON'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
+JSON`,
+    input: stopInputWithMessage('Re-anchor: active beast go-lark, required artifact APPROACH.md, implementation unlocked is false.'),
+    expectExit: 0,
   },
 ]
 

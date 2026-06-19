@@ -2,6 +2,24 @@
   "version": 1,
   "hooks": [
     {
+      "name": "go-beast-session-state.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "SessionStart",
+      "statusMessage": "Initializing go-beast session state"
+    },
+    {
+      "name": "go-beast-user-prompt-context.sh",
+      "targets": ["codex"],
+      "event": "UserPromptSubmit",
+      "statusMessage": "Re-anchoring go-beast context"
+    },
+    {
+      "name": "go-beast-stop-reanchor.sh",
+      "targets": ["claude-code", "codex"],
+      "event": "Stop",
+      "statusMessage": "Checking go-beast drift"
+    },
+    {
       "name": "code-dedup-check.sh",
       "targets": ["claude-code", "codex"],
       "event": "PreToolUse",

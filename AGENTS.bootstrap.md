@@ -69,6 +69,22 @@ These rules are stricter than the global baseline.
    unstructured pass when the task is non-trivial.
 5. Do not claim readiness to implement until the gating artifact exists.
 
+## Anti-Drift Gate
+
+When bootstrap mode is active, context retention is mandatory.
+
+1. Keep an explicit current state: active beast, required upstream artifact,
+   and whether implementation is unlocked.
+2. Before any substantial recommendation, tool call, or implementation step,
+   verify that the current state allows that action.
+3. If workflow drift, persona drift, or artifact uncertainty is detected, stop
+   and re-anchor by stating the current beast, the required artifact, and the
+   next allowed action.
+4. If re-anchoring cannot be proven from existing artifacts, return to the
+   required discovery beast instead of guessing.
+5. A visible loss of the expected enforcement posture is itself drift and must
+   be corrected before work continues.
+
 ## Priority Order
 
 Evaluate every decision in this sequence. Never improve a lower concern by

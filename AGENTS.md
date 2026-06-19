@@ -42,6 +42,10 @@ The detailed contract-writing pattern and precedence model live in
 The procedural layer for recurring maintainer workflows lives in
 `docs/architecture/MAINTAINER_PROTOCOLS.md`.
 
+Context-retention and anti-drift policy belong in the instruction layers and
+the harness adapter layer. Do not scatter that policy ad hoc across unrelated
+skills when the behavior is meant to apply session-wide.
+
 ## Conventions
 
 ### Skill structure
@@ -154,6 +158,8 @@ go-beast/
 ├── AGENTS.md              ← This file (context for the repo maintainer agent)
 ├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
 ├── AGENTS.bootstrap.md    ← Optional stricter bootstrap instructions synced when bootstrap mode is enabled
+├── REQUIREMENTS.md        ← Task-scoped discovery artifacts when maintainers check them into the repo
+├── APPROACH.md            ← Task-scoped approach decisions when maintainers check them into the repo
 ├── CONTRIBUTING.md        ← Canonical contributor workflow for issues, PRs, validation, and releases
 ├── README.md              ← Pack index, pipeline map, install instructions
 ├── PACKAGE.md             ← Manifest, directory tree, versioning policy
@@ -184,6 +190,10 @@ go-beast/
 │       ├── ADR-001-plugin-adapter-bundle.md ← Records the original plugin adapter architecture decision
 │       ├── ADR-002-canonical-skills-directory.md ← Records the canonical `skills/` migration decision
 │       ├── ADR-003-harness-bootstrap-architecture.md ← Records the harness versus bootstrap layer split
+│       ├── ADR.md         ← Task-scoped architecture decision record when a change needs a local ADR
+│       ├── STACK.md       ← Task-scoped stack and architecture notes
+│       ├── DIAGRAM.md     ← Task-scoped architecture diagram
+│       ├── CONTRACTS.md   ← Task-scoped runtime and interface contracts
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Explains how global, bootstrap, and repo-local agent contracts relate
 │       ├── MAINTAINER_PROTOCOLS.md ← Defines discovery, implementation, validation, PR/release, and blocker protocols
 │       └── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Explains source-of-truth boundaries for maintainers

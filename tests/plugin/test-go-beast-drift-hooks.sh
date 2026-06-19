@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$REPO_ROOT/tests/helpers.sh"
+
+TEST_HOME="$(mktemp -d)"
+cleanup() {
+  rm -rf "$TEST_HOME"
+}
+trap cleanup EXIT
+
+STATE_DIR="$TEST_HOME/.go-beast"
+mkdir -p "$STATE_DIR"
+touch "$STATE_DIR/bootstrap.enabled"
+
+HOOK_HOME="$TEST_HOME/.claude/hooks"
+mkdir -p "$HOOK_HOME"
+ln -s "$REPO_ROOT/hooks/go-beast-session-state.sh" "$HOOK_HOME/go-beast-session-state.sh"
+
+SESSION_INPUT='{"session_id":"sess-1","cwd":"/tmp/project","source":"startup"}'
+printf '%s' "$SESSION_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" bash "$HOOK_HOME/go-beast-session-state.sh"
+
+STATE_FILE="$STATE_DIR/anti-drift/sess-1.json"
+assert_contains "$STATE_FILE" '"mode":"bootstrap"' "session-state initializes bootstrap mode"
+assert_contains "$STATE_FILE" '"harness":"claude-code"' "session-state records harness from symlink path"
+
+cat > "$STATE_FILE" <<'JSON'
+{
+  "version": 1,
+  "session_id": "sess-1",
+  "cwd": "/tmp/project",
+  "harness": "codex",
+  "mode": "bootstrap",
+  "active_beast": "go-hawk",
+  "required_artifact": "REQUIREMENTS.md",
+  "implementation_unlocked": false,
+  "unanchored_stop_count": 0,
+  "last_reanchor_reason": "",
+  "updated_at": "2026-06-19T00:00:00Z"
+}
+JSON
+
+PROMPT_OUTPUT="$TEST_HOME/prompt-output.json"
+printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","prompt":"siga"}' \
+  | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-user-prompt-context.sh" \
+  > "$PROMPT_OUTPUT"
+
+assert_contains "$PROMPT_OUTPUT" 'go-beast re-anchor' "user-prompt hook emits re-anchor context"
+assert_contains "$PROMPT_OUTPUT" 'go-hawk' "user-prompt hook includes active beast"
+assert_contains "$PROMPT_OUTPUT" 'REQUIREMENTS.md' "user-prompt hook includes required artifact"
+
+STOP_INPUT='{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":false,"last_assistant_message":"Continuing with the task now."}'
+
+set +e
+printf '%s' "$STOP_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" > "$TEST_HOME/stop-first.out" 2>&1
+FIRST_EXIT=$?
+printf '%s' "$STOP_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" > "$TEST_HOME/stop-second.out" 2>&1
+SECOND_EXIT=$?
+set -e
+
+if [[ "$FIRST_EXIT" -ne 0 ]]; then
+  echo "[FAIL] stop hook first unanchored turn stays passive"
+  echo "Expected: 0"
+  echo "Actual:   $FIRST_EXIT"
+  exit 1
+fi
+echo "[PASS] stop hook first unanchored turn stays passive"
+
+if [[ "$SECOND_EXIT" -ne 2 ]]; then
+  echo "[FAIL] stop hook second unanchored turn forces re-anchor"
+  echo "Expected: 2"
+  echo "Actual:   $SECOND_EXIT"
+  exit 1
+fi
+echo "[PASS] stop hook second unanchored turn forces re-anchor"
+
+assert_contains "$TEST_HOME/stop-second.out" 'active beast' "stop hook asks for active beast on drift"
+
+printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":false,"last_assistant_message":"Re-anchor: active beast go-lark, required artifact APPROACH.md, implementation unlocked is false."}' \
+  | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" \
+  > "$TEST_HOME/stop-anchored.out" 2>&1
+
+assert_contains "$STATE_FILE" '"active_beast": "go-lark"' "stop hook refreshes active beast from anchored reply"
+assert_contains "$STATE_FILE" '"required_artifact": "APPROACH.md"' "stop hook refreshes required artifact from anchored reply"
+assert_contains "$STATE_FILE" '"unanchored_stop_count": 0' "stop hook resets drift counter after anchored reply"
+
+echo "STATUS: PASSED"

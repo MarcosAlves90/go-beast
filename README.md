@@ -66,6 +66,9 @@ Automated guards that run on agent lifecycle events. The installer symlinks hook
 | Hook | Event | What it does |
 |---|---|---|
 | `sync-go-beast-skills.sh` | `SessionStart` | Syncs skills, workflows, hooks, and global instructions for Claude Code and Codex |
+| `go-beast-session-state.sh` | `SessionStart` | Initializes shared anti-drift session state for go-beast-aware harness hooks |
+| `go-beast-user-prompt-context.sh` | `UserPromptSubmit (Codex)` | Re-injects the active go-beast workflow frame before each Codex prompt |
+| `go-beast-stop-reanchor.sh` | `Stop` | Forces a re-anchor when bootstrap sessions drift away from beast/artifact framing |
 | `git-commit-guard.sh` | `PreToolUse (Bash)` | Blocks commits of `.env`, credentials, build artifacts |
 | `git-strip-coauthored.sh` | `PreToolUse (Bash)` | Blocks commits with `Co-Authored-By` tag |
 | `code-dedup-check.sh` | `PreToolUse (Edit/Write)` | Warns when a new function/class already exists in the project |
@@ -83,7 +86,7 @@ Automated guards that run on agent lifecycle events. The installer symlinks hook
 | Workflow | Purpose |
 |---|---|
 | [go-skill-eval](workflows/go-skill-eval.js) | Evaluates all go-* skills: structural checklist + LLM-as-judge + A/B/C/D adversarial inputs |
-| [go-hook-eval](workflows/go-hook-eval.js) | Tests all hooks: 27 cases covering blockers, observers, jq fallback, flag files |
+| [go-hook-eval](workflows/go-hook-eval.js) | Tests all hooks: 31 cases covering blockers, observers, anti-drift state, jq fallback, and flag files |
 | [go-workflow-eval](workflows/go-workflow-eval.js) | Evaluates Workflow scripts: structural checklist + LLM judge for correctness, coverage, and design patterns |
 | [go-deep-analysis](workflows/go-deep-analysis.js) | Deep multi-dimensional codebase analysis: architecture, security, performance, testing, docs gaps, dependency health — one Markdown doc per dimension |
 
