@@ -88,6 +88,36 @@ function buildEntry(spec, command) {
   return entry
 }
 
+function refreshManagedConfigEntries(config, agentName, selected) {
+  if (!config.hooks || typeof config.hooks !== 'object') config.hooks = {}
+
+  const managedCommands = new Set(selected.map(spec => commandFor(agentName, spec.name)))
+  let removed = 0
+
+  for (const [event, entries] of Object.entries(config.hooks)) {
+    if (!Array.isArray(entries)) continue
+
+    const nextEntries = []
+    for (const entry of entries) {
+      const hooks = Array.isArray(entry?.hooks) ? entry.hooks : []
+      const keptHooks = hooks.filter(hook => {
+        if (!hook || hook.type !== 'command' || !hook.command) return true
+        if (!managedCommands.has(hook.command)) return true
+        removed++
+        return false
+      })
+
+      if (hooks.length > 0 && keptHooks.length === 0) continue
+      if (keptHooks.length !== hooks.length) nextEntries.push({ ...entry, hooks: keptHooks })
+      else nextEntries.push(entry)
+    }
+
+    config.hooks[event] = nextEntries
+  }
+
+  return removed
+}
+
 function wireAgentConfig({ repoRoot = REPO, home = HOME, agentName, hookNames = null }) {
   const agent = AGENTS[agentName]
   if (!agent) throw new Error(`Unsupported agent: ${agentName}`)
@@ -98,17 +128,14 @@ function wireAgentConfig({ repoRoot = REPO, home = HOME, agentName, hookNames = 
   const config = readJson(configPath) ?? { hooks: {} }
   if (!config.hooks || typeof config.hooks !== 'object') config.hooks = {}
 
+  const replaced = refreshManagedConfigEntries(config, agentName, selected)
   const existing = existingHookKeys(config)
   let added = 0
-  let skipped = 0
 
   for (const spec of selected) {
     const command = commandFor(agentName, spec.name)
     const key = `${spec.event}::${spec.matcher ?? ''}::${command}`
-    if (existing.has(key)) {
-      skipped++
-      continue
-    }
+    if (existing.has(key)) continue
 
     const bucket = config.hooks[spec.event] ?? (config.hooks[spec.event] = [])
     bucket.push(buildEntry(spec, command))
@@ -116,8 +143,17 @@ function wireAgentConfig({ repoRoot = REPO, home = HOME, agentName, hookNames = 
     added++
   }
 
-  if (added > 0) writeJson(configPath, config)
-  return { added, skipped, path: configPath, changed: added > 0 }
+  if (added > 0 || replaced > 0) writeJson(configPath, config)
+  return { added, replaced, path: configPath, changed: added > 0 || replaced > 0 }
+}
+
+function isManagedHookTarget(targetPath, hookName) {
+  if (path.basename(targetPath) !== hookName) return false
+
+  const hookDir = path.dirname(targetPath)
+  if (path.basename(hookDir) !== 'hooks') return false
+
+  return fs.existsSync(path.join(hookDir, 'manifest.json'))
 }
 
 function ensureSymlink(src, dst) {
@@ -129,9 +165,13 @@ function ensureSymlink(src, dst) {
   if (stat) {
     if (stat.isSymbolicLink()) {
       try {
-        const cur = path.normalize(fs.readlinkSync(dst)).replace(/[/\\]+$/, '')
+        const cur = path.resolve(path.dirname(dst), fs.readlinkSync(dst))
         const srcN = path.normalize(src).replace(/[/\\]+$/, '')
-        if (cur === srcN) return { status: 'skip', note: 'already linked' }
+        if (isManagedHookTarget(cur, path.basename(src))) {
+          fs.unlinkSync(dst)
+          fs.symlinkSync(src, dst, fs.statSync(src).isDirectory() ? 'dir' : 'file')
+          return { status: 'replaced', note: cur === srcN ? 'refreshed go-beast hook' : 'replaced previous go-beast hook' }
+        }
         return { status: 'warn', note: 'linked elsewhere — skipped' }
       } catch {
         return { status: 'warn', note: 'linked elsewhere — skipped' }
@@ -243,7 +283,9 @@ export {
   cleanStale,
   commandFor,
   hooksForAgent,
+  isManagedHookTarget,
   loadHookManifest,
+  refreshManagedConfigEntries,
   syncAgent,
   syncAgentHooks,
   syncAgents,

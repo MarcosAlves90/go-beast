@@ -7,7 +7,7 @@ import fs   from 'fs'
 import path from 'path'
 import os   from 'os'
 import readline from 'readline'
-import { hooksForAgent, loadHookManifest, wireAgentConfig } from './hook-wire.mjs'
+import { hooksForAgent, loadHookManifest, syncAgentHooks, wireAgentConfig } from './hook-wire.mjs'
 
 const REPO   = path.resolve(import.meta.dirname, '..')
 const HOME   = os.homedir()
@@ -223,10 +223,12 @@ async function askYesNo(label, defaultValue = false) {
 // ── Install section with tabular output ───────────────────────────────────────
 function printResults(results) {
   const newOnes  = results.filter(r => r.ico === icon.new)
+  const refreshed = results.filter(r => r.ico === icon.ok)
   const skipped  = results.filter(r => r.ico === icon.skip)
   const warnings = results.filter(r => r.ico === icon.warn || r.ico === icon.err)
 
   for (const r of newOnes)  ln(row(r.ico, r.name))
+  for (const r of refreshed) ln(row(r.ico, r.name, r.note))
   for (const r of warnings) ln(row(r.ico, r.name, r.note))
   if (skipped.length > 0)
     ln(`  ${icon.skip} ${dim(`${skipped.length} already linked`)}`)
@@ -297,7 +299,7 @@ async function main() {
   // 6. Install
   section('Installing')
 
-  const counts = { new: 0, skip: 0, warn: 0 }
+  const counts = { new: 0, refreshed: 0, skip: 0, warn: 0 }
 
   if (selSkills.length) {
     for (const agent of selAgents) {
@@ -308,6 +310,7 @@ async function main() {
       printResults(results)
       for (const r of results) {
         if (r.ico === icon.new)  counts.new++
+        if (r.ico === icon.ok)   counts.refreshed++
         if (r.ico === icon.skip) counts.skip++
         if (r.ico === icon.warn || r.ico === icon.err) counts.warn++
       }
@@ -317,17 +320,26 @@ async function main() {
   if (hookAgents.length && selHooks.length) {
     for (const agent of hookAgents) {
       ln(); ln(`  ${icon.link} ${bold('hooks')} ${dim('→')} ${cyan(agent.name)}`)
-      cleanStale(agent.hooks)
-      const results = []
       const available = hooksForAgent(HOOK_MANIFEST, agent.name, selHooks)
-      for (const hook of available) {
-        linkItem(j(REPO, 'hooks', hook.name), agent.hooks, results)
-        if (!IS_WIN) try { fs.chmodSync(j(REPO, 'hooks', hook.name), 0o755) } catch {}
-      }
+      const synced = syncAgentHooks({ repoRoot: REPO, home: HOME, agentName: agent.name, hookNames: available.map(h => h.name) })
+      const results = synced.results.map(result => {
+        const ico =
+          result.status === 'new' ? icon.new :
+          result.status === 'replaced' ? icon.ok :
+          result.status === 'skip' ? icon.skip :
+          icon.warn
+        return { ico, name: result.name, note: result.note }
+      })
       printResults(results)
       const wired = wireAgentConfig({ repoRoot: REPO, home: HOME, agentName: agent.name, hookNames: available.map(h => h.name) })
-      if (wired.added > 0) {
+      if (wired.added > 0 || wired.replaced > 0) {
         ln(row(icon.ok, `${agent.name} hook config`, wired.path.replace(HOME, '~')))
+      }
+      for (const r of results) {
+        if (r.ico === icon.new) counts.new++
+        if (r.ico === icon.ok) counts.refreshed++
+        if (r.ico === icon.skip) counts.skip++
+        if (r.ico === icon.warn || r.ico === icon.err) counts.warn++
       }
     }
   }
@@ -369,7 +381,7 @@ async function main() {
     ...(hookAgents.length && selHooks.length ? [`hooks      ${bold(String(selHooks.length))}  ${dim(hookAgents.map(a => a.name).join(', '))}`] : []),
     ...(cc && selWorkflows.length ? [`workflows  ${bold(String(selWorkflows.length))}`] : []),
     '---',
-    `${green(String(counts.new))} new  ${gray(String(counts.skip))} already linked  ${counts.warn ? yellow(String(counts.warn)) + ' warnings' : dim('0 warnings')}`,
+    `${green(String(counts.new))} new  ${cyan(String(counts.refreshed))} refreshed  ${gray(String(counts.skip))} already linked  ${counts.warn ? yellow(String(counts.warn)) + ' warnings' : dim('0 warnings')}`,
   ])
 
   ln()
