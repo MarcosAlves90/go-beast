@@ -194,17 +194,14 @@ node scripts/release-version.mjs release --bump <patch|minor|major>
 node scripts/release-version.mjs publish
 ```
 
-`publish` creates the annotated git tag and uploads both
-`release-certificate.json` and `release-certificate.json.sha256` to the GitHub
-Release. Set `GH_BIN` to point the publish step at a GitHub CLI binary when
-you want isolated credentials or a custom wrapper.
+`publish` creates the annotated git tag and a draft GitHub Release. Set
+`GH_BIN` to point the publish step at a GitHub CLI binary when you want
+isolated credentials or a custom wrapper.
 
-The GitHub attestation for `release-certificate.json` is created separately by
-`.github/workflows/release-attestation.yml` when the release is published. That
-is the record GitHub shows as the attestation/certificate for the release
-artifact. The workflow also uploads the Sigstore bundle as
-`release-certificate.sigstore.json` so the release includes the downloadable
-certificate bundle alongside the plain JSON certificate and checksum.
+`.github/workflows/release-finalize.yml` uploads
+`release-certificate.sigstore.json` to the draft release and publishes it.
+Because immutable releases are enabled, GitHub then generates the actual
+release attestation for the published release.
 
 Live harness tests are opt-in because they require a working local harness
 environment:

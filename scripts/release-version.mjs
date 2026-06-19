@@ -376,37 +376,36 @@ function publish() {
     tagStatus = 'created'
   }
 
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'go-beast-release-notes-'))
-  const notesPath = path.join(tmpDir, 'notes.md')
-  const checksumPath = path.join(tmpDir, 'release-certificate.json.sha256')
-  const notes = changelogSectionForVersion(state.changelog, version)
-  write(notesPath, `${notes}\n`)
-  write(checksumPath, `${releaseCertificateChecksum()}  release-certificate.json\n`)
-
   try {
     const releaseExists = ghMaybe(['release', 'view', tagName, '--json', 'tagName']) !== ''
     if (releaseExists) {
-      gh(['release', 'upload', tagName, RELEASE_CERT_PATH, checksumPath, '--clobber'])
       process.stdout.write(JSON.stringify({
         ok: true,
         tag: tagName,
         tagStatus,
-        status: 'updated',
+        status: 'already-exists',
       }, null, 2) + '\n')
       return
     }
 
-    gh(['release', 'create', tagName, RELEASE_CERT_PATH, checksumPath, '--title', `go-beast ${version}`, '--notes-file', notesPath])
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'go-beast-release-notes-'))
+    const notesPath = path.join(tmpDir, 'notes.md')
+    const notes = changelogSectionForVersion(state.changelog, version)
+    write(notesPath, `${notes}\n`)
+
+    gh(['release', 'create', tagName, '--draft', '--title', `go-beast ${version}`, '--notes-file', notesPath, '--verify-tag'])
     process.stdout.write(JSON.stringify({
       ok: true,
       tag: tagName,
       tagStatus,
-      status: 'created',
+      status: 'draft-created',
     }, null, 2) + '\n')
   } catch (error) {
     fail(`publish requires GitHub CLI access via ${GH_BIN}: ${error.stderr?.toString?.() || error.message}`)
   } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true })
+    if (typeof tmpDir !== 'undefined') {
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    }
   }
 }
 

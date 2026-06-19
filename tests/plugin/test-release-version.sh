@@ -88,7 +88,15 @@ case "$1 $2 $3" in
   "release view "*)
     tag="${3:-}"
     if [[ -f "$STATE_DIR/releases/$tag/release-created" ]]; then
-      printf '{"tagName":"%s"}\n' "$tag"
+      if [[ "${4:-}" == "--json" && "${5:-}" == "isDraft" ]]; then
+        if [[ -f "$STATE_DIR/releases/$tag/draft" ]]; then
+          printf '{"isDraft":true}\n'
+        else
+          printf '{"isDraft":false}\n'
+        fi
+      else
+        printf '{"tagName":"%s"}\n' "$tag"
+      fi
       exit 0
     fi
     exit 1
@@ -100,7 +108,12 @@ case "$1 $2 $3" in
     mkdir -p "$release_dir"
     while (($# > 0)); do
       case "$1" in
+        --draft)
+          touch "$release_dir/draft"
+          shift
+          ;;
         --title)
+          printf '%s\n' "$2" > "$release_dir/title.txt"
           shift 2
           ;;
         --notes-file)
@@ -111,7 +124,6 @@ case "$1 $2 $3" in
           shift
           ;;
         *)
-          cp "$1" "$release_dir/$(basename "$1")"
           shift
           ;;
       esac
@@ -187,31 +199,34 @@ export GH_FAKE_LOG="$FAKE_GH_ROOT/gh.log"
 export GH_FAKE_STATE_DIR="$FAKE_GH_ROOT/gh-state"
 
 node scripts/release-version.mjs publish > /tmp/go-beast-release-publish.json
-assert_contains /tmp/go-beast-release-publish.json '"status": "created"' "release-version publish creates the GitHub release"
+assert_contains /tmp/go-beast-release-publish.json '"status": "draft-created"' "release-version publish creates a draft GitHub release"
 assert_contains /tmp/go-beast-release-publish.json '"tagStatus": "created"' "release-version publish creates a git tag"
 git tag --list v1.3.0 > /tmp/go-beast-release-tag.out
 assert_contains /tmp/go-beast-release-tag.out '^v1\.3\.0$' "release-version publish creates the annotated tag"
 
-assert_contains "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/release-certificate.json" '"version": "1.3.0"' "release-version uploads the release certificate asset"
-assert_contains "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/release-certificate.json.sha256" 'release-certificate.json$' "release-version uploads the checksum asset"
-
-FAKE_GH_RELEASE_DIR="$FAKE_GH_ROOT/gh-state/releases/v1.3.0" python3 - <<'PY'
-from pathlib import Path
-import hashlib
-import os
-
-root = Path(os.environ["FAKE_GH_RELEASE_DIR"])
-cert = (root / "release-certificate.json").read_bytes()
-checksum = (root / "release-certificate.json.sha256").read_text().strip()
-expected = hashlib.sha256(cert).hexdigest() + "  release-certificate.json"
-assert checksum == expected, "checksum asset must match the certificate contents"
-PY
-echo "[PASS] release-version uploads a checksum that matches the certificate"
+if [[ ! -e "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/draft" ]]; then
+  echo "[FAIL] release-version creates the release as a draft"
+  exit 1
+fi
+echo "[PASS] release-version creates the release as a draft"
+assert_contains "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/notes.md" 'New release command\.' "release-version writes release notes"
+if [[ -e "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/release-certificate.json" ]]; then
+  echo "[FAIL] release-version publish should not upload release-certificate.json"
+  exit 1
+fi
+if [[ -e "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/release-certificate.json.sha256" ]]; then
+  echo "[FAIL] release-version publish should not upload release-certificate.json.sha256"
+  exit 1
+fi
+echo "[PASS] release-version publish leaves release assets to the finalize workflow"
 
 node scripts/release-version.mjs publish > /tmp/go-beast-release-publish-update.json
-assert_contains /tmp/go-beast-release-publish-update.json '"status": "updated"' "release-version publish updates the existing GitHub release"
+assert_contains /tmp/go-beast-release-publish-update.json '"status": "already-exists"' "release-version publish no-ops when the release already exists"
 assert_contains "$FAKE_GH_ROOT/gh.log" 'release create v1.3.0' "release-version publish used create on the first run"
-assert_contains "$FAKE_GH_ROOT/gh.log" 'release upload v1.3.0' "release-version publish used upload on the second run"
+if grep -q 'release upload v1.3.0' "$FAKE_GH_ROOT/gh.log"; then
+  echo "[FAIL] release-version publish should not upload assets"
+  exit 1
+fi
 
 python3 - <<'PY'
 from pathlib import Path

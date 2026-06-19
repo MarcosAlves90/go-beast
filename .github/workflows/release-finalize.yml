@@ -1,18 +1,18 @@
-name: Release Attestation
+name: Release Finalize
 
 on:
   release:
     types:
-      - published
+      - created
   workflow_dispatch:
     inputs:
       tag_name:
-        description: Release tag to attest
+        description: Release tag to finalize
         required: true
         type: string
 
 jobs:
-  attest-release-certificate:
+  finalize-release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -46,6 +46,14 @@ jobs:
       - name: Verify release certificate state
         run: node scripts/release-version.mjs check
 
+      - name: Confirm draft release
+        run: |
+          is_draft="$(gh release view "${{ steps.meta.outputs.tag_name }}" --json isDraft --jq '.isDraft')"
+          if [ "$is_draft" != "true" ]; then
+            echo "Release must still be a draft before finalization" >&2
+            exit 1
+          fi
+
       - name: Generate GitHub attestation
         uses: actions/attest@v4
         with:
@@ -60,3 +68,7 @@ jobs:
       - name: Upload attestation bundle asset
         run: |
           gh release upload "${{ steps.meta.outputs.tag_name }}" release-certificate.sigstore.json --clobber
+
+      - name: Publish release
+        run: |
+          gh release edit "${{ steps.meta.outputs.tag_name }}" --draft=false

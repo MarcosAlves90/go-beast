@@ -153,11 +153,9 @@ Canonical version source:
   `CHANGELOG.md` must match it.
 - `release-certificate.json` records the deterministic release certificate for
   each cut.
-- `release-certificate.json.sha256` is uploaded alongside the GitHub Release
-  as the integrity checksum for that certificate.
-- `.github/workflows/release-attestation.yml` publishes the GitHub attestation
-  for `release-certificate.json` after a release is published and uploads the
-  downloaded Sigstore bundle as `release-certificate.sigstore.json`.
+- `.github/workflows/release-finalize.yml` finalizes draft releases, uploads
+  `release-certificate.sigstore.json`, and publishes the immutable GitHub
+  release that produces the release attestation.
 
 Release commands:
 
@@ -172,12 +170,11 @@ node scripts/release-version.mjs publish
 Set `GH_BIN` to point the publish step at the GitHub CLI binary you want to
 use when you do not want to use the ambient `gh` binary.
 
-The publish step creates the GitHub Release assets and annotated tag. GitHub
-Actions then attests the released `release-certificate.json` on the
-`release.published` event, which is what makes the certificate show up as a
-real attestation in GitHub. The workflow also uploads the attestation bundle
-as `release-certificate.sigstore.json` so the release has the same bundle-style
-certificate artifact GitHub users can download and inspect offline.
+The publish step creates the annotated git tag and a draft GitHub Release.
+`release-finalize.yml` uploads `release-certificate.sigstore.json` to that
+draft release and then publishes it. Because immutable releases are enabled
+for the repository, the published release gets a real GitHub release
+attestation automatically.
 
 SemVer policy:
 
