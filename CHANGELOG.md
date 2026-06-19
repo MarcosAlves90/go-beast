@@ -9,6 +9,15 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `scripts/hook-wire.mjs` and `scripts/install.mjs` — reinstallation now removes and rewires go-beast-managed hook symlinks and hook-config entries for the selected hooks before adding them back, while preserving hooks that were never managed by go-beast.
+- `tests/plugin/test-hook-wire.sh` — added regression coverage for the reinstall case: refresh previously wired go-beast hooks and preserve external hook entries.
+
+### Added
+
+- `tests/codex/test-hook-wire.sh` and `tests/claude-code/test-hook-wire.sh` plus `package.json`/`README.md` script registration — live harness coverage for hook rewire behavior on both Codex and Claude layouts.
+
 ## [1.33.1] - 2026-06-18
 ### Added
 

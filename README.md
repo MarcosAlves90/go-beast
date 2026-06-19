@@ -188,6 +188,8 @@ environment:
 ```bash
 GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:go-mole
 GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:bootstrap
+GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:hook-wire
+GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:hook-wire
 GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-mule
 GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-tern
 GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-marten
