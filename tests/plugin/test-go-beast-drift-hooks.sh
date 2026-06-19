@@ -16,12 +16,16 @@ STATE_DIR="$TEST_HOME/.go-beast"
 mkdir -p "$STATE_DIR"
 touch "$STATE_DIR/bootstrap.enabled"
 
+HOOK_HOME="$TEST_HOME/.claude/hooks"
+mkdir -p "$HOOK_HOME"
+ln -s "$REPO_ROOT/hooks/go-beast-session-state.sh" "$HOOK_HOME/go-beast-session-state.sh"
+
 SESSION_INPUT='{"session_id":"sess-1","cwd":"/tmp/project","source":"startup"}'
-printf '%s' "$SESSION_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-session-state.sh"
+printf '%s' "$SESSION_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" bash "$HOOK_HOME/go-beast-session-state.sh"
 
 STATE_FILE="$STATE_DIR/anti-drift/sess-1.json"
 assert_contains "$STATE_FILE" '"mode":"bootstrap"' "session-state initializes bootstrap mode"
-assert_contains "$STATE_FILE" '"harness":"codex"' "session-state records harness"
+assert_contains "$STATE_FILE" '"harness":"claude-code"' "session-state records harness from symlink path"
 
 cat > "$STATE_FILE" <<'JSON'
 {
