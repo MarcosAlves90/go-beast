@@ -407,6 +407,30 @@ JSON`,
     input: stopInputWithMessage('Re-anchor: active beast go-lark, required artifact APPROACH.md, implementation unlocked is false.'),
     expectExit: 0,
   },
+  {
+    hook: 'go-beast-stop-reanchor.sh',
+    name: 'completed bootstrap task does not force re-anchor',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled && cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'JSON'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-lark","required_artifact":"APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
+JSON`,
+    input: stopInputWithMessage('Continuing with a normal summary.'),
+    expectExit: 0,
+  },
+  {
+    hook: 'go-beast-user-prompt-context.sh',
+    name: 'user prompt naming beast reopens completed task',
+    setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled && cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'JSON'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-lark","required_artifact":"APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
+JSON`,
+    input: json({
+      session_id: 'hook-eval-session',
+      cwd: '/tmp/hook-eval-project',
+      hook_event_name: 'UserPromptSubmit',
+      prompt: 'use go-wren to adjust the hook',
+    }),
+    expectExit: 0,
+    expectOutput: 'go-wren',
+  },
 ]
 
 // ─── Runner ───────────────────────────────────────────────────────────────

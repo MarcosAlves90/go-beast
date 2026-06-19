@@ -35,20 +35,29 @@ fi
 
 active_beast="$(printf '%s' "$state" | jq -r '.active_beast // empty')"
 required_artifact="$(printf '%s' "$state" | jq -r '.required_artifact // empty')"
+task_state="$(printf '%s' "$state" | jq -r '.task_state // "active"')"
 unanchored_stop_count="$(printf '%s' "$state" | jq -r '.unanchored_stop_count // 0')"
+
+if [[ "$task_state" == "complete" || "$task_state" == "idle" ]]; then
+  exit 0
+fi
 
 if gb_message_is_anchored "$last_message"; then
   detected_beast="$(gb_extract_beast "$last_message")"
   detected_artifact="$(gb_extract_artifact "$last_message")"
+  detected_task_state="$(gb_extract_task_state "$last_message")"
   [[ -n "$detected_beast" ]] && active_beast="$detected_beast"
   [[ -n "$detected_artifact" ]] && required_artifact="$detected_artifact"
+  [[ -n "$detected_task_state" ]] && task_state="$detected_task_state"
 
   state="$(printf '%s' "$state" | jq \
     --arg beast "$active_beast" \
     --arg artifact "$required_artifact" \
+    --arg task_state "$task_state" \
     --arg now "$(gb_now_utc)" \
     '.active_beast = $beast
     | .required_artifact = $artifact
+    | .task_state = $task_state
     | .unanchored_stop_count = 0
     | .last_reanchor_reason = ""
     | .updated_at = $now')"

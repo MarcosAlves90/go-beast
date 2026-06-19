@@ -81,7 +81,7 @@ go-beast/
     ├── sync-go-beast-skills.sh    ← SessionStart: syncs skills/workflows/hooks/global instructions
     ├── go-beast-drift-lib.sh      ← Shared anti-drift state helpers for go-beast lifecycle hooks
     ├── go-beast-session-state.sh  ← SessionStart: initializes shared anti-drift session state
-    ├── go-beast-user-prompt-context.sh ← UserPromptSubmit(Codex): re-injects go-beast workflow context
+    ├── go-beast-user-prompt-context.sh ← UserPromptSubmit: re-injects go-beast workflow context
     ├── go-beast-stop-reanchor.sh  ← Stop: continues bootstrap turns when go-beast framing drifts
     ├── git-commit-guard.sh        ← PreToolUse(Bash): blocks commits of sensitive files/build artifacts
     ├── code-dedup-check.sh        ← PreToolUse(Edit/Write): warns on duplicate function/class names

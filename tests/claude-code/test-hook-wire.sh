@@ -62,7 +62,7 @@ node "$REPO_ROOT/scripts/hook-wire.mjs" sync \
   --repo "$REPO_ROOT" \
   --home "$TEST_HOME" \
   --agent claude-code \
-  --hooks code-dedup-check.sh,code-verify-flag.sh,go-beast-stop-reanchor.sh \
+  --hooks code-dedup-check.sh,code-verify-flag.sh,go-beast-stop-reanchor.sh,go-beast-user-prompt-context.sh \
   > "$OUTPUT_JSON"
 
 assert_symlink_target \
@@ -84,6 +84,11 @@ assert_contains \
   "$TEST_HOME/.claude/settings.json" \
   "Checking go-beast drift" \
   "claude live rewire wires Stop anti-drift hook"
+
+assert_contains \
+  "$TEST_HOME/.claude/settings.json" \
+  "Re-anchoring go-beast context" \
+  "claude live rewire wires UserPromptSubmit anti-drift hook"
 
 assert_contains \
   "$TEST_HOME/.claude/settings.json" \
