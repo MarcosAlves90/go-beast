@@ -489,7 +489,8 @@ TEST: ${t.hook} — ${t.name}
 
 STEP 1 — Create isolated test environment and run any test-specific setup:
 \`\`\`bash
-${ensureTestHome} && ${setupCmd}true
+${ensureTestHome}
+${setupCmd ? setupCmd.replace(/ && $/, '') : 'true'}
 \`\`\`
 
 STEP 2 — Execute the hook with isolated HOME=${testHome} (flag files go to ${testHome}/.go-beast/, not ~/.go-beast/):
@@ -505,8 +506,8 @@ VERIFY these conditions and return JSON:
 - expected exit_code: ${t.expectExit}
 - output must contain: ${t.expectOutput ?? '(none)'}
 - output must NOT contain: ${t.expectNoOutput ?? '(none)'}
-- flag must exist: ${t.expectFlagAfter ?? '(skip)'}
-- flag must NOT exist: ${t.expectNoFlag ?? '(skip)'}
+- flag must exist: ${expectFlagAfter ?? '(skip)'}
+- flag must NOT exist: ${expectNoFlag ?? '(skip)'}
 
 Return ONLY:
 - passed: true only if ALL conditions satisfied
