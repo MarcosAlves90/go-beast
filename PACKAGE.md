@@ -23,6 +23,8 @@ go-beast/
 ├── AGENTS.md              ← Agent context: conventions, eval usage, adding new beasts
 ├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
 ├── AGENTS.bootstrap.md    ← Optional stricter bootstrap instructions for discovery-first sessions
+├── REQUIREMENTS.md        ← Task-scoped requirement artifacts when discovery outputs are checked into the repo
+├── APPROACH.md            ← Task-scoped approach decisions when solution exploration outputs are checked into the repo
 ├── CONTRIBUTING.md        ← Canonical contributor workflow for issues, PRs, validation, and releases
 ├── README.md              ← Pack index and pipeline map
 ├── PACKAGE.md             ← This file — manifest and metadata
@@ -38,6 +40,10 @@ go-beast/
 │       ├── ADR-001-plugin-adapter-bundle.md ← Plugin adapter architecture decision
 │       ├── ADR-002-canonical-skills-directory.md ← Canonical skills directory decision
 │       ├── ADR-003-harness-bootstrap-architecture.md ← Harness versus bootstrap architecture decision
+│       ├── ADR.md         ← Task-scoped architecture decision record when an implementation needs a local ADR
+│       ├── STACK.md       ← Task-scoped stack selection and architecture notes
+│       ├── DIAGRAM.md     ← Task-scoped architecture diagram
+│       ├── CONTRACTS.md   ← Task-scoped interface and runtime contracts
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Maintainer guide for global, bootstrap, and repo-local instruction layering
 │       ├── MAINTAINER_PROTOCOLS.md ← Maintainer protocol layer for recurring AI workflows
 │       └── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Maintainer guide for harness and bootstrap boundaries
@@ -66,6 +72,10 @@ go-beast/
 └── hooks/
     ├── manifest.json             ← Shared hook manifest for Claude Code and Codex
     ├── sync-go-beast-skills.sh    ← SessionStart: syncs skills/workflows/hooks/global instructions
+    ├── go-beast-drift-lib.sh      ← Shared anti-drift state helpers for go-beast lifecycle hooks
+    ├── go-beast-session-state.sh  ← SessionStart: initializes shared anti-drift session state
+    ├── go-beast-user-prompt-context.sh ← UserPromptSubmit(Codex): re-injects go-beast workflow context
+    ├── go-beast-stop-reanchor.sh  ← Stop: continues bootstrap turns when go-beast framing drifts
     ├── git-commit-guard.sh        ← PreToolUse(Bash): blocks commits of sensitive files/build artifacts
     ├── code-dedup-check.sh        ← PreToolUse(Edit/Write): warns on duplicate function/class names
     ├── code-verify-flag.sh        ← PostToolUse(Edit/Write): flags project for post-session verification

@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Re-injects go-beast workflow context on each Codex user prompt.
+# Event: UserPromptSubmit
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=hooks/go-beast-drift-lib.sh
+source "$SCRIPT_DIR/go-beast-drift-lib.sh"
+
+input="$(cat)"
+session_id="$(gb_json_get "$input" '.session_id // empty')"
+cwd="$(gb_json_get "$input" '.cwd // empty')"
+prompt="$(gb_json_get "$input" '.prompt // empty')"
+
+[[ -z "$session_id" ]] && session_id="session-$(date +%s)"
+[[ -z "$cwd" ]] && cwd="$(pwd)"
+
+harness="$(gb_detect_harness "$0")"
+mode="$(gb_detect_mode)"
+state="$(gb_load_state_json "$session_id" "$cwd" "$harness" "$mode")"
+
+active_beast="$(printf '%s' "$state" | jq -r '.active_beast // empty')"
+required_artifact="$(printf '%s' "$state" | jq -r '.required_artifact // empty')"
+implementation_unlocked="$(printf '%s' "$state" | jq -r '.implementation_unlocked // false')"
+
+prompt_beast="$(gb_extract_beast "$prompt")"
+if [[ -n "$prompt_beast" ]]; then
+  active_beast="$prompt_beast"
+  state="$(printf '%s' "$state" | jq --arg beast "$active_beast" --arg now "$(gb_now_utc)" '.active_beast = $beast | .updated_at = $now')"
+  gb_save_state_json "$session_id" "$state"
+fi
+
+context="go-beast re-anchor: keep the current beast, required artifact, and implementation gate in working memory."
+if [[ "$mode" == "bootstrap" ]]; then
+  context="${context} Bootstrap mode is active: verify whether go-mole, go-hawk, or go-lark is required before implementation."
+fi
+if [[ -n "$active_beast" ]]; then
+  context="${context} Active beast: ${active_beast}."
+else
+  context="${context} If the active beast is unclear, re-anchor from the latest verified artifact before acting."
+fi
+if [[ -n "$required_artifact" ]]; then
+  if [[ "$implementation_unlocked" == "true" ]]; then
+    context="${context} Latest unlocking artifact: ${required_artifact}. Implementation may continue if no stricter gate is missing."
+  else
+    context="${context} Required artifact is still missing: ${required_artifact}. Keep the gate closed until it exists."
+  fi
+fi
+
+jq -nc \
+  --arg context "$context" \
+  '{
+    hookSpecificOutput: {
+      hookEventName: "UserPromptSubmit",
+      additionalContext: $context
+    }
+  }'

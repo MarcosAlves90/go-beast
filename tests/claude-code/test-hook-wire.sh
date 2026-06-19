@@ -62,7 +62,7 @@ node "$REPO_ROOT/scripts/hook-wire.mjs" sync \
   --repo "$REPO_ROOT" \
   --home "$TEST_HOME" \
   --agent claude-code \
-  --hooks code-dedup-check.sh,code-verify-flag.sh \
+  --hooks code-dedup-check.sh,code-verify-flag.sh,go-beast-stop-reanchor.sh \
   > "$OUTPUT_JSON"
 
 assert_symlink_target \
@@ -79,6 +79,11 @@ assert_contains \
   "$TEST_HOME/.claude/settings.json" \
   "Checking for duplicate code" \
   "claude live rewire refreshes managed hook config"
+
+assert_contains \
+  "$TEST_HOME/.claude/settings.json" \
+  "Checking go-beast drift" \
+  "claude live rewire wires Stop anti-drift hook"
 
 assert_contains \
   "$TEST_HOME/.claude/settings.json" \

@@ -62,7 +62,7 @@ node "$REPO_ROOT/scripts/hook-wire.mjs" sync \
   --repo "$REPO_ROOT" \
   --home "$TEST_HOME" \
   --agent codex \
-  --hooks code-dedup-check.sh,code-verify-flag.sh \
+  --hooks code-dedup-check.sh,code-verify-flag.sh,go-beast-user-prompt-context.sh \
   > "$OUTPUT_JSON"
 
 assert_symlink_target \
@@ -79,6 +79,11 @@ assert_contains \
   "$TEST_HOME/.codex/hooks.json" \
   "Checking for duplicate code" \
   "codex live rewire refreshes managed hook config"
+
+assert_contains \
+  "$TEST_HOME/.codex/hooks.json" \
+  "Re-anchoring go-beast context" \
+  "codex live rewire wires UserPromptSubmit anti-drift hook"
 
 assert_contains \
   "$TEST_HOME/.codex/hooks.json" \

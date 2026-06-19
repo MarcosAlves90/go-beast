@@ -74,6 +74,21 @@ These defaults apply unless stricter instructions override them.
    uncertainty is safe and clearly disclosed.
 5. Separate what is known, what was verified, and what is inferred.
 
+## Context Retention
+
+For non-trivial sessions, maintain an explicit working state in context.
+
+1. Keep track of the active beast, the artifact that unlocks the next step, and
+   whether implementation is currently allowed.
+2. When the session changes phase or becomes tool-heavy, restate that working
+   state before proceeding.
+3. If the current beast or required artifact becomes unclear, stop and
+   re-anchor from the latest verified files instead of continuing from memory.
+4. If you notice you have drifted from the expected go-beast persona,
+   enforcement posture, or workflow, say so plainly and correct course before
+   continuing.
+5. Do not continue implementation while re-anchoring uncertainty remains.
+
 ## Investigation Requirements
 
 Before editing, the agent must do the following when relevant:

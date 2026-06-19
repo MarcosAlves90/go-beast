@@ -15,10 +15,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - `workflows/go-hook-eval.js` — added coverage for `git-strip-coauthored.sh` when the commit message comes from a file.
 - `scripts/hook-wire.mjs` and `scripts/install.mjs` — reinstallation now removes and rewires go-beast-managed hook symlinks and hook-config entries for the selected hooks before adding them back, while preserving hooks that were never managed by go-beast.
 - `tests/plugin/test-hook-wire.sh` — added regression coverage for the reinstall case: refresh previously wired go-beast hooks and preserve external hook entries.
+- `AGENTS.global.md`, `AGENTS.bootstrap.md`, and `AGENTS.md` — added session-wide context-retention and anti-drift rules so workflow state, beast gates, and enforcement posture are explicitly re-anchored instead of being left implicit.
 
 ### Added
 
 - `tests/codex/test-hook-wire.sh` and `tests/claude-code/test-hook-wire.sh` plus `package.json`/`README.md` script registration — live harness coverage for hook rewire behavior on both Codex and Claude layouts.
+- `REQUIREMENTS.md`, `APPROACH.md`, and `docs/architecture/{STACK.md,ADR.md,DIAGRAM.md,CONTRACTS.md}` — recorded the anti-drift problem statement, selected the stateful drift-guard approach, and defined the runtime contracts before hook implementation.
+- `hooks/go-beast-session-state.sh`, `hooks/go-beast-user-prompt-context.sh`, `hooks/go-beast-stop-reanchor.sh`, and `hooks/go-beast-drift-lib.sh` — added shared anti-drift runtime state, Codex prompt-time re-anchoring, and bootstrap Stop enforcement for repeated workflow drift.
+- `tests/plugin/test-go-beast-drift-hooks.sh`, `tests/codex/test-hook-wire.sh`, `tests/claude-code/test-hook-wire.sh`, and `workflows/go-hook-eval.js` — added deterministic and live coverage for anti-drift hook wiring and enforcement paths.
 
 ## [1.33.1] - 2026-06-18
 ### Added
