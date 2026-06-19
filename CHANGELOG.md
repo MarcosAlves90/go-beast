@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.35.0] - 2026-06-19
+
 ### Added
 
 - `scripts/release-version.mjs` plus `package.json` scripts and `tests/plugin/test-release-version.sh` — added a canonical release/versioning contract with `check` and `release` modes so `package.json` drives version sync across `README.md`, `PACKAGE.md`, and the latest released section of `CHANGELOG.md`.
