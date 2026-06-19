@@ -28,6 +28,11 @@ if echo "$file_path" | grep -qE '(^|/)\.gitignore$|(^|/)\.gitattributes$|(^|/)\.
   exit 0
 fi
 
+# Ignore agent/system config directories (not project source)
+if echo "$file_path" | grep -qE "^$HOME/(\.claude|\.config|\.local|\.codex)/"; then
+  exit 0
+fi
+
 # Find the nearest existing ancestor directory (file may not exist yet)
 ancestor_dir="$(dirname "$file_path")"
 while [[ ! -d "$ancestor_dir" && "$ancestor_dir" != "/" ]]; do
