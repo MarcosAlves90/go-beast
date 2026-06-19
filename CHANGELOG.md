@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.39.0] - 2026-06-19
+
 ### Added
 
 - `.github/workflows/release-finalize.yml` — finalizes draft releases by uploading `release-certificate.sigstore.json` and then publishing the immutable release so GitHub generates the real release attestation.
