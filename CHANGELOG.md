@@ -9,15 +9,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `.github/workflows/release-attestation.yml` — the release attestation workflow also uploads the downloaded Sigstore bundle as `release-certificate.sigstore.json` so the release exposes the attestation in the same bundle format GitHub users can inspect offline.
+
+### Changed
+
+- `CONTRIBUTING.md`, `README.md`, and `docs/architecture/RELEASE_VERSIONING_APPROACH.md` — clarified that `release-certificate.json` is a local release certificate asset while GitHub now generates the actual attestation separately on release publication.
+
 ## [1.38.0] - 2026-06-19
 
 ### Added
 
 - `.github/workflows/release-attestation.yml` — added a GitHub Actions attestation workflow that publishes a real GitHub attestation for `release-certificate.json` when a release is published, with a manual backfill path for older tags.
-
-### Changed
-
-- `CONTRIBUTING.md`, `README.md`, and `docs/architecture/RELEASE_VERSIONING_APPROACH.md` — clarified that `release-certificate.json` is a local release certificate asset while GitHub now generates the actual attestation separately on release publication.
 
 ## [1.37.0] - 2026-06-19
 

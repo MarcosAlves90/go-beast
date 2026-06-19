@@ -15,9 +15,11 @@ jobs:
   attest-release-certificate:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       attestations: write
       id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Resolve release tag
         id: meta
@@ -48,3 +50,13 @@ jobs:
         uses: actions/attest@v4
         with:
           subject-path: release-certificate.json
+
+      - name: Download attestation bundle
+        run: |
+          gh attestation download release-certificate.json -R "${{ github.repository }}"
+          bundle_path="$(find . -maxdepth 1 -name 'sha256:*.jsonl' -print -quit)"
+          mv "$bundle_path" release-certificate.sigstore.json
+
+      - name: Upload attestation bundle asset
+        run: |
+          gh release upload "${{ steps.meta.outputs.tag_name }}" release-certificate.sigstore.json --clobber

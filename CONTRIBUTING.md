@@ -156,7 +156,8 @@ Canonical version source:
 - `release-certificate.json.sha256` is uploaded alongside the GitHub Release
   as the integrity checksum for that certificate.
 - `.github/workflows/release-attestation.yml` publishes the GitHub attestation
-  for `release-certificate.json` after a release is published.
+  for `release-certificate.json` after a release is published and uploads the
+  downloaded Sigstore bundle as `release-certificate.sigstore.json`.
 
 Release commands:
 
@@ -174,7 +175,9 @@ use when you do not want to use the ambient `gh` binary.
 The publish step creates the GitHub Release assets and annotated tag. GitHub
 Actions then attests the released `release-certificate.json` on the
 `release.published` event, which is what makes the certificate show up as a
-real attestation in GitHub.
+real attestation in GitHub. The workflow also uploads the attestation bundle
+as `release-certificate.sigstore.json` so the release has the same bundle-style
+certificate artifact GitHub users can download and inspect offline.
 
 SemVer policy:
 

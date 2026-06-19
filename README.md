@@ -202,7 +202,9 @@ you want isolated credentials or a custom wrapper.
 The GitHub attestation for `release-certificate.json` is created separately by
 `.github/workflows/release-attestation.yml` when the release is published. That
 is the record GitHub shows as the attestation/certificate for the release
-artifact.
+artifact. The workflow also uploads the Sigstore bundle as
+`release-certificate.sigstore.json` so the release includes the downloadable
+certificate bundle alongside the plain JSON certificate and checksum.
 
 Live harness tests are opt-in because they require a working local harness
 environment:

@@ -71,9 +71,11 @@ a checksum asset, and a separate publish step that creates the annotated git
 tag after the release commit exists. Publish uploads the certificate and its
 checksum as GitHub Release assets. A separate GitHub Actions workflow then
 attests the released `release-certificate.json` on the `release.published`
-event. That keeps the version bump, the local release certificate, the GitHub
-attestation, the release assets, and the git tag each explicit without forcing
-the release script to guess about commit state.
+event and uploads the attestation bundle as `release-certificate.sigstore.json`
+for offline inspection. That keeps the version bump, the local release
+certificate, the GitHub attestation, the release bundle, the release assets,
+and the git tag each explicit without forcing the release script to guess
+about commit state.
 
 **Key risk:** the repo still needs explicit policy for how `CHANGELOG.md`
 release sections are cut, or the automation could sync version numbers while
