@@ -323,7 +323,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **AGENTS.global.md**: removed personal references — `filesystem` MCP no longer hardcodes `/Users/marcos.lopes`, now describes the user's home directory generically. Communication section no longer hardcodes Portuguese — now says "respond in the same language the user writes in". Removed `---` dividers.
+- **AGENTS.global.md**: removed personal references — `filesystem` MCP no longer hardcodes a specific home directory, now describes the user's home directory generically. Communication section no longer hardcodes Portuguese — now says "respond in the same language the user writes in". Removed `---` dividers.
 - **AGENTS.global.md**: MCP Tools section expanded — each entry now includes an "If missing" column with the exact install command or fallback strategy, so the agent can guide the user to install missing servers instead of silently degrading.
 
 ---
