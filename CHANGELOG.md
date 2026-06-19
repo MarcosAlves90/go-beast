@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.37.0] - 2026-06-19
+
 ### Added
 
 - `scripts/release-version.mjs` now uploads `release-certificate.json` and `release-certificate.json.sha256` as GitHub Release assets during `publish`, and supports `GH_BIN` so publish can run through a configured GitHub CLI binary.
