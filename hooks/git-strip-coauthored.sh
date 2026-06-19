@@ -58,8 +58,8 @@ fi
 
 [[ -z "$command" ]] && exit 0
 
-# Only act on git commit
-echo "$command" | grep -qE '(^|;|&&|\|\|)[[:space:]]*git[[:space:]]+commit' || exit 0
+# Only act on git commit (handles flags between git and commit, e.g. git -C /path commit)
+echo "$command" | grep -qE '(^|;|&&|\|\|)[[:space:]]*git([[:space:]]+[^|&;]+)?[[:space:]]+commit' || exit 0
 message_file=$(extract_commit_message_file "$command")
 if [[ -n "$message_file" && -f "$message_file" ]]; then
   grep -iqE 'co-authored' "$message_file" && {
