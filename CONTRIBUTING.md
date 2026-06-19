@@ -151,9 +151,12 @@ Canonical version source:
 - `package.json` is the canonical release version.
 - `README.md`, `PACKAGE.md`, and the latest released section in
   `CHANGELOG.md` must match it.
-- `release-certificate.json` records the release attestation for each cut.
+- `release-certificate.json` records the deterministic release certificate for
+  each cut.
 - `release-certificate.json.sha256` is uploaded alongside the GitHub Release
-  as the integrity checksum for that attestation.
+  as the integrity checksum for that certificate.
+- `.github/workflows/release-attestation.yml` publishes the GitHub attestation
+  for `release-certificate.json` after a release is published.
 
 Release commands:
 
@@ -167,6 +170,11 @@ node scripts/release-version.mjs publish
 
 Set `GH_BIN` to point the publish step at the GitHub CLI binary you want to
 use when you do not want to use the ambient `gh` binary.
+
+The publish step creates the GitHub Release assets and annotated tag. GitHub
+Actions then attests the released `release-certificate.json` on the
+`release.published` event, which is what makes the certificate show up as a
+real attestation in GitHub.
 
 SemVer policy:
 

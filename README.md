@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
-**Version 1.37.0** · [Changelog](CHANGELOG.md)
+**Version 1.38.0** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
@@ -198,6 +198,11 @@ node scripts/release-version.mjs publish
 `release-certificate.json` and `release-certificate.json.sha256` to the GitHub
 Release. Set `GH_BIN` to point the publish step at a GitHub CLI binary when
 you want isolated credentials or a custom wrapper.
+
+The GitHub attestation for `release-certificate.json` is created separately by
+`.github/workflows/release-attestation.yml` when the release is published. That
+is the record GitHub shows as the attestation/certificate for the release
+artifact.
 
 Live harness tests are opt-in because they require a working local harness
 environment:

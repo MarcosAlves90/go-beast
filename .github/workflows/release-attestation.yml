@@ -1,0 +1,50 @@
+name: Release Attestation
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Release tag to attest
+        required: true
+        type: string
+
+jobs:
+  attest-release-certificate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Resolve release tag
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag_name='${{ inputs.tag_name }}'
+          else
+            tag_name='${{ github.event.release.tag_name }}'
+          fi
+
+          if [ -z "$tag_name" ]; then
+            echo "Missing release tag" >&2
+            exit 1
+          fi
+
+          echo "tag_name=$tag_name" >> "$GITHUB_OUTPUT"
+
+      - name: Check out release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.meta.outputs.tag_name }}
+          fetch-depth: 0
+
+      - name: Verify release certificate state
+        run: node scripts/release-version.mjs check
+
+      - name: Generate GitHub attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: release-certificate.json
