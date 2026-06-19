@@ -165,8 +165,8 @@ node scripts/release-version.mjs release --bump major
 node scripts/release-version.mjs publish
 ```
 
-Set `GH_BIN` to point the publish step at a scoped GitHub CLI wrapper such as
-`gh-cherry` when you do not want to use the ambient `gh` binary.
+Set `GH_BIN` to point the publish step at the GitHub CLI binary you want to
+use when you do not want to use the ambient `gh` binary.
 
 SemVer policy:
 

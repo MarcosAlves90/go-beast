@@ -158,8 +158,8 @@ at `~/.go-beast/bootstrap.enabled`.
 Requires Node.js 18+. No external dependencies.
 
 ```bash
-git clone <repo-url> ~/Documents/@cherry-c/go-beast
-node ~/Documents/@cherry-c/go-beast/scripts/install.mjs
+git clone <repo-url> <repo-dir>
+node <repo-dir>/scripts/install.mjs
 ```
 
 The installer detects which agents are installed, lets you choose which skills,
@@ -196,8 +196,8 @@ node scripts/release-version.mjs publish
 
 `publish` creates the annotated git tag and uploads both
 `release-certificate.json` and `release-certificate.json.sha256` to the GitHub
-Release. Set `GH_BIN` to a scoped wrapper such as `gh-cherry` if you want the
-publish step to use isolated GitHub CLI credentials.
+Release. Set `GH_BIN` to point the publish step at a GitHub CLI binary when
+you want isolated credentials or a custom wrapper.
 
 Live harness tests are opt-in because they require a working local harness
 environment:
@@ -231,7 +231,7 @@ Code and Codex.
 
 ```bash
 # One-time setup
-bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
+bash <repo-dir>/hooks/sync-go-beast-skills.sh
 ```
 
 Add to `~/.claude/settings.json`:
@@ -253,7 +253,7 @@ After setup, skills are available as `/go-hawk`, `/go-fox`, etc. Workflows run v
 
 > **New skill created mid-session?** The sync only runs at session start. To activate a new beast immediately without waiting for the next session:
 > ```bash
-> bash ~/Documents/@cherry-c/go-beast/hooks/sync-go-beast-skills.sh
+> bash <repo-dir>/hooks/sync-go-beast-skills.sh
 > ```
 
 ### Codex hooks (optional)

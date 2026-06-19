@@ -9,7 +9,8 @@ export const meta = {
 
 // ─── Infrastructure ────────────────────────────────────────────────────────
 
-const REAL_HOME = args?.home ?? "/Users/marcos.lopes"
+const REAL_HOME = args?.home ?? process.env.HOME ?? '/tmp'
+const REPO_ROOT = args?.repoPath ?? process.cwd()
 const HOOKS_DIR = `${REAL_HOME}/.claude/hooks`
 
 // Isolated home for flag files — avoids writing to ~/.go-beast/ which triggers safety classifier
@@ -228,7 +229,7 @@ const TESTS = [
   {
     hook: 'git-commit-remind-flag.sh',
     name: 'creates flag when Edit occurs in git repo',
-    input: editInput(`${REAL_HOME}/Documents/@cherry-c/go-beast/hooks/git-commit-remind.sh`),
+    input: editInput(`${REPO_ROOT}/hooks/git-commit-remind.sh`),
     expectExit: 0,
     expectFlagAfter: `${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
   },
@@ -259,7 +260,7 @@ const TESTS = [
   {
     hook: 'git-commit-remind.sh',
     name: 'respects stop_hook_active=true',
-    setup: `echo ${REAL_HOME}/Documents/@cherry-c/go-beast > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
+    setup: `echo ${REPO_ROOT} > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
     input: stopInput(true),
     expectExit: 0,
     expectNoOutput: 'uncommitted',
@@ -267,7 +268,7 @@ const TESTS = [
   {
     hook: 'git-commit-remind.sh',
     name: 'shows reminder when flag exists and repo has changes (exit 2)',
-    setup: `echo ${REAL_HOME}/Documents/@cherry-c/go-beast > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
+    setup: `echo ${REPO_ROOT} > ${EVAL_HOME}/.go-beast/git-commit-remind.pending`,
     input: stopInput(false),
     expectExit: 2,
     expectOutput: 'Conventional Commits',
@@ -429,7 +430,7 @@ const results = await parallel(
     // Replace EVAL_HOME placeholder in setup with this test's isolated testHome
     const rawSetup = t.setup ? t.setup.replaceAll(EVAL_HOME, testHome) : ''
     const setupCmd = rawSetup ? `${rawSetup} && ` : ''
-    const cwd = t.cwd ?? `${REAL_HOME}/Documents/@cherry-c/go-beast`
+    const cwd = t.cwd ?? REPO_ROOT
 
     // Re-map flag paths for this test's isolated home
     const remapFlag = (f) => f ? f.replace(`${EVAL_HOME}/.go-beast/`, `${testHome}/.go-beast/`) : f
