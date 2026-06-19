@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
-**Version 1.35.0** · [Changelog](CHANGELOG.md)
+**Version 1.36.0** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
@@ -185,6 +185,13 @@ npm run sync:plugin-skills
 npm run release:version:check
 npm run test:plugin
 npm run test:plugin:release-version
+```
+
+Release flow:
+
+```bash
+node scripts/release-version.mjs release --bump <patch|minor|major>
+node scripts/release-version.mjs publish
 ```
 
 Live harness tests are opt-in because they require a working local harness

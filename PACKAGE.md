@@ -2,9 +2,9 @@
 
 ```
 name:    go-beast
-version: 1.35.0
+version: 1.36.0
 date:    2026-06-19
-author:  @cherry-c
+author:  MarcosAlves90
 type:    skill-pack
 scope:   full-stack software development lifecycle
 ```
@@ -15,6 +15,7 @@ Agent-specific adapters, plugin manifests, hook integrations, and live harness
 tests are optional layers around the core `skills/go-*` directories.
 
 Canonical release version source: `package.json`
+Release certificate: `release-certificate.json`
 
 ---
 
@@ -31,6 +32,7 @@ go-beast/
 ├── README.md              ← Pack index and pipeline map
 ├── PACKAGE.md             ← This file — manifest and metadata
 ├── CHANGELOG.md           ← Version history
+├── release-certificate.json ← Signed-style release attestation for the latest cut
 ├── package.json           ← Package metadata and maintenance scripts
 ├── .github/
 │   ├── ISSUE_TEMPLATE.md        ← Issue body pattern for repo changes

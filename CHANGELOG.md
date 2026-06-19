@@ -9,6 +9,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.36.0] - 2026-06-19
+
+### Added
+
+- `scripts/release-version.mjs` now produces a `release-certificate.json` release attestation and exposes a `publish` mode that creates annotated git tags for released versions.
+
+### Changed
+
+- `PACKAGE.md` now identifies `MarcosAlves90` as the author.
+- `README.md`, `CONTRIBUTING.md`, and `hooks/version-bump-remind.sh` now describe the tag-plus-certificate release workflow.
+
 ## [1.35.0] - 2026-06-19
 
 ### Added

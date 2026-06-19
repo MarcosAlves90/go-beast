@@ -68,11 +68,11 @@ MSG+="║                                                          ║"$'\n'
 MSG+="║  Before closing, cut the release${VERSION_HINT}:$(printf '%*s' $((25 - ${#VERSION_HINT})) '')║"$'\n'
 MSG+="║  1. Run release-version.mjs with the SemVer bump        ║"$'\n'
 MSG+="║  2. Re-run release-version.mjs check                    ║"$'\n'
-MSG+="║  3. Review CHANGELOG/README/PACKAGE sync                ║"$'\n'
+MSG+="║  3. Publish the git tag and certificate                 ║"$'\n'
 MSG+="╚══════════════════════════════════════════════════════════╝"$'\n'
 
 echo "$MSG"
-echo "Ask the user if they want to run the release-version workflow before ending the session."
+echo "Ask the user if they want to run the release-version workflow and publish the release tag before ending the session."
 echo "$MSG" >&2
 
 exit 2

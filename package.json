@@ -1,11 +1,12 @@
 {
   "name": "go-beast",
-  "version": "1.35.0",
+  "version": "1.36.0",
   "private": true,
   "type": "module",
   "description": "Agent-agnostic go-* skill pack with hooks, workflows, and plugin adapter bundles for coding agents.",
   "scripts": {
     "release:version:check": "node scripts/release-version.mjs check",
+    "release:version:publish": "node scripts/release-version.mjs publish",
     "sync:plugin-skills": "node scripts/sync-plugin-skills.mjs",
     "test:plugin:release-version": "bash tests/plugin/test-release-version.sh",
     "test:plugin:drift-hooks": "bash tests/plugin/test-go-beast-drift-hooks.sh",
