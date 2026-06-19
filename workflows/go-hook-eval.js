@@ -97,11 +97,21 @@ function buildHarness({ testHome, testId, cwd, hookPath, inputJson, envVars, set
   const extraEnv = envVars ? Object.entries(envVars).map(([k, v]) => `${k}='${v}'`).join(' ') : ''
   // Double-stringify for safe embedding in bash echo "..."
   // echo "..." processes \" as " and \\" as \" — round-trips valid JSON
-  const inputEscaped = JSON.stringify(inputJson)
+  // Write input to a temp file so literal newlines, single quotes, and shell metacharacters
+  // in the payload survive intact — echo/printf quoting breaks on payloads with literal newlines
+  // or single quotes (e.g. heredoc payloads from jsonWithLiteralNewlines).
+  const inputFile = `/tmp/hook-input-${testId}.json`
+  // Use a unique heredoc delimiter that cannot appear inside any hook payload
+  const DELIM = `HOOKEVAL_INPUT_EOF_${testId.replace(/[^a-z0-9]/gi, '_').toUpperCase()}`
+  const inputRaw = typeof inputJson === 'string' ? inputJson : JSON.stringify(inputJson)
 
   const lines = [
     'set -uo pipefail',
     `mkdir -p '${testHome}/.go-beast' '${testHome}/.claude'`,
+    // Write payload to file via heredoc — handles any content safely
+    `cat > '${inputFile}' <<'${DELIM}'`,
+    inputRaw,
+    DELIM,
   ]
 
   if (setup) lines.push(setup)
@@ -109,10 +119,10 @@ function buildHarness({ testHome, testId, cwd, hookPath, inputJson, envVars, set
   lines.push(
     `hook_exit=0`,
     `tmpstderr='/tmp/hook-stderr-${testId}.txt'`,
-    // Capture stdout; capture exit via || assignment
-    `hook_stdout=$(cd '${cwd}' && echo ${inputEscaped} | HOME='${testHome}' ${extraEnv} bash '${hookPath}' 2>"$tmpstderr") || hook_exit=$?`,
+    // Feed hook from file — avoids all quoting issues
+    `hook_stdout=$(cd '${cwd}' && cat '${inputFile}' | HOME='${testHome}' ${extraEnv} bash '${hookPath}' 2>"$tmpstderr") || hook_exit=$?`,
     `hook_stderr=$(cat "$tmpstderr" 2>/dev/null || true)`,
-    `rm -f "$tmpstderr"`,
+    `rm -f "$tmpstderr" '${inputFile}'`,
     `passed=true`,
     `fail_reason=''`,
   )
