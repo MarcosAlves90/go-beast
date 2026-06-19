@@ -25,15 +25,17 @@ run_hook() {
 }
 
 run_hook '{"tool_name":"Bash","tool_input":{"command":"git commit -m \"fix: something\\nCo-Authored-By: Claude <noreply@anthropic.com>\""}}' /tmp/go-beast-inline-coauthored.out
+run_hook '{"tool_name":"Bash","note":"Co-Authored-By: Example Agent <agent@example.com>","tool_input":{"command":"git commit -m \"fix: clean message\""}' /tmp/go-beast-outside-command-coauthored.out
 run_hook "{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git commit -F $DIRTY_MSG\"}}" /tmp/go-beast-file-coauthored.out
 run_hook "{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git commit -F $CLEAN_MSG\"}}" /tmp/go-beast-file-clean.out
 run_hook "{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git commit -F $CLEAN_MSG --trailer \\\"Co-Authored-By: Claude <noreply@anthropic.com>\\\"\"}}" /tmp/go-beast-file-trailer.out
 
 assert_contains /tmp/go-beast-inline-coauthored.out "EXIT:1" "blocks inline Co-Authored-By commit"
+assert_contains /tmp/go-beast-outside-command-coauthored.out "EXIT:0" "ignores Co-Authored-By outside the commit command"
 assert_contains /tmp/go-beast-file-coauthored.out "EXIT:1" "blocks Co-Authored-By from message file"
 assert_contains /tmp/go-beast-file-clean.out "EXIT:0" "passes clean message file commit"
 assert_contains /tmp/go-beast-file-trailer.out "EXIT:1" "blocks Co-Authored-By trailer with clean message file"
 
-rm -f /tmp/go-beast-inline-coauthored.out /tmp/go-beast-file-coauthored.out /tmp/go-beast-file-clean.out /tmp/go-beast-file-trailer.out
+rm -f /tmp/go-beast-inline-coauthored.out /tmp/go-beast-outside-command-coauthored.out /tmp/go-beast-file-coauthored.out /tmp/go-beast-file-clean.out /tmp/go-beast-file-trailer.out
 
 echo "STATUS: PASSED"

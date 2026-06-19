@@ -18,6 +18,15 @@ strip_matching_quotes() {
   printf '%s' "$value"
 }
 
+extract_command_from_raw_input() {
+  local raw_input="$1"
+  printf '%s' "$raw_input" | perl -0ne '
+    if (/"tool_input"\s*:\s*\{.*?"command"\s*:\s*"((?:[^"\\]|\\.)*)"/s) {
+      print $1;
+    }
+  '
+}
+
 extract_commit_message_file() {
   local cmd="$1"
   local file_arg=""
@@ -41,33 +50,28 @@ else
   [[ "$tool_name" != "Bash" ]] && exit 0
 fi
 
-# Extract command via jq; if jq fails, use the raw input for the greps below.
+# Extract command via jq; if jq fails, extract the command from the raw input.
 command=$(echo "$input" | jq -r '.tool_input.command // empty' 2>/dev/null || true)
-raw_fallback=false
 if [[ -z "$command" ]]; then
-  # jq failed or command is empty — check raw input for commit + co-authored
-  echo "$input" | grep -qE 'git[[:space:]]+commit' || exit 0
-  raw_fallback=true
+  command=$(extract_command_from_raw_input "$input")
 fi
 
-if [[ "$raw_fallback" == "true" ]]; then
-  # Check co-authored directly in the raw input
-  echo "$input" | grep -iqE 'co-authored' || exit 0
-else
-  # Only act on git commit
-  echo "$command" | grep -qE '(^|;|&&|\|\|)[[:space:]]*git[[:space:]]+commit' || exit 0
-  message_file=$(extract_commit_message_file "$command")
-  if [[ -n "$message_file" && -f "$message_file" ]]; then
-    grep -iqE 'co-authored' "$message_file" && {
-      echo "🚫 Blocked: commit message contains a 'Co-Authored-By' tag."
-      echo ""
-      echo "Remove all 'Co-Authored-By: ...' lines from the message and resend the commit."
-      exit 1
-    }
-  fi
-  # Detect Co-Authored-By in the message (case-insensitive, covers variants)
-  echo "$command" | grep -iqE 'co-authored' || exit 0
+[[ -z "$command" ]] && exit 0
+
+# Only act on git commit
+echo "$command" | grep -qE '(^|;|&&|\|\|)[[:space:]]*git[[:space:]]+commit' || exit 0
+message_file=$(extract_commit_message_file "$command")
+if [[ -n "$message_file" && -f "$message_file" ]]; then
+  grep -iqE 'co-authored' "$message_file" && {
+    echo "🚫 Blocked: commit message contains a 'Co-Authored-By' tag."
+    echo ""
+    echo "Remove all 'Co-Authored-By: ...' lines from the message and resend the commit."
+    exit 1
+  }
 fi
+
+# Detect Co-Authored-By in the message (case-insensitive, covers variants)
+echo "$command" | grep -iqE 'co-authored' || exit 0
 
 echo "🚫 Blocked: commit message contains a 'Co-Authored-By' tag."
 echo ""

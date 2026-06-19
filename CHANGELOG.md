@@ -17,6 +17,11 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 - `CONTRIBUTING.md`, `README.md`, and `docs/architecture/RELEASE_VERSIONING_APPROACH.md` — clarified the draft-release finalization flow, the immutable release attestation, and the `release-certificate.sigstore.json` asset.
 
+### Fixed
+
+- `hooks/git-strip-coauthored.sh` — now extracts and inspects the `tool_input.command` field from malformed hook payloads instead of scanning the entire raw JSON blob, which avoids false positives outside the actual commit command while still blocking `Co-Authored-By` trailers in heredoc and file-based commit messages.
+- `tests/plugin/test-git-strip-coauthored.sh` and `workflows/go-hook-eval.js` — added regression coverage for malformed payloads that carry `Co-Authored-By` text outside the commit command.
+
 ## [1.38.0] - 2026-06-19
 
 ### Added
