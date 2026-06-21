@@ -15,6 +15,11 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - `README.md`, `PACKAGE.md` — updated pipeline diagram and skill tables to include go-snipe at `[go-snipe]` position between go-beaver and go-wolf/go-lynx.
 - `workflows/go-skill-eval.js` — added go-snipe checklist and skillOverrides eval scenario.
 
+### Changed
+
+- **`skills/go-wolf/SKILL.md`** (v1.1.0 → v1.2.0): added `SPEC.md` from go-snipe as an explicit prerequisite in `when_to_use` and Quick start, making the ATDD gate visible to implementers.
+- **`skills/go-lynx/SKILL.md`** (v1.1.0 → v1.2.0): added `SPEC.md` from go-snipe as an explicit prerequisite in `when_to_use` and Quick start, aligning UI implementation with behavioral specification targets.
+
 ## [1.39.0] - 2026-06-19
 
 ### Added

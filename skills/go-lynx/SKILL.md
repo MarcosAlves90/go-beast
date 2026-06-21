@@ -1,8 +1,8 @@
 ---
 name: go-lynx
-version: 1.1.0
+version: 1.2.0
 description: Builds frontend UIs with correct component architecture, state management, API integration, accessibility, and responsive design — wired to a real backend, not mocked.
-when_to_use: Use when building or extending frontend applications, designing component hierarchies, wiring up API calls, managing client state, or implementing UI features. Invoke after go-wolf has a running backend (or a mocked API contract).
+when_to_use: Use when building or extending frontend applications, designing component hierarchies, wiring up API calls, managing client state, or implementing UI features. Invoke after go-wolf has a running backend (or a mocked API contract) and go-snipe has produced SPEC.md (or the team has explicitly decided to skip behavioral specification).
 ---
 
 # go-lynx — Frontend UI Development
@@ -12,7 +12,7 @@ go-lynx moves fast and precise. It builds UIs that are functional, accessible, a
 ## Quick start
 
 ```
-Prerequisites: Running backend from go-wolf (or mocked API), scaffold from go-beaver
+Prerequisites: Running backend from go-wolf (or mocked API), scaffold from go-beaver, SPEC.md from go-snipe (or explicit decision to skip)
 → invoke go-lynx
 → component design → routing → state management → API integration → accessibility
 ```
