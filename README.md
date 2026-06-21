@@ -13,7 +13,7 @@ Each skill is named `go-<animal>`. Each beast owns exactly one phase of the proj
 
 ```
 go-hawk → [go-lark] → go-fox → go-otter → go-beaver
-  → go-wolf + go-lynx → go-eagle → go-bear → go-raven → [go-crane] → go-owl
+  → [go-snipe] → go-wolf + go-lynx → go-eagle → go-bear → go-raven → [go-crane] → go-owl
 ```
 
 > `[brackets]` = optional. go-bear can interrupt any beast. go-owl can run at any phase.
@@ -30,6 +30,7 @@ go-hawk → [go-lark] → go-fox → go-otter → go-beaver
 | [go-fox](skills/go-fox/SKILL.md) | Architecture | `ADR.md`, `STACK.md`, `DIAGRAM.md`, `CONTRACTS.md` |
 | [go-otter](skills/go-otter/SKILL.md) | Database | ER diagram, migrations, index strategy |
 | [go-beaver](skills/go-beaver/SKILL.md) | Scaffolding | Working repo skeleton, tooling, `.env.example`, `SETUP.md` |
+| [go-snipe](skills/go-snipe/SKILL.md) | Behavioral Specification | `SPEC.md` — BDD scenarios, acceptance criteria, acceptance test skeleton |
 | [go-wolf](skills/go-wolf/SKILL.md) | Backend | REST/GraphQL API, auth, middleware, validation |
 | [go-lynx](skills/go-lynx/SKILL.md) | Frontend | Components, state, API integration, a11y |
 | [go-eagle](skills/go-eagle/SKILL.md) | Testing | Test pyramid, unit/integration/E2E, CI gates, `TESTING.md` |

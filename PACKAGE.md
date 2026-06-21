@@ -107,8 +107,9 @@ go-hawk
         └─► go-fox
         └─► go-otter (parallel with go-fox is fine)
         └─► go-beaver
-              ├─► go-wolf
-              └─► go-lynx
+              └─► go-snipe (optional — invoke when ATDD/BDD spec must precede implementation)
+                    ├─► go-wolf
+                    └─► go-lynx
                     └─► go-eagle
                           └─► go-bear  ← also invocable earlier on any security-sensitive feature
                                 └─► go-raven
