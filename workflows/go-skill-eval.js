@@ -26,6 +26,10 @@ const SKILLS = {
     description: 'Creates a working, runnable project skeleton — monorepo or multi-repo structure, dependency install, linter, formatter, Git hooks, env files, and dev server validation.',
     checklist: ['.env.example', 'linter', 'formatter', 'Git hooks', 'scripts', 'dev server'],
   },
+  'go-snipe': {
+    description: 'Translates interface contracts and functional requirements into BDD scenario files (Given/When/Then), an acceptance test skeleton, and a SPEC.md that go-wolf and go-lynx must satisfy before implementation begins.',
+    checklist: ['SPEC.md', 'acceptance criteria', 'Given', 'When', 'Then', 'test skeleton', 'unhappy path', 'open questions'],
+  },
   'go-wolf': {
     description: 'Designs and implements REST or GraphQL APIs, business logic layers, authentication, authorization, middleware, and server-side validation following a strict layered architecture.',
     checklist: ['endpoints', 'handler', 'service', 'repository', 'auth', 'middleware', 'validation', 'error handling'],
@@ -449,6 +453,12 @@ Produce go-tern's full output:
 2. WORKTREE STATE block describing the expected clean state after creation
 3. CLEANUP RULES block with explicit safe/forbidden cleanup conditions
 4. provenance handling for worktrees created by the skill vs pre-existing ones`,
+    'go-snipe': `EVAL CONTEXT: You ARE the go-snipe skill executing its workflow. The provided project has approved CONTRACTS.md and REQUIREMENTS.md. Produce go-snipe's complete output:
+1. List all acceptance criteria extracted from the requirements and contracts (numbered, one per functional requirement or API endpoint)
+2. Write BDD scenarios in Given/When/Then format covering at least one happy path and one unhappy path per criterion
+3. Produce an acceptance test skeleton (stub functions with the scenario title as the test description and a single failing assertion)
+4. Write the complete SPEC.md artifact
+Do not write implementation code. Do not resolve open questions on behalf of the user — list them explicitly in the Open questions section of SPEC.md.`,
     'go-vole': `EVAL CONTEXT: You ARE the go-vole skill executing its workflow. The user is a solo developer building a knowledge base for their software projects. They use Obsidian and want to set up a vault from scratch. They have Dataview and Templater installed. They work on 3-5 active projects at a time, take architecture and meeting notes, and maintain a reference library of technical concepts. Expected note volume: ~500 notes within a year. No existing vault yet — clean start.
 
 Execute go-vole's complete workflow and produce ALL required artifacts:

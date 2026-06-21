@@ -9,6 +9,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `skills/go-snipe/` — new beast for behavioral specification (ATDD/BDD). Translates approved contracts and functional requirements into BDD scenarios (Given/When/Then), an acceptance test skeleton, and `SPEC.md` — a hard prerequisite for go-wolf and go-lynx before implementation begins.
+- `README.md`, `PACKAGE.md` — updated pipeline diagram and skill tables to include go-snipe at `[go-snipe]` position between go-beaver and go-wolf/go-lynx.
+- `workflows/go-skill-eval.js` — added go-snipe checklist and skillOverrides eval scenario.
+
+### Changed
+
+- **`skills/go-wolf/SKILL.md`** (v1.1.0 → v1.3.0): added `SPEC.md` from go-snipe as an explicit prerequisite and a hard TDD rule — implementation must not begin before the corresponding failing stub exists and is confirmed red.
+- **`skills/go-lynx/SKILL.md`** (v1.1.0 → v1.3.0): added `SPEC.md` from go-snipe as an explicit prerequisite and a hard TDD rule — component implementation must not begin before the corresponding failing stub exists and is confirmed red.
+
 ## [1.39.0] - 2026-06-19
 
 ### Added
