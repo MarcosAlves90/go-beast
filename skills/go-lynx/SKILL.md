@@ -1,6 +1,6 @@
 ---
 name: go-lynx
-version: 1.2.0
+version: 1.3.0
 description: Builds frontend UIs with correct component architecture, state management, API integration, accessibility, and responsive design — wired to a real backend, not mocked.
 when_to_use: Use when building or extending frontend applications, designing component hierarchies, wiring up API calls, managing client state, or implementing UI features. Invoke after go-wolf has a running backend (or a mocked API contract) and go-snipe has produced SPEC.md (or the team has explicitly decided to skip behavioral specification).
 ---
@@ -92,6 +92,7 @@ Use the `verify` skill or Playwright to confirm:
 - No API calls in display components.
 - No hardcoded user-facing strings — prepare for i18n from day one.
 - Every form handles: loading · success · validation errors · server errors.
+- Do not write implementation code for a component before its stub from SPEC.md exists and fails. Run the stub, confirm it fails, then implement until it passes.
 
 ## Output
 

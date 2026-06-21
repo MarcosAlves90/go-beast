@@ -1,6 +1,6 @@
 ---
 name: go-wolf
-version: 1.2.0
+version: 1.3.0
 description: Designs and implements REST or GraphQL APIs, business logic layers, authentication, authorization, middleware, and server-side validation following a strict layered architecture.
 when_to_use: Use when building or extending backend services, implementing endpoints, handling auth flows, or writing server-side business logic. Invoke after go-beaver has produced a running scaffold, go-fox has produced CONTRACTS.md, and go-snipe has produced SPEC.md (or the team has explicitly decided to skip behavioral specification).
 ---
@@ -87,6 +87,7 @@ Invoke `go-eagle` for a broader QA plan. Invoke `go-bear` for security-critical 
 - No HTTP concepts in service layer.
 - Never return raw database errors to the client.
 - Every endpoint needs at least one test before it is considered done.
+- Do not write implementation code for an endpoint before its stub from SPEC.md exists and fails. Run the stub, confirm it fails, then implement until it passes.
 
 ## Output
 

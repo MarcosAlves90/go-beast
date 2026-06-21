@@ -17,8 +17,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **`skills/go-wolf/SKILL.md`** (v1.1.0 → v1.2.0): added `SPEC.md` from go-snipe as an explicit prerequisite in `when_to_use` and Quick start, making the ATDD gate visible to implementers.
-- **`skills/go-lynx/SKILL.md`** (v1.1.0 → v1.2.0): added `SPEC.md` from go-snipe as an explicit prerequisite in `when_to_use` and Quick start, aligning UI implementation with behavioral specification targets.
+- **`skills/go-wolf/SKILL.md`** (v1.1.0 → v1.3.0): added `SPEC.md` from go-snipe as an explicit prerequisite and a hard TDD rule — implementation must not begin before the corresponding failing stub exists and is confirmed red.
+- **`skills/go-lynx/SKILL.md`** (v1.1.0 → v1.3.0): added `SPEC.md` from go-snipe as an explicit prerequisite and a hard TDD rule — component implementation must not begin before the corresponding failing stub exists and is confirmed red.
 
 ## [1.39.0] - 2026-06-19
 
