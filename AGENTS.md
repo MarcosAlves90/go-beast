@@ -190,13 +190,10 @@ go-beast/
 │       ├── ADR-001-plugin-adapter-bundle.md ← Records the original plugin adapter architecture decision
 │       ├── ADR-002-canonical-skills-directory.md ← Records the canonical `skills/` migration decision
 │       ├── ADR-003-harness-bootstrap-architecture.md ← Records the harness versus bootstrap layer split
-│       ├── ADR.md         ← Task-scoped architecture decision record when a change needs a local ADR
-│       ├── STACK.md       ← Task-scoped stack and architecture notes
-│       ├── DIAGRAM.md     ← Task-scoped architecture diagram
-│       ├── CONTRACTS.md   ← Task-scoped runtime and interface contracts
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Explains how global, bootstrap, and repo-local agent contracts relate
 │       ├── MAINTAINER_PROTOCOLS.md ← Defines discovery, implementation, validation, PR/release, and blocker protocols
-│       └── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Explains source-of-truth boundaries for maintainers
+│       ├── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Explains source-of-truth boundaries for maintainers
+│       └── task-artifacts/    ← Task-scoped go-fox/go-lark outputs (ADR.md, STACK.md, DIAGRAM.md, CONTRACTS.md, etc.) — overwritten per task
 ├── workflows/
 │   ├── go-skill-eval.js       ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
 │   ├── go-hook-eval.js        ← Hook eval: test cases across all hooks

@@ -28,8 +28,8 @@ Use `repomix pack_codebase` on the project root. If the repo is large, compress 
 Before reading a single line of code, pull what the project already knows about itself:
 
 - [ ] Read `CONTEXT.md` (domain glossary) if present — these are the canonical names for every concept
-- [ ] Read `docs/architecture/ADR.md` or any `docs/adr/` directory — decisions already made are not to be re-litigated unless there is strong evidence of friction
-- [ ] Read `docs/architecture/STACK.md` if present — know the intended stack before observing the actual one
+- [ ] Read `docs/architecture/task-artifacts/ADR.md` or any `docs/adr/` directory — decisions already made are not to be re-litigated unless there is strong evidence of friction
+- [ ] Read `docs/architecture/task-artifacts/STACK.md` if present — know the intended stack before observing the actual one
 - [ ] Read `README.md` for stated goals and scope
 
 If none of these exist, note the absence as a finding (Dimension 5: Missing context infrastructure).

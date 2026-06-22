@@ -29,7 +29,7 @@ Load `REQUIREMENTS.md`. Identify:
 
 ### 2. Propose and justify the stack
 
-Produce this as `docs/architecture/STACK.md`. Fill every row — do not leave choices blank:
+Produce this as `docs/architecture/task-artifacts/STACK.md`. Fill every row — do not leave choices blank:
 
 | Layer | Choice | Why | Risk |
 |---|---|---|---|
@@ -62,7 +62,7 @@ Write a Mermaid `C4Context` or `flowchart` showing: external actors, frontend/BF
 
 ### 5. Define interface contracts
 
-Produce this as `docs/architecture/CONTRACTS.md`. For each service boundary: protocol, auth model, core endpoints/topics with request/response shape, error model.
+Produce this as `docs/architecture/task-artifacts/CONTRACTS.md`. For each service boundary: protocol, auth model, core endpoints/topics with request/response shape, error model.
 
 ### 6. Flag design risks
 
@@ -79,7 +79,7 @@ List any decision that increases operational complexity, requires specialized kn
 
 All four documents are mandatory regardless of project size or complexity:
 
-- `docs/architecture/ADR.md` — one ADR per significant decision
-- `docs/architecture/STACK.md` — filled technology table with choices, reasons, and risks
-- `docs/architecture/DIAGRAM.md` — Mermaid component diagram
-- `docs/architecture/CONTRACTS.md` — interface contracts for every service boundary
+- `docs/architecture/task-artifacts/ADR.md` — one ADR per significant decision
+- `docs/architecture/task-artifacts/STACK.md` — filled technology table with choices, reasons, and risks
+- `docs/architecture/task-artifacts/DIAGRAM.md` — Mermaid component diagram
+- `docs/architecture/task-artifacts/CONTRACTS.md` — interface contracts for every service boundary

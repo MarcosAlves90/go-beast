@@ -23,7 +23,7 @@ Prerequisites: CONTRACTS.md from go-fox, functional requirements from go-hawk
 
 ### 1. Extract acceptance criteria from contracts and requirements
 
-Read `docs/architecture/CONTRACTS.md` and `REQUIREMENTS.md`. For every functional requirement and
+Read `docs/architecture/task-artifacts/CONTRACTS.md` and `REQUIREMENTS.md`. For every functional requirement and
 every interface boundary, extract one or more testable acceptance criteria:
 
 - [ ] Each criterion must be falsifiable: there must be a concrete condition that would make it fail.

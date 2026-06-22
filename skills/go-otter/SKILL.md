@@ -84,7 +84,7 @@ Document in `docs/DATABASE.md`: backup schedule, point-in-time recovery procedur
 
 ## Output
 
-- ER diagram in `docs/architecture/DIAGRAM.md`
+- ER diagram in `docs/architecture/task-artifacts/DIAGRAM.md`
 - Migration files under `db/migrations/`
 - `docs/DATABASE.md` — schema reference, naming conventions, backup plan
 - Seed script under `db/seeds/`

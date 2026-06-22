@@ -1,90 +1,88 @@
 ## Requirements summary
 
-- Detect workflow drift and behavior drift during active Claude/Codex sessions.
-- Re-anchor the agent mid-session instead of relying only on SessionStart.
-- Support severity-based escalation up to blocking for critical bootstrap or
-  safety violations.
-- Keep only minimal operational state and avoid unnecessary sensitive
-  persistence.
-- Favor an incremental solution that can ship without redesigning the whole
-  pack.
+- All three eval workflows (go-skill-eval, go-hook-eval, go-workflow-eval) must persist results to
+  disk after each run.
+- The output format must be optimized for LLM agent consumption — not human readability.
+- The file must contain full detail: operations, evaluations, scores, notes, observations.
+- The format must be consistent and standardized across all three workflows.
+- The file must be revisitable in future sessions without re-running the eval.
+- go-deep-analysis is explicitly out of scope.
 
 ## Approaches considered
 
-### 1. Context-Only Reinforcement
+### A — Pure JSON per run
 
-Keep the solution in instruction files and context artifacts only. Tighten
-`AGENTS.bootstrap.md`, add a dedicated anti-drift section via `go-jay`, and
-avoid any new runtime enforcement.
-
-Trade-offs:
-- Optimizes for simplicity and low implementation risk
-- Sacrifices mid-session recovery because the model can still drift after the
-  initial context window weakens
-
-### 2. Stateless Runtime Reminders
-
-Add lightweight hooks that detect a few obvious drift patterns and emit
-re-anchoring reminders, but do not keep session state and do not block. The
-hooks act as runtime nudges only.
+One `.json` file per execution with a strict, well-defined schema. All fields named semantically,
+arrays for runs/findings, no free-form narrative. The agent can deserialize directly without
+speculative parsing.
 
 Trade-offs:
-- Optimizes for low overhead and easy rollout
-- Sacrifices precision because stateless checks cannot tell where the session is
-  in the beast pipeline
+- Optimizes: maximum parseability, no ambiguity, schema-validatable.
+- Sacrifices: long narrative content (e.g. judge reasoning) becomes verbose inside JSON strings;
+  minor token overhead from escaping and quotes.
 
-### 3. Stateful Drift Guard
+### B — Markdown with YAML frontmatter
 
-Maintain a short session/task state record with the active beast, required
-artifact, bootstrap mode, and enforcement severity. Use hooks to update this
-state and to decide whether to remind, re-anchor, or block based on actual
-session position.
+A `.md` file with a YAML block at the top for structured metadata/scores, followed by Markdown
+sections for narrative content. Two formats in one file.
 
 Trade-offs:
-- Optimizes for correctness, mid-session recovery, and enforceable gates
-- Sacrifices some simplicity because it introduces a state contract that hooks
-  must maintain carefully
+- Optimizes: narrative readability; easy to write in current workflows.
+- Sacrifices: agent must parse two distinct formats (YAML + Markdown); boundaries between sections
+  are ambiguous; unreliable for structured extraction.
 
-### 4. Workflow-Centric Enforcement
+### C — JSONL append log (one growing file per workflow)
 
-Push most non-trivial work into explicit go-beast workflows and use the
-workflow/runtime boundary as the main anti-drift mechanism. The agent is kept on
-rails by moving more work into structured pipelines rather than open-ended chat.
+Each run appends a JSON line to the same log file. Enables run-over-run comparison without
+managing multiple files. One file per workflow, not per run.
 
 Trade-offs:
-- Optimizes for determinism and strong process control
-- Sacrifices flexibility and has a much larger adoption cost for ordinary
-  interactive sessions
+- Optimizes: automatic history; single file per workflow simplifies location.
+- Sacrifices: multi-line content (scenario text, judge reasoning) is difficult in JSONL;
+  retrieving a specific run requires full file scan; per-run completeness is compromised by
+  the compression pressure inherent in the format.
+
+### D — JSON envelope with Markdown body
+
+JSON at the outer level for metadata and scores, with a `body` field containing Markdown
+narrative. Attempts to combine structure and readability.
+
+Trade-offs:
+- Optimizes: structured metadata + preserved narrative.
+- Sacrifices: worst of both worlds for agents — Markdown inside JSON requires parsing two
+  formats; Markdown narrative adds no value when the consumer is exclusively an agent.
 
 ## Evaluation
 
-| Approach | Simplicity | Scalability | Dev speed | Operational cost | Fit to constraints |
-|----------|-----------|-------------|-----------|------------------|-------------------|
-| Context-Only Reinforcement | ✓✓ | ✗ | ✓✓ | ✓✓ | ✗ |
-| Stateless Runtime Reminders | ✓ | ✓ | ✓✓ | ✓✓ | ✓ |
-| Stateful Drift Guard | ✓ | ✓✓ | ✓ | ✓ | ✓✓ |
-| Workflow-Centric Enforcement | ✗ | ✓✓ | ✗ | ✗ | ✓ |
+| Approach | Agent parseability | Completeness | Token efficiency | Implementation simplicity |
+|---|---|---|---|---|
+| A — Pure JSON | ✓✓ | ✓✓ | ✓ | ✓ |
+| B — Markdown + YAML frontmatter | ✓ | ✓ | ✓✓ | ✓✓ |
+| C — JSONL append log | ✓✓ | ✗ | ✓✓ | ✓ |
+| D — JSON + Markdown body | ✓ | ✓✓ | ✗ | ✓ |
+
+Approaches C and D are eliminated: C compromises per-run completeness; D adds two-format
+parsing overhead with no benefit for an agent-only consumer.
 
 ## Selected approach
 
-**Selected:** Stateful Drift Guard
+**Selected:** A — Pure JSON per run
 
-**Rationale:** This is the smallest responsible approach that can actually solve
-the reported failure modes. Pure context hardening does not recover once the
-agent drifts, and stateless reminders do not know enough about session state to
-enforce beast sequencing or bootstrap gates reliably. A short state model plus
-runtime hooks gives go-beast enough memory to re-anchor the agent during the
-session, escalate severe drift to blocking behavior, and still remain
-incremental within the current harness adapter architecture.
+**Rationale:** This is the only approach that maximizes the two highest-priority attributes
+simultaneously — full parseability and completeness without trade-offs. The consumer being
+exclusively an agent eliminates any justification for narrative or hybrid formats. JSON with a
+well-defined schema allows all three workflows to produce the same format without negotiation:
+required fields guarantee completeness, optional fields cover variation between evals. The token
+overhead of JSON (escaping, quotes) is real but marginal compared to the reliability gain in
+structured extraction.
 
-**Key risk:** the first version may become noisy if severity thresholds and
-state transitions are too loosely defined.
+**Key risk:** If the schema is too generic to accommodate all three workflows, it loses
+specificity; too specific per workflow, it loses the promised standardization. The balance between
+common fields and workflow-specific fields is the most critical design decision.
 
 ## Deferred decisions
 
-- exact state file schema and lifecycle
-- which hook events own state updates versus enforcement
-- drift severity taxonomy and blocker thresholds
-- whether persona drift is enforced directly or inferred from workflow drift
-- test strategy split between direct shell tests, live harness tests, and
-  workflow-level evals
+- Exact schema: which fields are mandatory across all workflows vs. optional per type.
+- File naming convention and persistence directory.
+- Retention policy: overwrite last run or keep history (last N runs).
+- Whether workflows consume a shared schema module or each implements independently.

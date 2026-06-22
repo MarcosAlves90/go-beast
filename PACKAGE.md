@@ -45,14 +45,10 @@ go-beast/
 │       ├── ADR-001-plugin-adapter-bundle.md ← Plugin adapter architecture decision
 │       ├── ADR-002-canonical-skills-directory.md ← Canonical skills directory decision
 │       ├── ADR-003-harness-bootstrap-architecture.md ← Harness versus bootstrap architecture decision
-│       ├── ADR.md         ← Task-scoped architecture decision record when an implementation needs a local ADR
-│       ├── STACK.md       ← Task-scoped stack selection and architecture notes
-│       ├── DIAGRAM.md     ← Task-scoped architecture diagram
-│       ├── CONTRACTS.md   ← Task-scoped interface and runtime contracts
-│       ├── RELEASE_VERSIONING_APPROACH.md ← Task-scoped release/versioning approach comparison and selection
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Maintainer guide for global, bootstrap, and repo-local instruction layering
 │       ├── MAINTAINER_PROTOCOLS.md ← Maintainer protocol layer for recurring AI workflows
-│       └── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Maintainer guide for harness and bootstrap boundaries
+│       ├── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Maintainer guide for harness and bootstrap boundaries
+│       └── task-artifacts/    ← Task-scoped go-fox/go-lark outputs (ADR.md, STACK.md, DIAGRAM.md, CONTRACTS.md, etc.) — overwritten per task
 ├── plugins/
 │   └── go-beast/
 │       ├── .codex-plugin/
