@@ -126,6 +126,14 @@ harness, hook schema, plugin system, or live agent runtime is optional. The core
 pack remains the canonical `skills/` directory plus the plain Markdown docs
 they depend on.
 
+Start here:
+
+1. Use the checkout-based installer if you are maintaining or editing go-beast.
+2. Use the release archive bootstrap if you want to install without cloning the repo.
+3. Omit archive flags to fetch the latest GitHub release automatically.
+4. Pass `--archive-url` when you already know the release URL.
+5. Pass `--archive` when you already have a local tarball.
+
 ### Plugin adapter bundle
 
 The repository now includes `plugins/go-beast/`, a plugin-oriented adapter that
@@ -188,28 +196,45 @@ git clone <repo-url> <repo-dir>
 node <repo-dir>/scripts/install.mjs
 ```
 
-The installer detects which agents are installed, lets you choose which skills,
-optional hook integrations for hook-capable agents, and workflows (Claude Code
-only) to install, creates symlinks, and writes hook config only for the agents
-you actually have installed and selected. It also copies the chosen global
-instructions file to the correct location for each selected agent. This remains
-the supported installation path for optional hooks and global instructions even
-when the plugin adapter bundle is used for skill packaging.
+Use this path when you have a local checkout.
+
+What it does:
+
+- detects which agents are installed
+- lets you choose which skills, hooks, and Claude Code workflows to install
+- creates symlinks from the checkout into each selected agent
+- writes hook config only for the agents you actually have installed and selected
+- copies the selected global instructions file for each selected agent
+
+This remains the supported installation path for optional hooks and global
+instructions even when the plugin adapter bundle is used for skill packaging.
 
 ```bash
-node scripts/install.mjs --all       # install everything, no prompts
-node scripts/install.mjs --all --bootstrap # install everything with stricter bootstrap mode
-node scripts/install.mjs --uninstall # remove all repo symlinks
+node scripts/install.mjs --all
+node scripts/install.mjs --all --bootstrap
+node scripts/install.mjs --uninstall
 ```
+
+- `--all` installs everything without prompts.
+- `--bootstrap` writes the stricter bootstrap instructions instead of the standard ones.
+- `--uninstall` removes symlinks that point back to the checkout.
 
 ### Release archive bootstrap
 
-If you do not want to clone the repository, use a published release source
-archive as the install input. The bootstrap wrapper extracts the archive into a
-versioned cache under `~/.go-beast/source/go-beast-release-archive/`, updates
-the active source pointer, and then runs the canonical installer from that
-active tree. If you omit `--archive` and `--archive-url`, it resolves the latest
-GitHub release automatically.
+Use this path when you do not want to clone the repository.
+
+How it works:
+
+1. The wrapper finds the archive source.
+2. It extracts the archive into `~/.go-beast/source/go-beast-release-archive/`.
+3. It refreshes the active source pointer.
+4. It runs the canonical installer from that active tree.
+
+Archive source options:
+
+- no archive flags: fetch the latest GitHub release automatically
+- `--archive-url <url>`: fetch a specific archive URL
+- `--archive <path>`: use a local archive you already downloaded
 
 ```mermaid
 flowchart LR
@@ -229,10 +254,19 @@ node scripts/install-from-release-archive.mjs --archive-url https://github.com/M
 node scripts/install-from-release-archive.mjs --archive /path/to/go-beast-release-archive.tar.gz --all --bootstrap
 ```
 
+What each command means:
+
+- `node scripts/install-from-release-archive.mjs --all` downloads the latest
+  release and installs everything without prompts.
+- `node scripts/install-from-release-archive.mjs --archive-url <url> --all`
+  installs from a specific release archive URL.
+- `node scripts/install-from-release-archive.mjs --archive <path> --all --bootstrap`
+  installs from a local archive and enables bootstrap mode in the same run.
+
 The archive-based path keeps the checkout-based installer available for
 maintainers while giving end users a repo-free bootstrap option. Re-running the
-same command with a newer archive updates the active source pointer in place, so
-installed links follow the new version without a manual cleanup step. The
+same command with a newer archive updates the active source pointer in place,
+so installed links follow the new version without a manual cleanup step. The
 archive path does not require cloning the repository first.
 
 ### Validation
