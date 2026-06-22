@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync, spawnSync } from 'node:child_process'
 
 const HOME = os.homedir()
+const REPO_ROOT = path.resolve(import.meta.dirname, '..')
 const RELEASE_ROOT = path.join(HOME, '.go-beast', 'source', 'go-beast-release-archive')
 const VERSION_ROOT = path.join(RELEASE_ROOT, 'versions')
 const CURRENT_ROOT = path.join(RELEASE_ROOT, 'current')
@@ -58,6 +59,59 @@ function safeSlug(value) {
 function hashFile(filePath) {
   const content = fs.readFileSync(filePath)
   return createHash('sha256').update(content).digest('hex').slice(0, 12)
+}
+
+function parseGitHubRepositorySlug(repositoryUrl) {
+  const normalized = repositoryUrl
+    .replace(/^git\+/, '')
+    .replace(/\.git$/, '')
+  const parsed = new URL(normalized)
+
+  if (parsed.hostname !== 'github.com') {
+    fail(`Unsupported repository host for latest release discovery: ${parsed.hostname}`)
+  }
+
+  const [owner, repo] = parsed.pathname.replace(/^\/+/, '').split('/')
+  if (!owner || !repo) {
+    fail(`Invalid repository URL in package.json: ${repositoryUrl}`)
+  }
+
+  return `${owner}/${repo}`
+}
+
+function readRepositorySlug(repoRoot) {
+  const packageJsonPath = path.join(repoRoot, 'package.json')
+  const raw = fs.readFileSync(packageJsonPath, 'utf8')
+  const repository = JSON.parse(raw).repository?.url ?? ''
+  if (!repository) {
+    fail(`Missing repository.url in package.json: ${packageJsonPath}`)
+  }
+  return parseGitHubRepositorySlug(repository)
+}
+
+async function resolveLatestReleaseArchive(repoRoot) {
+  const repoSlug = readRepositorySlug(repoRoot)
+  const apiUrl = process.env.GO_BEAST_RELEASE_LATEST_API_URL || `https://api.github.com/repos/${repoSlug}/releases/latest`
+  const response = await fetch(apiUrl, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'go-beast-install-from-release-archive',
+    },
+  })
+
+  if (!response.ok) {
+    fail(`Failed to resolve latest release: ${response.status} ${response.statusText}`)
+  }
+
+  const latest = await response.json()
+  const archiveUrl = latest.tarball_url
+  const tagName = latest.tag_name
+
+  if (!archiveUrl || !tagName) {
+    fail('Latest release payload is missing tarball_url or tag_name')
+  }
+
+  return { archiveUrl, sourceLabel: safeSlug(tagName) }
 }
 
 function downloadArchive(url, destination) {
@@ -116,22 +170,28 @@ function updateCurrentPointer(versionDir) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
-  if (!args.archive && !args.archiveUrl) {
-    fail('Usage: node scripts/install-from-release-archive.mjs --archive <path> | --archive-url <url> [installer flags]')
-  }
 
-  const sourceLabel = args.archive
-    ? safeSlug(path.basename(args.archive))
-    : safeSlug(path.basename(new URL(args.archiveUrl).pathname))
+  let sourceLabel = ''
 
   let archivePath = args.archive
   let tempDir = ''
 
-  if (args.archiveUrl) {
+  if (args.archive) {
+    sourceLabel = safeSlug(path.basename(args.archive))
+  } else if (args.archiveUrl) {
+    sourceLabel = safeSlug(path.basename(new URL(args.archiveUrl).pathname))
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'go-beast-release-archive-'))
     archivePath = path.join(tempDir, `${sourceLabel}.tar.gz`)
     await downloadArchive(args.archiveUrl, archivePath)
-  } else if (!fs.existsSync(archivePath)) {
+  } else {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'go-beast-release-archive-'))
+    const latest = await resolveLatestReleaseArchive(REPO_ROOT)
+    sourceLabel = latest.sourceLabel
+    archivePath = path.join(tempDir, `${sourceLabel}.tar.gz`)
+    await downloadArchive(latest.archiveUrl, archivePath)
+  }
+
+  if (!archivePath || !fs.existsSync(archivePath)) {
     fail(`Archive not found: ${archivePath}`)
   }
 

@@ -208,7 +208,8 @@ If you do not want to clone the repository, use a published release source
 archive as the install input. The bootstrap wrapper extracts the archive into a
 versioned cache under `~/.go-beast/source/go-beast-release-archive/`, updates
 the active source pointer, and then runs the canonical installer from that
-active tree.
+active tree. If you omit `--archive` and `--archive-url`, it resolves the latest
+GitHub release automatically.
 
 ```mermaid
 flowchart LR
@@ -223,6 +224,7 @@ flowchart LR
 ```
 
 ```bash
+node scripts/install-from-release-archive.mjs --all
 node scripts/install-from-release-archive.mjs --archive-url https://github.com/MarcosAlves90/go-beast/archive/refs/tags/v1.40.3.tar.gz --all
 node scripts/install-from-release-archive.mjs --archive /path/to/go-beast-release-archive.tar.gz --all --bootstrap
 ```
