@@ -10,16 +10,35 @@ Each skill is named `go-<animal>`. Each beast owns exactly one phase of the proj
 
 ## Summary
 
-- Canonical skills live in `skills/` and are the source of truth.
-- The pack supports both checkout-based installation and repo-free installation from a release archive.
-- The release-archive path is update-safe: rerunning it with a newer archive refreshes the active source pointer and updates installed links.
-- Optional harness adapters, hooks, and bootstrap mode remain available for Claude Code and Codex.
+- [Pipeline](#pipeline) - ordered beast chain and optional branches
+- [Skills](#skills) - phase-by-phase skill index
+- [Installation](#installation) - checkout-based install, repo-free archive bootstrap, bootstrap mode
+- [Release archive bootstrap](#release-archive-bootstrap) - repo-free install path with update-safe reruns
+- [Validation](#validation) - repo-local checks and live harness tests
+- [Architecture docs](#architecture-docs) - maintainer-facing design notes and protocols
 
 ## Pipeline
 
-```
-go-hawk → [go-lark] → go-fox → go-otter → go-beaver
-  → [go-snipe] → go-wolf + go-lynx → go-eagle → go-bear → go-raven → [go-crane] → go-owl
+```mermaid
+flowchart LR
+  hawk[go-hawk<br/>Discovery]
+  lark[go-lark<br/>Solution Exploration]
+  fox[go-fox<br/>Architecture]
+  otter[go-otter<br/>Database]
+  beaver[go-beaver<br/>Scaffolding]
+  snipe[go-snipe<br/>Behavioral Specification]
+  wolf[go-wolf<br/>Backend]
+  lynx[go-lynx<br/>Frontend]
+  eagle[go-eagle<br/>Testing]
+  bear[go-bear<br/>Security]
+  raven[go-raven<br/>CI/CD]
+  crane[go-crane<br/>Observability]
+  owl[go-owl<br/>Documentation]
+
+  hawk --> lark --> fox --> otter --> beaver --> snipe
+  snipe --> wolf --> eagle
+  snipe --> lynx --> eagle
+  eagle --> bear --> raven --> crane --> owl
 ```
 
 > `[brackets]` = optional. go-bear can interrupt any beast. go-owl can run at any phase.
@@ -190,6 +209,18 @@ archive as the install input. The bootstrap wrapper extracts the archive into a
 versioned cache under `~/.go-beast/source/go-beast-release-archive/`, updates
 the active source pointer, and then runs the canonical installer from that
 active tree.
+
+```mermaid
+flowchart LR
+  archive[Release source archive]
+  wrapper[scripts/install-from-release-archive.mjs]
+  cache[Versioned cache<br/>~/.go-beast/source/go-beast-release-archive/versions/]
+  current[current pointer]
+  installer[scripts/install.mjs]
+  links[Agent skills, hooks, workflows]
+
+  archive --> wrapper --> cache --> current --> installer --> links
+```
 
 ```bash
 node scripts/install-from-release-archive.mjs --archive-url https://github.com/MarcosAlves90/go-beast/archive/refs/tags/v1.40.3.tar.gz --all
