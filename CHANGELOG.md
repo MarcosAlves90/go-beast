@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `scripts/install-from-release-archive.mjs`, `scripts/install.mjs`, `README.md` — the repo-free install bootstrap now keeps a stable active source pointer under `~/.go-beast/source/go-beast-release-archive/current`, so rerunning the command with a newer archive updates the installed links in place.
+
 ## [1.40.3] - 2026-06-22
 
 ### Changed

@@ -9,7 +9,8 @@ import os   from 'os'
 import readline from 'readline'
 import { hooksForAgent, loadHookManifest, syncAgentHooks, wireAgentConfig } from './hook-wire.mjs'
 
-const REPO   = path.resolve(import.meta.dirname, '..')
+const DEFAULT_REPO = path.resolve(import.meta.dirname, '..')
+const REPO   = path.resolve(process.env.GO_BEAST_INSTALL_ROOT || DEFAULT_REPO)
 const HOME   = os.homedir()
 const IS_WIN = process.platform === 'win32'
 const W      = process.stdout.columns || 60

@@ -181,8 +181,9 @@ node scripts/install.mjs --uninstall # remove all repo symlinks
 
 If you do not want to clone the repository, use a published release source
 archive as the install input. The bootstrap wrapper extracts the archive into a
-persistent cache under `~/.go-beast/source/` and then runs the canonical
-installer from that extracted tree.
+versioned cache under `~/.go-beast/source/go-beast-release-archive/`, updates
+the active source pointer, and then runs the canonical installer from that
+active tree.
 
 ```bash
 node scripts/install-from-release-archive.mjs --archive-url https://github.com/MarcosAlves90/go-beast/archive/refs/tags/v1.40.3.tar.gz --all
@@ -190,7 +191,9 @@ node scripts/install-from-release-archive.mjs --archive /path/to/go-beast-releas
 ```
 
 The archive-based path keeps the checkout-based installer available for
-maintainers while giving end users a repo-free bootstrap option.
+maintainers while giving end users a repo-free bootstrap option. Re-running the
+same command with a newer archive updates the active source pointer in place, so
+installed links follow the new version without a manual cleanup step.
 
 ### Validation
 

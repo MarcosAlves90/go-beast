@@ -9,6 +9,7 @@ source "$REPO_ROOT/tests/helpers.sh"
 TEST_HOME="$(mktemp -d)"
 ARCHIVE_DIR="$(mktemp -d)"
 ARCHIVE_PATH="$ARCHIVE_DIR/go-beast-release-archive.tar.gz"
+SECOND_WORKDIR=""
 cleanup() {
   rm -rf "$TEST_HOME" "$ARCHIVE_DIR"
 }
@@ -27,7 +28,9 @@ HOME="$TEST_HOME" node "$REPO_ROOT/scripts/install-from-release-archive.mjs" \
   --all \
   --bootstrap
 
-INSTALL_ROOT="$(cd "$TEST_HOME/.go-beast/source/go-beast-release-archive" && pwd -P)"
+INSTALL_BASE="$TEST_HOME/.go-beast/source/go-beast-release-archive"
+CURRENT_ROOT="$INSTALL_BASE/current"
+INSTALL_ROOT="$(cd "$CURRENT_ROOT" && pwd -P)"
 
 assert_contains \
   "$TEST_HOME/.go-beast/bootstrap.enabled" \
@@ -56,5 +59,43 @@ assert_contains \
 
 test -f "$INSTALL_ROOT/scripts/install.mjs"
 echo "[PASS] archive bootstrap extracted persistent install root"
+
+SECOND_WORKDIR="$(mktemp -d)"
+ARCHIVE_PATH_2="$ARCHIVE_DIR/go-beast-release-archive-v2.tar.gz"
+trap 'rm -rf "$TEST_HOME" "$ARCHIVE_DIR" "$SECOND_WORKDIR"' EXIT
+
+tar -xzf "$ARCHIVE_PATH" -C "$SECOND_WORKDIR"
+SECOND_REPO="$SECOND_WORKDIR/$(basename "$REPO_ROOT")"
+
+perl -0pi -e 's/^description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project\./description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification./m' \
+  "$SECOND_REPO/skills/go-hawk/SKILL.md"
+
+tar -czf "$ARCHIVE_PATH_2" \
+  --exclude='go-beast/.git' \
+  --exclude='go-beast/.vscode' \
+  -C "$SECOND_WORKDIR" \
+  "$(basename "$REPO_ROOT")"
+
+HOME="$TEST_HOME" node "$REPO_ROOT/scripts/install-from-release-archive.mjs" \
+  --archive "$ARCHIVE_PATH_2" \
+  --all \
+  --bootstrap
+
+UPDATED_INSTALL_ROOT="$(cd "$CURRENT_ROOT" && pwd -P)"
+
+assert_symlink_target \
+  "$TEST_HOME/.go-beast/source/go-beast-release-archive/current" \
+  "$UPDATED_INSTALL_ROOT" \
+  "archive bootstrap refreshes the active source pointer in place"
+
+assert_symlink_target \
+  "$TEST_HOME/.claude/skills/go-mule" \
+  "$UPDATED_INSTALL_ROOT/skills/go-mule" \
+  "archive bootstrap keeps installed links pointed at the active source pointer"
+
+assert_contains \
+  "$TEST_HOME/.claude/skills/go-hawk/SKILL.md" \
+  '^description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification\.$' \
+  "archive bootstrap updates installed content after rerun"
 
 echo "STATUS: PASSED"

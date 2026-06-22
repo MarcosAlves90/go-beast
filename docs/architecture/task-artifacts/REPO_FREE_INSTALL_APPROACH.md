@@ -47,7 +47,7 @@ Trade-offs:
 ### Selected approach
 **Selected:** Release source archive bootstrap
 
-**Rationale:** The release source archive already exists for every tagged release, so it provides a repo-free transport layer without introducing a second build artifact or a new packaging pipeline. It keeps the canonical repository layout intact, preserves the current checkout-based workflow for maintainers, and lets the bootstrap wrapper either consume a pre-downloaded archive or fetch the published archive directly before extracting it into a persistent cache under `~/.go-beast/source/`. The main trade-off is that the installer still expects a canonical tree after extraction, but that is acceptable because the archive already contains that tree.
+**Rationale:** The release source archive already exists for every tagged release, so it provides a repo-free transport layer without introducing a second build artifact or a new packaging pipeline. It keeps the canonical repository layout intact, preserves the current checkout-based workflow for maintainers, and lets the bootstrap wrapper either consume a pre-downloaded archive or fetch the published archive directly before extracting it into a versioned cache and refreshing a stable active pointer under `~/.go-beast/source/go-beast-release-archive/current`. The main trade-off is that the installer still expects a canonical tree after extraction, but that is acceptable because the archive already contains that tree.
 
 **Key risk:** Extraction and temporary-directory handling need to be cross-platform and robust enough not to become a second source of install failures.
 
