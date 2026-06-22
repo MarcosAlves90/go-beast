@@ -14,6 +14,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - `scripts/release-version.mjs` — the `publish` step now pushes the release tag to `origin`, dispatches `release-finalize.yml` automatically, and waits for the release to leave draft state, so version bumps publish without a manual `gh release edit --draft=false` follow-up.
+- `scripts/install-from-release-archive.mjs`, `scripts/install.mjs`, `README.md` — added a repo-free install bootstrap that extracts a published release source archive into `~/.go-beast/source/` and runs the existing installer from that persistent extracted tree.
 
 ## [1.40.2] - 2026-06-22
 
