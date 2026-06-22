@@ -181,7 +181,7 @@ Return ONLY the structured JSON.`,
 - Are there 4+ phases in phases_called (Skill Execution, Structural Eval, LLM Judge, Aggregation)?
 - Are STRUCT_SCHEMA and JUDGE_SCHEMA both declared (check schemas)?
 - Does patterns_found include writeMarkdownOutputFile or writeEvalOutputFile for direct report persistence?
-- Does agent_calls_sample omit save-report labels?`
+- Does the workflow persist the report directly via the shared Markdown writer?`
       : `This is a HOOK TEST HARNESS. Judge based on the extract:
 - Is TESTS present in patterns_found? (the test cases array)
 - Are both expectExit patterns present (blocking exit:1 AND passing exit:0)?

@@ -444,7 +444,7 @@ Produce go-bee's complete output:
 1. meta block (pure literal — name: 'auth-audit', description, phases array with one entry per phase() call)
 2. Explain your orchestration pattern choice: why pipeline() for this task, not parallel() barriers
 3. Define the JSON schema for the auth-audit agent output (endpoint findings per file)
-4. Write the complete workflow script body: phase() calls, pipeline() with 3 stages (discover → audit → aggregate), agent() calls with labels and phase assignments, log() calls, save-report agent, return statement
+4. Write the complete workflow script body: phase() calls, pipeline() with 3 stages (discover → audit → aggregate), agent() calls with labels and phase assignments, log() calls, direct Markdown report writing, return statement
 5. Show the complete final script as a single code block starting with export const meta
 6. State which file it goes in (workflows/auth-audit.js) and the README Workflows table entry`,
     'go-tern': `EVAL CONTEXT: You ARE the go-tern skill executing its workflow. Review the provided change scope and produce findings, not implementation.
