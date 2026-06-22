@@ -1,3 +1,10 @@
+import {
+  GO_BEAST_REPO_ROOT,
+  readGoBeastVersion,
+  writeMarkdownOutputFile,
+  writeEvalOutputFile,
+} from '../scripts/eval-output.mjs'
+
 export const meta = {
   name: 'go-skill-eval',
   description: 'Tests all go-* skills with structural eval + LLM-as-judge and A/B/C/D benchmark',
@@ -8,6 +15,9 @@ export const meta = {
     { title: 'Aggregation', detail: 'Consolidates results and generates report' },
   ],
 }
+
+const HOME = process?.env?.HOME ?? '.'
+const GO_BEAST_VERSION = readGoBeastVersion(GO_BEAST_REPO_ROOT)
 
 const SKILLS = {
   'go-hawk': {
@@ -434,7 +444,7 @@ Produce go-bee's complete output:
 1. meta block (pure literal — name: 'auth-audit', description, phases array with one entry per phase() call)
 2. Explain your orchestration pattern choice: why pipeline() for this task, not parallel() barriers
 3. Define the JSON schema for the auth-audit agent output (endpoint findings per file)
-4. Write the complete workflow script body: phase() calls, pipeline() with 3 stages (discover → audit → aggregate), agent() calls with labels and phase assignments, log() calls, save-report agent, return statement
+4. Write the complete workflow script body: phase() calls, pipeline() with 3 stages (discover → audit → aggregate), agent() calls with labels and phase assignments, log() calls, direct Markdown report writing, return statement
 5. Show the complete final script as a single code block starting with export const meta
 6. State which file it goes in (workflows/auth-audit.js) and the README Workflows table entry`,
     'go-tern': `EVAL CONTEXT: You ARE the go-tern skill executing its workflow. Review the provided change scope and produce findings, not implementation.
@@ -1042,18 +1052,60 @@ reportLines.push(`- Runs with errors: ${results.filter(r => !r).length}`)
 
 const reportContent = reportLines.join('\n')
 
-await agent(
-  `Save the following Markdown content to the file ~/.claude/workflows/go-star-eval/reports/report.md (create directories if needed using Bash or mcp__filesystem__create_directory). Use the Write tool to write the file.
-
-CONTENT:
-${reportContent}`,
-  {
-    label: 'save-report',
-    phase: 'Aggregation',
-  }
-)
+writeMarkdownOutputFile({
+  filePath: `${HOME}/.claude/workflows/go-star-eval/reports/report.md`,
+  content: reportContent,
+  log,
+})
 
 log('Report saved to ~/.claude/workflows/go-star-eval/reports/report.md')
+
+// ── JSON output (agent-readable, schema_version 1) ─────────────────────────
+writeEvalOutputFile({
+  workflowName: 'go-skill-eval',
+  outputDir: `${HOME}/.claude/workflows/go-skill-eval/results`,
+  summary: {
+    total: RUNS.length,
+    passed: validResults.filter(r => r.structResult?.pass !== false).length,
+    failed: structFails.length,
+    errors: results.filter(r => !r).length,
+    avg_score: parseFloat((skillScores.reduce((s, r) => s + (r.avgScore ?? 0), 0) / (skillScores.filter(r => r.avgScore != null).length || 1)).toFixed(2)),
+    estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
+  },
+  inputs: {
+    filter: args?.skills ?? null,
+    workflow_version: GO_BEAST_VERSION,
+  },
+  meta: {
+    go_beast_version: GO_BEAST_VERSION,
+    environment: 'claude-code',
+  },
+  detail: {
+    type: 'skill-eval',
+    runs: validResults.map(r => ({
+      skill: r.run.skillName,
+      input_key: getInputKey(r.run.input),
+      input_label: r.run.input.nome ?? null,
+      struct: {
+        pass: r.structResult?.pass ?? null,
+        missing: r.structResult?.missing ?? [],
+        tokens_approx: r.tokens_approx ?? null,
+        latency_ms: r.structResult?.latency_ms ?? null,
+      },
+      judge: r.judgeResult ? {
+        score: r.judgeResult.score ?? null,
+        dimensions: r.judgeResult.dimensions ?? null,
+        rationale: r.judgeResult.rationale ?? null,
+        strengths: r.judgeResult.strengths ?? [],
+        weaknesses: r.judgeResult.weaknesses ?? [],
+      } : null,
+      skipped: false,
+      skip_reason: null,
+    })),
+  },
+  startedAtMs: START_MS,
+  log,
+})
 
 return {
   totalRuns: RUNS.length,

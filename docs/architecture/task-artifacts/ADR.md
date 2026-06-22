@@ -18,6 +18,8 @@ without re-running the eval.
 All three eval workflows will emit a structured JSON file per run in addition
 to (or replacing) the existing Markdown report. The file will use a shared
 envelope schema with a typed `detail` block specific to each workflow type.
+The file will be written deterministically by the workflow code and validated
+after write, rather than relying on a second agent to materialize the JSON.
 
 ### Consequences
 
@@ -35,6 +37,8 @@ envelope schema with a typed `detail` block specific to each workflow type.
 - The inline schema (EVAL_OUTPUT_SCHEMA) will be duplicated across three files.
 - Token overhead compared to a flat Markdown summary; acceptable for the
   agent-consumption use case.
+- The write path can validate the envelope immediately after save and log a
+  warning if the JSON is malformed.
 
 ### Alternatives considered
 

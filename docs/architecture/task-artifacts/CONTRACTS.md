@@ -8,7 +8,7 @@ All three eval workflows must emit a JSON object conforming to this envelope.
 {
   "schema_version": 1,
   "workflow": "go-skill-eval | go-hook-eval | go-workflow-eval",
-  "run_id": "<uuid or timestamp-based opaque string>",
+  "run_id": "<workflow-name>-<YYYYMMDD-HHmmss>",
   "timestamp": "<ISO 8601 UTC>",
   "duration_ms": 12345,
   "summary": {
@@ -159,7 +159,8 @@ Each element represents one workflow evaluated.
 
 **Retention:** Before writing, list existing files in the directory sorted by
 name (chronological). Delete all but the most recent `(EVAL_KEEP_RUNS - 1)`
-files. Default `EVAL_KEEP_RUNS = 10`.
+files. Default `EVAL_KEEP_RUNS = 10`; override with the `EVAL_KEEP_RUNS`
+environment variable when a longer or shorter history is needed.
 
 **Error model:**
 - Directory does not exist: create it before writing.

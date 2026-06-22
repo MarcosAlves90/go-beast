@@ -1,3 +1,10 @@
+import {
+  GO_BEAST_REPO_ROOT,
+  readGoBeastVersion,
+  writeMarkdownOutputFile,
+  writeEvalOutputFile,
+} from '../scripts/eval-output.mjs'
+
 export const meta = {
   name: 'go-hook-eval',
   description: 'Tests go-beast hooks: authoritative shell suites, targeted cases, harness variants, channel separation, adversarial verify',
@@ -15,7 +22,7 @@ const ENV_SCHEMA = {
   type: 'object',
   required: ['home', 'repo_root'],
   properties: {
-    home: { type: 'string' },
+    home:      { type: 'string' },
     repo_root: { type: 'string' },
   },
 }
@@ -23,12 +30,16 @@ const ENV_SCHEMA = {
 const env = args?.home && args?.repoPath
   ? { home: args.home, repo_root: args.repoPath }
   : await agent(
-      'Run the following two commands and return the values:\n```bash\necho "$HOME"\ngit rev-parse --show-toplevel\n```\nReturn home (first line) and repo_root (second line).',
+      `Run the following commands and return the values:
+1. echo "$HOME"                                           → home
+2. git rev-parse --show-toplevel                          → repo_root`,
       { label: 'discover-env', phase: 'Shell Suite', schema: ENV_SCHEMA }
     )
 
 const REAL_HOME = env.home
 const REPO_ROOT = env.repo_root
+const START_MS = Date.now()
+const GO_BEAST_VERSION = readGoBeastVersion(REPO_ROOT ?? GO_BEAST_REPO_ROOT)
 const HOOKS_DIR = `${REAL_HOME}/.claude/hooks`
 
 // Each targeted test gets its own isolated HOME to prevent flag-file contamination.
@@ -928,6 +939,13 @@ const failed = valid.filter(r => r.result?.passed === false)
 const confirmedFailures = adversarialResults.filter(Boolean).filter(r => r.adversarial?.confirmed_failure === true)
 const spuriousFailures  = adversarialResults.filter(Boolean).filter(r => r.adversarial?.confirmed_failure === false)
 
+// Token approximation: sum output sizes across all test case results
+const totalTokensApprox = valid.reduce((sum, r) => {
+  const text = JSON.stringify(r.result ?? '')
+  return sum + Math.round(text.length / 4 * 1.3)
+}, 0)
+const estimatedCostUSD = ((totalTokensApprox * 0.7 / 1_000_000) * 3) + ((totalTokensApprox * 0.3 / 1_000_000) * 15)
+
 // Group by hook
 const byHook = {}
 for (const r of valid) {
@@ -1015,15 +1033,67 @@ lines.push(`| Adversarially verified failures | ${adversarialResults.filter(Bool
 const reportContent = lines.join('\n')
 const reportPath = `${REPO_ROOT}/workflows/go-workflow-eval-reports/hook-eval-report.md`
 
-await agent(
-  `Save the following Markdown content to the file '${reportPath}' (create directories if needed). Use the Write tool.
-
-CONTENT:
-${reportContent}`,
-  { label: 'save-report', phase: 'Aggregation' }
-)
+writeMarkdownOutputFile({
+  filePath: reportPath,
+  content: reportContent,
+  log,
+})
 
 log(`Report saved to ${reportPath}`)
+
+writeEvalOutputFile({
+  workflowName: 'go-hook-eval',
+  outputDir: `${REAL_HOME}/.claude/workflows/go-hook-eval/results`,
+  summary: {
+    total: valid.length,
+    passed: passed.length,
+    failed: failed.length,
+    errors: testResults.filter(r => !r).length,
+    confirmed_failures: confirmedFailures.length,
+    spurious_failures: spuriousFailures.length,
+    suites_passed: suitePassCount,
+    suites_total: totalSuites,
+    avg_score: null,
+    estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
+  },
+  inputs: {
+    filter: null,
+    workflow_version: GO_BEAST_VERSION,
+  },
+  meta: {
+    go_beast_version: GO_BEAST_VERSION,
+    environment: 'claude-code',
+  },
+  detail: {
+    type: 'hook-eval',
+    runs: valid.map(r => {
+      const advEntry = adversarialResults.find(a => a?.test === r.test)
+      return {
+        hook: r.test.hook,
+        case_name: r.test.name,
+        expected_exit: r.test.expectExit,
+        result: {
+          passed: r.result?.passed ?? null,
+          exit_code: r.result?.exit_code ?? null,
+          stdout: (r.result?.stdout ?? '').slice(0, 200),
+          stderr: (r.result?.stderr ?? '').slice(0, 200),
+          detail: r.result?.detail ?? null,
+        },
+        adversarial: advEntry ? {
+          run: true,
+          confirmed_failure: advEntry.adversarial?.confirmed_failure ?? null,
+          detail: advEntry.adversarial?.detail ?? null,
+        } : {
+          run: false,
+          confirmed_failure: null,
+          detail: null,
+        },
+      }
+    }),
+  },
+  startedAtMs: START_MS,
+  log,
+})
 
 return {
   suites: { total: totalSuites, passed: suitePassCount, failed: suiteFailed.length },

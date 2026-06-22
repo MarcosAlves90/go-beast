@@ -63,6 +63,7 @@ go-beast/
 │   ├── go-workflow-eval.js    ← Workflow eval pipeline for Workflow scripts
 │   └── go-deep-analysis.js    ← Deep multi-dimensional codebase analysis workflow
 ├── scripts/
+│   ├── eval-output.mjs   ← Shared JSON output helper for eval workflows
 │   ├── hook-wire.mjs          ← Shared hook manifest wiring helper for config and symlinks
 │   ├── install.mjs            ← Cross-platform installer (Node.js 18+, no deps)
 │   ├── release-version.mjs    ← Canonical release/versioning contract: check and cut releases from package.json
