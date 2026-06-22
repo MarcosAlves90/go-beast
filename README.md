@@ -21,19 +21,19 @@ Each skill is named `go-<animal>`. Each beast owns exactly one phase of the proj
 
 ```mermaid
 flowchart LR
-  hawk[go-hawk<br/>Discovery]
-  lark[go-lark<br/>Solution Exploration]
-  fox[go-fox<br/>Architecture]
-  otter[go-otter<br/>Database]
-  beaver[go-beaver<br/>Scaffolding]
-  snipe[go-snipe<br/>Behavioral Specification]
-  wolf[go-wolf<br/>Backend]
-  lynx[go-lynx<br/>Frontend]
-  eagle[go-eagle<br/>Testing]
-  bear[go-bear<br/>Security]
-  raven[go-raven<br/>CI/CD]
-  crane[go-crane<br/>Observability]
-  owl[go-owl<br/>Documentation]
+  hawk["go-hawk<br/>Discovery"]
+  lark["[go-lark]<br/>Solution Exploration"]
+  fox["go-fox<br/>Architecture"]
+  otter["go-otter<br/>Database"]
+  beaver["go-beaver<br/>Scaffolding"]
+  snipe["[go-snipe]<br/>Behavioral Specification"]
+  wolf["go-wolf<br/>Backend"]
+  lynx["go-lynx<br/>Frontend"]
+  eagle["go-eagle<br/>Testing"]
+  bear["go-bear<br/>Security"]
+  raven["go-raven<br/>CI/CD"]
+  crane["[go-crane]<br/>Observability"]
+  owl["go-owl<br/>Documentation"]
 
   hawk --> lark --> fox --> otter --> beaver --> snipe
   snipe --> wolf --> eagle
