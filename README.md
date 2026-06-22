@@ -205,12 +205,21 @@ at `~/.go-beast/bootstrap.enabled`.
 
 Requires Node.js 18+. No external dependencies.
 
+Command guide:
+
+| Command | Use when | Outcome |
+|---|---|---|
+| `node scripts/install.mjs` | You have a local checkout and want to choose what to install | Opens the interactive installer against the checkout |
+| `node scripts/install.mjs --all` | You want everything from a local checkout without prompts | Installs all supported skills, hooks, and workflows |
+| `node scripts/install.mjs --all --bootstrap` | You want the checkout install plus stricter bootstrap mode | Installs everything and writes `AGENTS.bootstrap.md` |
+
 ```bash
 git clone <repo-url> <repo-dir>
 node <repo-dir>/scripts/install.mjs
 ```
 
-Use this path when you have a local checkout.
+Use this path when you have a local checkout and want the installer to read
+directly from that checkout.
 
 What it does:
 
@@ -236,6 +245,14 @@ node scripts/install.mjs --uninstall
 ### Release archive bootstrap
 
 Use this path when you do not want to clone the repository.
+
+Command guide:
+
+| Command | Use when | Outcome |
+|---|---|---|
+| `node scripts/install-from-release-archive.mjs --all` | You want repo-free install and do not want to choose a version manually | Fetches the latest GitHub release automatically and installs from it |
+| `node scripts/install-from-release-archive.mjs --archive-url <url> --all` | You want a specific published release archive | Downloads that archive URL and installs from it |
+| `node scripts/install-from-release-archive.mjs --archive <path> --all --bootstrap` | You already downloaded a tarball and want bootstrap mode in the same run | Installs from the local archive and enables bootstrap mode |
 
 How it works:
 
@@ -267,15 +284,6 @@ node scripts/install-from-release-archive.mjs --all
 node scripts/install-from-release-archive.mjs --archive-url https://github.com/MarcosAlves90/go-beast/archive/refs/tags/v1.40.3.tar.gz --all
 node scripts/install-from-release-archive.mjs --archive /path/to/go-beast-release-archive.tar.gz --all --bootstrap
 ```
-
-What each command means:
-
-- `node scripts/install-from-release-archive.mjs --all` downloads the latest
-  release and installs everything without prompts.
-- `node scripts/install-from-release-archive.mjs --archive-url <url> --all`
-  installs from a specific release archive URL.
-- `node scripts/install-from-release-archive.mjs --archive <path> --all --bootstrap`
-  installs from a local archive and enables bootstrap mode in the same run.
 
 The archive-based path keeps the checkout-based installer available for
 maintainers while giving end users a repo-free bootstrap option. Re-running the
