@@ -9,6 +9,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.40.2] - 2026-06-22
+
+### Changed
+
+- `scripts/release-version.mjs` — the `publish` step now dispatches `release-finalize.yml` automatically and waits for the release to leave draft state, so version bumps publish without a manual `gh release edit --draft=false` follow-up.
+
 ## [1.40.1] - 2026-06-22
 
 ### Added
@@ -19,8 +25,6 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - `scripts/eval-output.mjs` and the three eval workflows — factored the JSON write path into a shared deterministic helper that writes the envelope directly, validates the saved file, aligns `run_id` with the documented `{workflow-name}-{YYYYMMDD-HHmmss}` pattern, and makes retention configurable via `EVAL_KEEP_RUNS`.
-- `scripts/release-version.mjs` — the `publish` step now dispatches `release-finalize.yml` automatically and waits for the release to leave draft state, so version bumps publish without a manual `gh release edit --draft=false` follow-up.
-
 - `docs/architecture/` — task-scoped go-fox outputs (`ADR.md`, `STACK.md`, `DIAGRAM.md`, `CONTRACTS.md`) moved to `docs/architecture/task-artifacts/` to separate them from permanent architecture docs. Updated references in `AGENTS.md`, `PACKAGE.md`, and skills `go-fox`, `go-kite`, `go-otter`, `go-snipe`.
 
 ## [1.40.0] - 2026-06-21
