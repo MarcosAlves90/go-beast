@@ -1,6 +1,7 @@
 import {
   GO_BEAST_REPO_ROOT,
   readGoBeastVersion,
+  writeMarkdownOutputFile,
   writeEvalOutputFile,
 } from '../scripts/eval-output.mjs'
 
@@ -1032,13 +1033,11 @@ lines.push(`| Adversarially verified failures | ${adversarialResults.filter(Bool
 const reportContent = lines.join('\n')
 const reportPath = `${REPO_ROOT}/workflows/go-workflow-eval-reports/hook-eval-report.md`
 
-await agent(
-  `Save the following Markdown content to the file '${reportPath}' (create directories if needed). Use the Write tool.
-
-CONTENT:
-${reportContent}`,
-  { label: 'save-report', phase: 'Aggregation' }
-)
+writeMarkdownOutputFile({
+  filePath: reportPath,
+  content: reportContent,
+  log,
+})
 
 log(`Report saved to ${reportPath}`)
 

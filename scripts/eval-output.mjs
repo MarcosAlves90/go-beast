@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export const GO_BEAST_REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+export const DEFAULT_EVAL_KEEP_RUNS = 10
 
 function pad2(value) {
   return String(value).padStart(2, '0')
@@ -28,9 +29,9 @@ export function formatEvalRunId(workflowName, date = new Date()) {
   return `${workflowName}-${timestamp}`
 }
 
-export function getEvalRetentionLimit(defaultLimit = 10) {
+export function getEvalRetentionLimit() {
   const parsed = Number.parseInt(process.env.EVAL_KEEP_RUNS ?? '', 10)
-  if (!Number.isFinite(parsed) || parsed < 1) return defaultLimit
+  if (!Number.isFinite(parsed) || parsed < 1) return DEFAULT_EVAL_KEEP_RUNS
   return parsed
 }
 
@@ -100,4 +101,26 @@ export function writeEvalOutputFile({
   }
 
   return { filePath, runId, timestamp, durationMs, payload }
+}
+
+export function writeMarkdownOutputFile({
+  filePath,
+  content,
+  log = () => {},
+}) {
+  const normalizedContent = content.endsWith('\n') ? content : `${content}\n`
+
+  fs.mkdirSync(path.dirname(filePath), { recursive: true })
+  fs.writeFileSync(filePath, normalizedContent, 'utf8')
+
+  try {
+    const written = fs.readFileSync(filePath, 'utf8')
+    if (written !== normalizedContent) {
+      log(`WARNING: markdown output validation failed for ${filePath}: content mismatch`)
+    }
+  } catch (error) {
+    log(`WARNING: failed to validate markdown output ${filePath}: ${error.message}`)
+  }
+
+  return { filePath, bytes: Buffer.byteLength(normalizedContent, 'utf8') }
 }

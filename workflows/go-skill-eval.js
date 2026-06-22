@@ -1,6 +1,7 @@
 import {
   GO_BEAST_REPO_ROOT,
   readGoBeastVersion,
+  writeMarkdownOutputFile,
   writeEvalOutputFile,
 } from '../scripts/eval-output.mjs'
 
@@ -1051,16 +1052,11 @@ reportLines.push(`- Runs with errors: ${results.filter(r => !r).length}`)
 
 const reportContent = reportLines.join('\n')
 
-await agent(
-  `Save the following Markdown content to the file ~/.claude/workflows/go-star-eval/reports/report.md (create directories if needed using Bash or mcp__filesystem__create_directory). Use the Write tool to write the file.
-
-CONTENT:
-${reportContent}`,
-  {
-    label: 'save-report',
-    phase: 'Aggregation',
-  }
-)
+writeMarkdownOutputFile({
+  filePath: `${HOME}/.claude/workflows/go-star-eval/reports/report.md`,
+  content: reportContent,
+  log,
+})
 
 log('Report saved to ~/.claude/workflows/go-star-eval/reports/report.md')
 

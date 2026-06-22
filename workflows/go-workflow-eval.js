@@ -1,6 +1,7 @@
 import {
   GO_BEAST_REPO_ROOT,
   readGoBeastVersion,
+  writeMarkdownOutputFile,
   writeEvalOutputFile,
 } from '../scripts/eval-output.mjs'
 
@@ -22,12 +23,12 @@ const WORKFLOWS = {
   'go-skill-eval': {
     description: 'Evaluates all go-* skills with structural checklist, LLM-as-judge, and adversarial A/B/C/D inputs.',
     type: 'skill-eval',
-    checklist: ['SKILLS', 'skillOverrides', 'FILESYSTEM_SKILLS', 'pipeline', 'STRUCT_SCHEMA', 'JUDGE_SCHEMA', 'label', 'return'],
+    checklist: ['SKILLS', 'skillOverrides', 'FILESYSTEM_SKILLS', 'pipeline', 'STRUCT_SCHEMA', 'JUDGE_SCHEMA', 'label', 'return', 'writeMarkdownOutputFile', 'writeEvalOutputFile'],
   },
   'go-hook-eval': {
     description: 'Tests go-beast hooks with positive, negative, and edge cases including jq fallback and stop_hook_active.',
     type: 'hook-eval',
-    checklist: ['TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'parallel', 'return', 'setup'],
+    checklist: ['TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'parallel', 'return', 'setup', 'writeMarkdownOutputFile', 'writeEvalOutputFile'],
   },
   'go-deep-analysis': {
     description: 'Performs deep multi-dimensional analysis of a codebase and produces a complete Markdown document for each dimension: architecture, security, performance, testing, documentation gaps, and dependency health.',
@@ -120,7 +121,7 @@ Extract:
 - agent_calls_sample: first label from each distinct agent() call (up to 15) — look for both label: '...' and label: \`...\` patterns
 - has_return: does the file end with a return statement?
 - total_lines: approximate line count
-- patterns_found: which of these appear anywhere: ['pipeline', 'parallel', 'filter(Boolean)', 'skillOverrides', 'FILESYSTEM_SKILLS', 'TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'setup', 'label', 'schema', 'DIMENSIONS', 'outputDir', 'repoPath', 'args?.repoPath', 'args?.outputDir']`,
+- patterns_found: which of these appear anywhere: ['pipeline', 'parallel', 'filter(Boolean)', 'skillOverrides', 'FILESYSTEM_SKILLS', 'TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'setup', 'label', 'schema', 'DIMENSIONS', 'outputDir', 'repoPath', 'args?.repoPath', 'args?.outputDir', 'writeMarkdownOutputFile', 'writeEvalOutputFile']`,
       { label: `extract:${name}`, phase: 'Source Collection', schema: EXTRACT_SCHEMA }
     )
     if (!extracted) {
@@ -179,14 +180,15 @@ Return ONLY the structured JSON.`,
 - Is FILESYSTEM_SKILLS present in patterns_found? (controls which skills get real-file inputs)
 - Are there 4+ phases in phases_called (Skill Execution, Structural Eval, LLM Judge, Aggregation)?
 - Are STRUCT_SCHEMA and JUDGE_SCHEMA both declared (check schemas)?
-- Does agent_calls_sample include exec:, struct:, judge:, and save-report labels?`
+- Does patterns_found include writeMarkdownOutputFile or writeEvalOutputFile for direct report persistence?
+- Does agent_calls_sample omit save-report labels?`
       : `This is a HOOK TEST HARNESS. Judge based on the extract:
 - Is TESTS present in patterns_found? (the test cases array)
 - Are both expectExit patterns present (blocking exit:1 AND passing exit:0)?
 - Is stop_hook_active present (prevents infinite loops)?
 - Is setup present (for test isolation — creating/removing files before test)?
 - Are parallel and filter(Boolean) present (parallel execution, null guard)?
-- Does agent_calls_sample show labels for both test execution and save-report?`
+- Does patterns_found include writeMarkdownOutputFile or writeEvalOutputFile for direct report persistence?`
 
     const judgeResult = await agent(
       `You are an adversarial code reviewer evaluating the Workflow script "${name}".
@@ -291,13 +293,11 @@ for (const r of valid) {
 const reportContent = reportLines.join('\n')
 const reportPath = `${REPO}/workflows/go-workflow-eval-reports/report.md`
 
-await agent(
-  `Save the following Markdown to ${reportPath} (create directories if needed using Bash or mcp__filesystem__create_directory). Use the Write tool.
-
-CONTENT:
-${reportContent}`,
-  { label: 'save-report', phase: 'Aggregation' }
-)
+writeMarkdownOutputFile({
+  filePath: reportPath,
+  content: reportContent,
+  log,
+})
 
 log(`Report saved to ${reportPath}`)
 
