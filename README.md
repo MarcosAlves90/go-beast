@@ -8,6 +8,12 @@ Each skill is named `go-<animal>`. Each beast owns exactly one phase of the proj
 
 **Version 1.40.3** · [Changelog](CHANGELOG.md)
 
+## Summary
+
+- Canonical skills live in `skills/` and are the source of truth.
+- The pack supports both checkout-based installation and repo-free installation from a release archive.
+- The release-archive path is update-safe: rerunning it with a newer archive refreshes the active source pointer and updates installed links.
+- Optional harness adapters, hooks, and bootstrap mode remain available for Claude Code and Codex.
 
 ## Pipeline
 
@@ -193,7 +199,8 @@ node scripts/install-from-release-archive.mjs --archive /path/to/go-beast-releas
 The archive-based path keeps the checkout-based installer available for
 maintainers while giving end users a repo-free bootstrap option. Re-running the
 same command with a newer archive updates the active source pointer in place, so
-installed links follow the new version without a manual cleanup step.
+installed links follow the new version without a manual cleanup step. The
+archive path does not require cloning the repository first.
 
 ### Validation
 
