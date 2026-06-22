@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+
 export const meta = {
   name: 'go-hook-eval',
   description: 'Tests go-beast hooks: authoritative shell suites, targeted cases, harness variants, channel separation, adversarial verify',
@@ -13,17 +15,28 @@ export const meta = {
 
 const ENV_SCHEMA = {
   type: 'object',
-  required: ['home', 'repo_root'],
+  required: ['home', 'repo_root', 'start_ms', 'go_beast_version'],
   properties: {
-    home: { type: 'string' },
-    repo_root: { type: 'string' },
+    home:             { type: 'string' },
+    repo_root:        { type: 'string' },
+    start_ms:         { type: 'number' },
+    go_beast_version: { type: 'string' },
   },
 }
 
 const env = args?.home && args?.repoPath
-  ? { home: args.home, repo_root: args.repoPath }
+  ? {
+      home: args.home,
+      repo_root: args.repoPath,
+      start_ms: Date.now(),
+      go_beast_version: JSON.parse(fs.readFileSync(`${args.repoPath}/package.json`, 'utf8')).version,
+    }
   : await agent(
-      'Run the following two commands and return the values:\n```bash\necho "$HOME"\ngit rev-parse --show-toplevel\n```\nReturn home (first line) and repo_root (second line).',
+      `Run the following commands and return the values:
+1. echo "$HOME"                                           → home
+2. git rev-parse --show-toplevel                          → repo_root
+3. date +%s%3N                                            → start_ms (number)
+4. cat "$(git rev-parse --show-toplevel)/package.json" | grep '"version"' | head -1 | sed 's/.*"version": "\\(.*\\)".*/\\1/'  → go_beast_version`,
       { label: 'discover-env', phase: 'Shell Suite', schema: ENV_SCHEMA }
     )
 
@@ -928,6 +941,13 @@ const failed = valid.filter(r => r.result?.passed === false)
 const confirmedFailures = adversarialResults.filter(Boolean).filter(r => r.adversarial?.confirmed_failure === true)
 const spuriousFailures  = adversarialResults.filter(Boolean).filter(r => r.adversarial?.confirmed_failure === false)
 
+// Token approximation: sum output sizes across all test case results
+const totalTokensApprox = valid.reduce((sum, r) => {
+  const text = JSON.stringify(r.result ?? '')
+  return sum + Math.round(text.length / 4 * 1.3)
+}, 0)
+const estimatedCostUSD = ((totalTokensApprox * 0.7 / 1_000_000) * 3) + ((totalTokensApprox * 0.3 / 1_000_000) * 15)
+
 // Group by hook
 const byHook = {}
 for (const r of valid) {
@@ -1029,7 +1049,7 @@ log(`Report saved to ${reportPath}`)
 const jsonOutputData = {
   schema_version: 1,
   workflow: 'go-hook-eval',
-  duration_ms: null,
+  duration_ms: 'INJECT_DURATION',
   summary: {
     total: valid.length,
     passed: passed.length,
@@ -1040,14 +1060,14 @@ const jsonOutputData = {
     suites_passed: suitePassCount,
     suites_total: totalSuites,
     avg_score: null,
-    estimated_cost_usd: null,
+    estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
   },
   inputs: {
     filter: null,
-    workflow_version: null,
+    workflow_version: env?.go_beast_version ?? null,
   },
   meta: {
-    go_beast_version: null,
+    go_beast_version: env?.go_beast_version ?? null,
     environment: 'claude-code',
   },
   detail: {
@@ -1082,14 +1102,15 @@ const jsonOutputData = {
 await agent(
   `Perform these steps in order using Bash and Write tools:
 1. Run: mkdir -p $HOME/.claude/workflows/go-hook-eval/results
-2. Get the current timestamp by running: date -u +%Y%m%dT%H%M%S
-   Use that value as RUN_TS.
-3. Set RUN_ID to: go-hook-eval-<RUN_TS>
+2. Get the current timestamp by running: date -u +%Y%m%dT%H%M%S → RUN_TS
+3. Get end timestamp in ms: date +%s%3N → END_MS
+4. Set RUN_ID to: go-hook-eval-<RUN_TS>
    Set OUTPUT_PATH to: $HOME/.claude/workflows/go-hook-eval/results/<RUN_ID>.json
-4. List .json files in $HOME/.claude/workflows/go-hook-eval/results/ sorted by name. Delete all but the 9 most recent (to make room for the new file).
-5. Write the file at OUTPUT_PATH. Inject the actual RUN_ID and RUN_TS into the JSON before writing — replace the placeholder strings "INJECT_RUN_ID" and "INJECT_TIMESTAMP" with the real values.
+   Set DURATION_MS to: END_MS - ${env?.start_ms ?? 0}
+5. List .json files in $HOME/.claude/workflows/go-hook-eval/results/ sorted by name. Delete all but the 9 most recent.
+6. Write the file at OUTPUT_PATH. Replace "INJECT_RUN_ID" with RUN_ID, "INJECT_TIMESTAMP" with RUN_TS (ISO 8601 UTC), and "INJECT_DURATION" with DURATION_MS as a number.
 
-JSON CONTENT (write this after injecting RUN_ID and timestamp):
+JSON CONTENT:
 ${JSON.stringify({ ...jsonOutputData, run_id: 'INJECT_RUN_ID', timestamp: 'INJECT_TIMESTAMP' }, null, 2)}`,
   { label: 'save-output', phase: 'Aggregation' }
 )
