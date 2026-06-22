@@ -84,7 +84,7 @@ if (RUNS.length === 0) {
   return { total: 0, results: [] }
 }
 
-const REPO = args?.repoPath ?? process.cwd()
+const REPO = args?.repoPath ?? (process?.cwd?.() ?? '.')
 
 phase('Source Collection')
 log(`Reading ${RUNS.length} workflow source file(s)...`)
