@@ -1,6 +1,6 @@
 {
   "name": "go-beast",
-  "version": "1.40.0",
+  "version": "1.40.1",
   "private": true,
   "type": "module",
   "description": "Agent-agnostic go-* skill pack with hooks, workflows, and plugin adapter bundles for coding agents.",

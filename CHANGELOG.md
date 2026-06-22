@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.40.1] - 2026-06-22
+
 ### Added
 
 - `workflows/go-skill-eval.js`, `workflows/go-hook-eval.js`, `workflows/go-workflow-eval.js` — all three eval workflows now emit a structured JSON output file per run to `~/.claude/workflows/{name}/results/` in addition to the existing Markdown report. The file uses a shared envelope schema (`schema_version`, `workflow`, `run_id`, `timestamp`, `summary`, `inputs`, `meta`, `detail`) with a typed `detail.runs` block per workflow type, optimized for agent consumption. Last 10 runs are retained automatically.

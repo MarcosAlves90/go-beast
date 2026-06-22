@@ -1,6 +1,6 @@
 {
   "name": "go-beast",
-  "version": "1.40.0",
+  "version": "1.40.1",
   "description": "Agent-agnostic go-* skill pack for discovery, architecture, implementation, testing, security, and documentation workflows.",
   "author": {
     "name": "MarcosAlves90",
