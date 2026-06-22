@@ -1,3 +1,9 @@
+import {
+  GO_BEAST_REPO_ROOT,
+  readGoBeastVersion,
+  writeEvalOutputFile,
+} from '../scripts/eval-output.mjs'
+
 export const meta = {
   name: 'go-workflow-eval',
   description: 'Evaluates go-beast Workflow scripts: reads source via agent, runs structural checklist + LLM-as-judge for code quality, design patterns, and test coverage. Supports args.workflows filter and args.repoPath.',
@@ -84,24 +90,10 @@ if (RUNS.length === 0) {
   return { total: 0, results: [] }
 }
 
-const REPO = args?.repoPath ?? (process?.cwd?.() ?? '.')
-
-// ── Boot: capture start timestamp and repo version ─────────────────────────
-const BOOT_SCHEMA = {
-  type: 'object',
-  required: ['start_ms', 'go_beast_version'],
-  properties: {
-    start_ms:         { type: 'number' },
-    go_beast_version: { type: 'string' },
-  },
-}
-
-const boot = await agent(
-  `Run these two commands and return the values:
-1. date +%s%3N   → start_ms (integer milliseconds since epoch)
-2. cat "${REPO}/package.json" | grep '"version"' | head -1 | sed 's/.*"version": "\\(.*\\)".*/\\1/'   → go_beast_version`,
-  { label: 'boot', phase: 'Source Collection', schema: BOOT_SCHEMA }
-)
+const REPO = args?.repoPath ?? GO_BEAST_REPO_ROOT
+const HOME = process?.env?.HOME ?? '.'
+const START_MS = Date.now()
+const GO_BEAST_VERSION = readGoBeastVersion(REPO)
 
 phase('Source Collection')
 log(`Reading ${RUNS.length} workflow source file(s)...`)
@@ -310,10 +302,9 @@ ${reportContent}`,
 log(`Report saved to ${reportPath}`)
 
 // ── JSON output (agent-readable, schema_version 1) ─────────────────────────
-const jsonOutputData = {
-  schema_version: 1,
-  workflow: 'go-workflow-eval',
-  duration_ms: 'INJECT_DURATION',
+writeEvalOutputFile({
+  workflowName: 'go-workflow-eval',
+  outputDir: `${HOME}/.claude/workflows/go-workflow-eval/results`,
   summary: {
     total: valid.length,
     passed: valid.filter(r => r.structResult?.pass !== false).length,
@@ -324,10 +315,10 @@ const jsonOutputData = {
   },
   inputs: {
     filter: args?.workflows ?? null,
-    workflow_version: boot?.go_beast_version ?? null,
+    workflow_version: GO_BEAST_VERSION,
   },
   meta: {
-    go_beast_version: boot?.go_beast_version ?? null,
+    go_beast_version: GO_BEAST_VERSION,
     environment: 'claude-code',
   },
   detail: {
@@ -350,25 +341,9 @@ const jsonOutputData = {
       } : null,
     })),
   },
-}
-
-await agent(
-  `Perform these steps in order using Bash and Write tools:
-1. Run: mkdir -p $HOME/.claude/workflows/go-workflow-eval/results
-2. Get the current timestamp by running: date -u +%Y%m%dT%H%M%S → RUN_TS
-3. Get end timestamp in ms: date +%s%3N → END_MS
-4. Set RUN_ID to: go-workflow-eval-<RUN_TS>
-   Set OUTPUT_PATH to: $HOME/.claude/workflows/go-workflow-eval/results/<RUN_ID>.json
-   Set DURATION_MS to: END_MS - ${boot?.start_ms ?? 0}
-5. List .json files in $HOME/.claude/workflows/go-workflow-eval/results/ sorted by name. Delete all but the 9 most recent.
-6. Write the file at OUTPUT_PATH. Replace "INJECT_RUN_ID" with RUN_ID, "INJECT_TIMESTAMP" with RUN_TS (ISO 8601 UTC), and "INJECT_DURATION" with DURATION_MS as a number.
-
-JSON CONTENT:
-${JSON.stringify({ ...jsonOutputData, run_id: 'INJECT_RUN_ID', timestamp: 'INJECT_TIMESTAMP' }, null, 2)}`,
-  { label: 'save-output', phase: 'Aggregation' }
-)
-
-log('JSON output saved to ~/.claude/workflows/go-workflow-eval/results/')
+  startedAtMs: START_MS,
+  log,
+})
 
 return {
   total: valid.length,

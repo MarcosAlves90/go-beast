@@ -1,3 +1,9 @@
+import {
+  GO_BEAST_REPO_ROOT,
+  readGoBeastVersion,
+  writeEvalOutputFile,
+} from '../scripts/eval-output.mjs'
+
 export const meta = {
   name: 'go-skill-eval',
   description: 'Tests all go-* skills with structural eval + LLM-as-judge and A/B/C/D benchmark',
@@ -8,6 +14,9 @@ export const meta = {
     { title: 'Aggregation', detail: 'Consolidates results and generates report' },
   ],
 }
+
+const HOME = process?.env?.HOME ?? '.'
+const GO_BEAST_VERSION = readGoBeastVersion(GO_BEAST_REPO_ROOT)
 
 const SKILLS = {
   'go-hawk': {
@@ -710,25 +719,6 @@ ${checklist.map(item => `- ${item}`).join('\n')}
 ${importanteNote}${override}`
 }
 
-// ── Boot: capture start timestamp and repo version ─────────────────────────
-const BOOT_SCHEMA = {
-  type: 'object',
-  required: ['start_ms', 'go_beast_version'],
-  properties: {
-    start_ms:         { type: 'number' },
-    go_beast_version: { type: 'string' },
-  },
-}
-
-const boot = await agent(
-  `Run these two commands and return the values:
-1. date +%s%3N   → start_ms (integer milliseconds since epoch)
-2. cat "$(git rev-parse --show-toplevel)/package.json" | grep '"version"' | head -1 | sed 's/.*"version": "\\(.*\\)".*/\\1/'   → go_beast_version
-
-Return start_ms as a number and go_beast_version as a string.`,
-  { label: 'boot', phase: 'Skill Execution', schema: BOOT_SCHEMA }
-)
-
 // args.skills: array of names to filter (e.g. ['go-swift']). Default: all.
 // Filesystem-dependent skills receive only C and D (real code).
 // go-kite, go-ant, go-crane: require a codebase to function.
@@ -1075,10 +1065,9 @@ ${reportContent}`,
 log('Report saved to ~/.claude/workflows/go-star-eval/reports/report.md')
 
 // ── JSON output (agent-readable, schema_version 1) ─────────────────────────
-const jsonOutputData = {
-  schema_version: 1,
-  workflow: 'go-skill-eval',
-  duration_ms: 'INJECT_DURATION',
+writeEvalOutputFile({
+  workflowName: 'go-skill-eval',
+  outputDir: `${HOME}/.claude/workflows/go-skill-eval/results`,
   summary: {
     total: RUNS.length,
     passed: validResults.filter(r => r.structResult?.pass !== false).length,
@@ -1089,10 +1078,10 @@ const jsonOutputData = {
   },
   inputs: {
     filter: args?.skills ?? null,
-    workflow_version: boot?.go_beast_version ?? null,
+    workflow_version: GO_BEAST_VERSION,
   },
   meta: {
-    go_beast_version: boot?.go_beast_version ?? null,
+    go_beast_version: GO_BEAST_VERSION,
     environment: 'claude-code',
   },
   detail: {
@@ -1118,25 +1107,9 @@ const jsonOutputData = {
       skip_reason: null,
     })),
   },
-}
-
-await agent(
-  `Perform these steps in order using Bash and Write tools:
-1. Run: mkdir -p $HOME/.claude/workflows/go-skill-eval/results
-2. Get the current timestamp by running: date -u +%Y%m%dT%H%M%S → RUN_TS
-3. Get end timestamp in ms: date +%s%3N → END_MS
-4. Set RUN_ID to: go-skill-eval-<RUN_TS>
-   Set OUTPUT_PATH to: $HOME/.claude/workflows/go-skill-eval/results/<RUN_ID>.json
-   Set DURATION_MS to: END_MS - ${boot?.start_ms ?? 0}
-5. List .json files in $HOME/.claude/workflows/go-skill-eval/results/ sorted by name. Delete all but the 9 most recent.
-6. Write the file at OUTPUT_PATH. Replace "INJECT_RUN_ID" with RUN_ID, "INJECT_TIMESTAMP" with RUN_TS (ISO 8601 UTC format: append Z, replace T with T), and "INJECT_DURATION" with DURATION_MS as a number.
-
-JSON CONTENT:
-${JSON.stringify({ ...jsonOutputData, run_id: 'INJECT_RUN_ID', timestamp: 'INJECT_TIMESTAMP' }, null, 2)}`,
-  { label: 'save-output', phase: 'Aggregation' }
-)
-
-log('JSON output saved to ~/.claude/workflows/go-skill-eval/results/')
+  startedAtMs: START_MS,
+  log,
+})
 
 return {
   totalRuns: RUNS.length,
