@@ -18,6 +18,9 @@ Each skill is named `go-<animal>`. Each beast owns exactly one phase of the proj
 - [Validation](#validation) - repo-local checks and live harness tests
 - [Architecture docs](#architecture-docs) - maintainer-facing design notes and protocols
 
+If you only want to install the pack, start at [Getting started](#getting-started).
+If you want to understand the full lifecycle, read [Pipeline](#pipeline) next.
+
 ## Getting Started
 
 Pick the path that matches your situation:
@@ -28,8 +31,8 @@ Pick the path that matches your situation:
 | You do not want to clone the repo | `node scripts/install-from-release-archive.mjs --all` | Fetches the latest GitHub release automatically and installs from the archive |
 | You already downloaded a release tarball | `node scripts/install-from-release-archive.mjs --archive /path/to/go-beast-release-archive.tar.gz --all --bootstrap` | Installs from your local archive and enables bootstrap mode |
 
-Use the checkout-based path for repo maintenance. Use the release archive path
-for normal installs on machines that should stay repo-free.
+Use the checkout-based path for repo maintenance and the release archive path
+for machines that should stay repo-free.
 
 ## Pipeline
 
@@ -218,8 +221,7 @@ git clone <repo-url> <repo-dir>
 node <repo-dir>/scripts/install.mjs
 ```
 
-Use this path when you have a local checkout and want the installer to read
-directly from that checkout.
+Use this path when you have a local checkout.
 
 What it does:
 
@@ -288,8 +290,7 @@ node scripts/install-from-release-archive.mjs --archive /path/to/go-beast-releas
 The archive-based path keeps the checkout-based installer available for
 maintainers while giving end users a repo-free bootstrap option. Re-running the
 same command with a newer archive updates the active source pointer in place,
-so installed links follow the new version without a manual cleanup step. The
-archive path does not require cloning the repository first.
+so installed links follow the new version without a manual cleanup step.
 
 ### Validation
 
