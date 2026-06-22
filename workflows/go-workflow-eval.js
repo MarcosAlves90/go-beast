@@ -285,6 +285,66 @@ ${reportContent}`,
 
 log(`Report saved to ${reportPath}`)
 
+// ── JSON output (agent-readable, schema_version 1) ─────────────────────────
+const jsonOutputData = {
+  schema_version: 1,
+  workflow: 'go-workflow-eval',
+  duration_ms: null,
+  summary: {
+    total: valid.length,
+    passed: valid.filter(r => r.structResult?.pass !== false).length,
+    failed: valid.filter(r => r.structResult?.pass === false).length,
+    errors: results.filter(r => !r).length,
+    avg_score: parseFloat(avgScore.toFixed(2)),
+    estimated_cost_usd: null,
+  },
+  inputs: {
+    filter: args?.workflows ?? null,
+    workflow_version: null,
+  },
+  meta: {
+    go_beast_version: null,
+    environment: 'claude-code',
+  },
+  detail: {
+    type: 'workflow-eval',
+    runs: valid.map(r => ({
+      workflow: r.name,
+      type: r.wf.type,
+      total_lines: r.extracted?.total_lines ?? null,
+      struct: {
+        pass: r.structResult?.pass ?? null,
+        missing: r.structResult?.missing ?? [],
+        issues: r.structResult?.issues ?? [],
+      },
+      judge: r.judgeResult ? {
+        score: r.judgeResult.score ?? null,
+        dimensions: r.judgeResult.dimensions ?? null,
+        rationale: r.judgeResult.rationale ?? null,
+        strengths: r.judgeResult.strengths ?? [],
+        weaknesses: r.judgeResult.weaknesses ?? [],
+      } : null,
+    })),
+  },
+}
+
+await agent(
+  `Perform these steps in order using Bash and Write tools:
+1. Run: mkdir -p $HOME/.claude/workflows/go-workflow-eval/results
+2. Get the current timestamp by running: date -u +%Y%m%dT%H%M%S
+   Use that value as RUN_TS.
+3. Set RUN_ID to: go-workflow-eval-<RUN_TS>
+   Set OUTPUT_PATH to: $HOME/.claude/workflows/go-workflow-eval/results/<RUN_ID>.json
+4. List .json files in $HOME/.claude/workflows/go-workflow-eval/results/ sorted by name. Delete all but the 9 most recent (to make room for the new file).
+5. Write the file at OUTPUT_PATH. Inject the actual RUN_ID and RUN_TS into the JSON before writing — replace the placeholder strings "INJECT_RUN_ID" and "INJECT_TIMESTAMP" with the real values.
+
+JSON CONTENT (write this after injecting RUN_ID and timestamp):
+${JSON.stringify({ ...jsonOutputData, run_id: 'INJECT_RUN_ID', timestamp: 'INJECT_TIMESTAMP' }, null, 2)}`,
+  { label: 'save-output', phase: 'Aggregation' }
+)
+
+log('JSON output saved to ~/.claude/workflows/go-workflow-eval/results/')
+
 return {
   total: valid.length,
   avgScore: parseFloat(avgScore.toFixed(1)),

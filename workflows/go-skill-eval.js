@@ -1055,6 +1055,69 @@ ${reportContent}`,
 
 log('Report saved to ~/.claude/workflows/go-star-eval/reports/report.md')
 
+// ── JSON output (agent-readable, schema_version 1) ─────────────────────────
+const jsonOutputData = {
+  schema_version: 1,
+  workflow: 'go-skill-eval',
+  duration_ms: null,
+  summary: {
+    total: RUNS.length,
+    passed: validResults.filter(r => r.structResult?.pass !== false).length,
+    failed: structFails.length,
+    errors: results.filter(r => !r).length,
+    avg_score: parseFloat((skillScores.reduce((s, r) => s + (r.avgScore ?? 0), 0) / (skillScores.filter(r => r.avgScore != null).length || 1)).toFixed(2)),
+    estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
+  },
+  inputs: {
+    filter: args?.skills ?? null,
+    workflow_version: null,
+  },
+  meta: {
+    go_beast_version: null,
+    environment: 'claude-code',
+  },
+  detail: {
+    type: 'skill-eval',
+    runs: validResults.map(r => ({
+      skill: r.run.skillName,
+      input_key: getInputKey(r.run.input),
+      input_label: r.run.input.nome ?? null,
+      struct: {
+        pass: r.structResult?.pass ?? null,
+        missing: r.structResult?.missing ?? [],
+        tokens_approx: r.tokens_approx ?? null,
+        latency_ms: r.structResult?.latency_ms ?? null,
+      },
+      judge: r.judgeResult ? {
+        score: r.judgeResult.score ?? null,
+        dimensions: r.judgeResult.dimensions ?? null,
+        rationale: r.judgeResult.rationale ?? null,
+        strengths: r.judgeResult.strengths ?? [],
+        weaknesses: r.judgeResult.weaknesses ?? [],
+      } : null,
+      skipped: false,
+      skip_reason: null,
+    })),
+  },
+}
+
+await agent(
+  `Perform these steps in order using Bash and Write tools:
+1. Run: mkdir -p $HOME/.claude/workflows/go-skill-eval/results
+2. Get the current timestamp by running: date -u +%Y%m%dT%H%M%S
+   Use that value as RUN_TS.
+3. Set RUN_ID to: go-skill-eval-<RUN_TS>
+   Set OUTPUT_PATH to: $HOME/.claude/workflows/go-skill-eval/results/<RUN_ID>.json
+4. List .json files in $HOME/.claude/workflows/go-skill-eval/results/ sorted by name. Delete all but the 9 most recent (to make room for the new file).
+5. Write the file at OUTPUT_PATH. Inject the actual RUN_ID and RUN_TS into the JSON before writing — replace the placeholder strings "INJECT_RUN_ID" and "INJECT_TIMESTAMP" with the real values.
+
+JSON CONTENT (write this after injecting RUN_ID and timestamp):
+${JSON.stringify({ ...jsonOutputData, run_id: 'INJECT_RUN_ID', timestamp: 'INJECT_TIMESTAMP' }, null, 2)}`,
+  { label: 'save-output', phase: 'Aggregation' }
+)
+
+log('JSON output saved to ~/.claude/workflows/go-skill-eval/results/')
+
 return {
   totalRuns: RUNS.length,
   validResults: validResults.length,

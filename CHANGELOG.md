@@ -9,6 +9,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `workflows/go-skill-eval.js`, `workflows/go-hook-eval.js`, `workflows/go-workflow-eval.js` — all three eval workflows now emit a structured JSON output file per run to `~/.claude/workflows/{name}/results/` in addition to the existing Markdown report. The file uses a shared envelope schema (`schema_version`, `workflow`, `run_id`, `timestamp`, `summary`, `inputs`, `meta`, `detail`) with a typed `detail.runs` block per workflow type, optimized for agent consumption. Last 10 runs are retained automatically.
+
+### Changed
+
+- `docs/architecture/` — task-scoped go-fox outputs (`ADR.md`, `STACK.md`, `DIAGRAM.md`, `CONTRACTS.md`) moved to `docs/architecture/task-artifacts/` to separate them from permanent architecture docs. Updated references in `AGENTS.md`, `PACKAGE.md`, and skills `go-fox`, `go-kite`, `go-otter`, `go-snipe`.
+
 ## [1.40.0] - 2026-06-21
 
 ### Added
