@@ -10,6 +10,7 @@ TEST_HOME="$(mktemp -d)"
 ARCHIVE_DIR="$(mktemp -d)"
 ARCHIVE_PATH="$ARCHIVE_DIR/go-beast-release-archive.tar.gz"
 LATEST_JSON="$ARCHIVE_DIR/latest.json"
+RELEASES_JSON="$ARCHIVE_DIR/releases.json"
 SERVER_PORT_FILE="$ARCHIVE_DIR/server.port"
 SECOND_WORKDIR=""
 SERVER_PID=""
@@ -33,6 +34,8 @@ tar -czf "$ARCHIVE_PATH" \
   --exclude='go-beast/.vscode' \
   -C "$(dirname "$REPO_ROOT")" \
   "$(basename "$REPO_ROOT")"
+
+cp "$REPO_ROOT/scripts/install-from-release-archive.mjs" "$ARCHIVE_DIR/install-from-release-archive.mjs"
 
 python3 - "$ARCHIVE_DIR" "$SERVER_PORT_FILE" <<'PY' &
 import http.server
@@ -59,10 +62,15 @@ done
 
 SERVER_PORT="$(cat "$SERVER_PORT_FILE")"
 printf '{"tag_name":"v1.40.3","tarball_url":"http://127.0.0.1:%s/go-beast-release-archive.tar.gz"}\n' "$SERVER_PORT" > "$LATEST_JSON"
+printf '[{"tag_name":"v1.40.3","tarball_url":"http://127.0.0.1:%s/go-beast-release-archive.tar.gz","draft":false,"published_at":"2026-06-22T00:00:00Z"}]\n' "$SERVER_PORT" > "$RELEASES_JSON"
 
-GO_BEAST_RELEASE_LATEST_API_URL="http://127.0.0.1:$SERVER_PORT/latest.json" \
-HOME="$TEST_HOME" \
-node "$REPO_ROOT/scripts/install-from-release-archive.mjs" \
+printf '1\n' | env \
+  GO_BEAST_INSTALLER_SCRIPT_URL="http://127.0.0.1:$SERVER_PORT/install-from-release-archive.mjs" \
+  GO_BEAST_FORCE_RELEASE_MENU=1 \
+  GO_BEAST_RELEASE_LATEST_API_URL="http://127.0.0.1:$SERVER_PORT/latest.json" \
+  GO_BEAST_RELEASES_API_URL="http://127.0.0.1:$SERVER_PORT/releases.json" \
+  HOME="$TEST_HOME" \
+  bash "$REPO_ROOT/scripts/install.sh" \
   --all \
   --bootstrap
 
@@ -107,14 +115,26 @@ SECOND_REPO="$SECOND_WORKDIR/$(basename "$REPO_ROOT")"
 perl -0pi -e 's/^description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project\./description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification./m' \
   "$SECOND_REPO/skills/go-hawk/SKILL.md"
 
+assert_contains \
+  "$SECOND_REPO/skills/go-hawk/SKILL.md" \
+  '^description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification\.$' \
+  "archive bootstrap test fixture updates selected release content"
+
 tar -czf "$ARCHIVE_PATH_2" \
   --exclude='go-beast/.git' \
   --exclude='go-beast/.vscode' \
   -C "$SECOND_WORKDIR" \
   "$(basename "$REPO_ROOT")"
 
-HOME="$TEST_HOME" node "$REPO_ROOT/scripts/install-from-release-archive.mjs" \
-  --archive "$ARCHIVE_PATH_2" \
+printf '[{"tag_name":"v1.40.4","tarball_url":"http://127.0.0.1:%s/go-beast-release-archive-v2.tar.gz","draft":false,"published_at":"2026-06-22T01:00:00Z"},{"tag_name":"v1.40.3","tarball_url":"http://127.0.0.1:%s/go-beast-release-archive.tar.gz","draft":false,"published_at":"2026-06-22T00:00:00Z"}]\n' "$SERVER_PORT" "$SERVER_PORT" > "$RELEASES_JSON"
+printf '{"tag_name":"v1.40.4","tarball_url":"http://127.0.0.1:%s/go-beast-release-archive-v2.tar.gz"}\n' "$SERVER_PORT" > "$LATEST_JSON"
+
+printf '2\n1\n' | env \
+  GO_BEAST_FORCE_RELEASE_MENU=1 \
+  GO_BEAST_RELEASE_LATEST_API_URL="http://127.0.0.1:$SERVER_PORT/latest.json" \
+  GO_BEAST_RELEASES_API_URL="http://127.0.0.1:$SERVER_PORT/releases.json" \
+  HOME="$TEST_HOME" \
+  node "$REPO_ROOT/scripts/install-from-release-archive.mjs" \
   --all \
   --bootstrap
 

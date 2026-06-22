@@ -13,6 +13,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 - `scripts/install-from-release-archive.mjs`, `scripts/install.mjs`, `README.md` — the repo-free install bootstrap now keeps a stable active source pointer under `~/.go-beast/source/go-beast-release-archive/current`, so rerunning the command with a newer archive updates the installed links in place.
 - `scripts/install-from-release-archive.mjs`, `README.md`, `tests/install/test-release-archive-install.sh` — the repo-free install command now resolves the latest GitHub release automatically when no archive is provided, instead of requiring a manually chosen version string.
+- `scripts/install.sh`, `scripts/install-from-release-archive.mjs`, `README.md`, `tests/install/test-release-archive-install.sh` — added a repo-free terminal bootstrap command that downloads the installer without a checkout and prompts for latest versus a specific published release.
 
 ## [1.40.3] - 2026-06-22
 

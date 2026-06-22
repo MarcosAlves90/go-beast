@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync, spawnSync } from 'node:child_process'
 
 const HOME = os.homedir()
-const REPO_ROOT = path.resolve(import.meta.dirname, '..')
+const DEFAULT_REPO_SLUG = 'MarcosAlves90/go-beast'
 const RELEASE_ROOT = path.join(HOME, '.go-beast', 'source', 'go-beast-release-archive')
 const VERSION_ROOT = path.join(RELEASE_ROOT, 'versions')
 const CURRENT_ROOT = path.join(RELEASE_ROOT, 'current')
@@ -26,6 +26,9 @@ function parseArgs(argv) {
   const args = {
     archive: '',
     archiveUrl: '',
+    latest: false,
+    release: '',
+    repo: DEFAULT_REPO_SLUG,
     passthrough: [],
   }
 
@@ -37,6 +40,18 @@ function parseArgs(argv) {
     }
     if (arg === '--archive-url') {
       args.archiveUrl = argv[++i] ?? ''
+      continue
+    }
+    if (arg === '--latest') {
+      args.latest = true
+      continue
+    }
+    if (arg === '--release') {
+      args.release = argv[++i] ?? ''
+      continue
+    }
+    if (arg === '--repo') {
+      args.repo = argv[++i] ?? ''
       continue
     }
     args.passthrough.push(arg)
@@ -61,38 +76,39 @@ function hashFile(filePath) {
   return createHash('sha256').update(content).digest('hex').slice(0, 12)
 }
 
-function parseGitHubRepositorySlug(repositoryUrl) {
-  const normalized = repositoryUrl
+function normalizeRepoSlug(repo) {
+  if (!repo) {
+    fail('Missing repository value')
+  }
+
+  if (/^[^/]+\/[^/]+$/.test(repo)) {
+    return repo
+  }
+
+  const normalized = repo
     .replace(/^git\+/, '')
     .replace(/\.git$/, '')
-  const parsed = new URL(normalized)
+  let parsed
+  try {
+    parsed = new URL(normalized)
+  } catch {
+    fail(`Invalid repository value: ${repo}`)
+  }
 
   if (parsed.hostname !== 'github.com') {
-    fail(`Unsupported repository host for latest release discovery: ${parsed.hostname}`)
+    fail(`Unsupported repository host for release discovery: ${parsed.hostname}`)
   }
 
-  const [owner, repo] = parsed.pathname.replace(/^\/+/, '').split('/')
-  if (!owner || !repo) {
-    fail(`Invalid repository URL in package.json: ${repositoryUrl}`)
+  const [owner, repoName] = parsed.pathname.replace(/^\/+/, '').split('/')
+  if (!owner || !repoName) {
+    fail(`Invalid repository value: ${repo}`)
   }
 
-  return `${owner}/${repo}`
+  return `${owner}/${repoName}`
 }
 
-function readRepositorySlug(repoRoot) {
-  const packageJsonPath = path.join(repoRoot, 'package.json')
-  const raw = fs.readFileSync(packageJsonPath, 'utf8')
-  const repository = JSON.parse(raw).repository?.url ?? ''
-  if (!repository) {
-    fail(`Missing repository.url in package.json: ${packageJsonPath}`)
-  }
-  return parseGitHubRepositorySlug(repository)
-}
-
-async function resolveLatestReleaseArchive(repoRoot) {
-  const repoSlug = readRepositorySlug(repoRoot)
-  const apiUrl = process.env.GO_BEAST_RELEASE_LATEST_API_URL || `https://api.github.com/repos/${repoSlug}/releases/latest`
-  const response = await fetch(apiUrl, {
+async function fetchJson(url, failureMessage) {
+  const response = await fetch(url, {
     headers: {
       Accept: 'application/vnd.github+json',
       'User-Agent': 'go-beast-install-from-release-archive',
@@ -100,10 +116,15 @@ async function resolveLatestReleaseArchive(repoRoot) {
   })
 
   if (!response.ok) {
-    fail(`Failed to resolve latest release: ${response.status} ${response.statusText}`)
+    fail(`${failureMessage}: ${response.status} ${response.statusText}`)
   }
 
-  const latest = await response.json()
+  return response.json()
+}
+
+async function resolveLatestReleaseArchive(repoSlug) {
+  const apiUrl = process.env.GO_BEAST_RELEASE_LATEST_API_URL || `https://api.github.com/repos/${repoSlug}/releases/latest`
+  const latest = await fetchJson(apiUrl, 'Failed to resolve latest release')
   const archiveUrl = latest.tarball_url
   const tagName = latest.tag_name
 
@@ -111,7 +132,102 @@ async function resolveLatestReleaseArchive(repoRoot) {
     fail('Latest release payload is missing tarball_url or tag_name')
   }
 
-  return { archiveUrl, sourceLabel: safeSlug(tagName) }
+  return { archiveUrl, sourceLabel: safeSlug(tagName), tagName }
+}
+
+async function resolveReleaseList(repoSlug) {
+  const apiUrl = process.env.GO_BEAST_RELEASES_API_URL || `https://api.github.com/repos/${repoSlug}/releases?per_page=20`
+  const releases = await fetchJson(apiUrl, 'Failed to list releases')
+  if (!Array.isArray(releases)) {
+    fail('Release list payload is not an array')
+  }
+
+  return releases
+    .filter(release => !release.draft && release.tag_name && release.tarball_url)
+    .map(release => ({
+      tagName: release.tag_name,
+      archiveUrl: release.tarball_url,
+      publishedAt: release.published_at || '',
+    }))
+}
+
+function releaseToArchive(release) {
+  return {
+    archiveUrl: release.archiveUrl,
+    sourceLabel: safeSlug(release.tagName),
+  }
+}
+
+function ask(question) {
+  process.stdout.write(question)
+
+  const input = []
+  const buffer = Buffer.alloc(1)
+
+  while (true) {
+    const bytesRead = fs.readSync(0, buffer, 0, 1, null)
+    if (bytesRead === 0) break
+
+    const char = buffer.toString('utf8', 0, bytesRead)
+    if (char === '\n') break
+    if (char !== '\r') input.push(char)
+  }
+
+  return input.join('')
+}
+
+async function promptForRelease(repoSlug) {
+  const latest = await resolveLatestReleaseArchive(repoSlug)
+  const releases = await resolveReleaseList(repoSlug)
+
+  console.log('go-beast release installer')
+  console.log('')
+  console.log(`1) Install latest release (${latest.tagName})`)
+  console.log('2) Choose a specific release')
+  const mode = ask('Select an option [1]: ').trim()
+
+  if (!mode || mode === '1') {
+    return latest
+  }
+  if (mode !== '2') {
+    fail(`Invalid option: ${mode}`)
+  }
+
+  console.log('')
+  console.log('Available releases:')
+  releases.forEach((release, index) => {
+    const suffix = safeSlug(release.tagName) === latest.sourceLabel ? ' (latest)' : ''
+    console.log(`${index + 1}) ${release.tagName}${suffix}`)
+  })
+
+  const selection = ask('Select a release: ').trim()
+  const selectedIndex = Number(selection) - 1
+  const selected = releases[selectedIndex]
+
+  if (!selected) {
+    fail(`Invalid release selection: ${selection}`)
+  }
+
+  return releaseToArchive(selected)
+}
+
+async function resolveRequestedRelease(args) {
+  const repoSlug = normalizeRepoSlug(args.repo)
+
+  if (args.release) {
+    const releases = await resolveReleaseList(repoSlug)
+    const selected = releases.find(release => release.tagName === args.release)
+    if (!selected) {
+      fail(`Release not found: ${args.release}`)
+    }
+    return releaseToArchive(selected)
+  }
+
+  if (args.latest || (!process.stdin.isTTY && process.env.GO_BEAST_FORCE_RELEASE_MENU !== '1')) {
+    return resolveLatestReleaseArchive(repoSlug)
+  }
+
+  return promptForRelease(repoSlug)
 }
 
 function downloadArchive(url, destination) {
@@ -185,10 +301,10 @@ async function main() {
     await downloadArchive(args.archiveUrl, archivePath)
   } else {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'go-beast-release-archive-'))
-    const latest = await resolveLatestReleaseArchive(REPO_ROOT)
-    sourceLabel = latest.sourceLabel
+    const selectedRelease = await resolveRequestedRelease(args)
+    sourceLabel = selectedRelease.sourceLabel
     archivePath = path.join(tempDir, `${sourceLabel}.tar.gz`)
-    await downloadArchive(latest.archiveUrl, archivePath)
+    await downloadArchive(selectedRelease.archiveUrl, archivePath)
   }
 
   if (!archivePath || !fs.existsSync(archivePath)) {

@@ -28,8 +28,8 @@ Pick the path that matches your situation:
 | Situation | Command | What it does |
 |---|---|---|
 | You are maintaining go-beast locally | `git clone <repo-url> <repo-dir>` then `node <repo-dir>/scripts/install.mjs` | Uses the checkout-based installer from the cloned repo |
-| You do not want to clone the repo | `node scripts/install-from-release-archive.mjs --all` | Fetches the latest GitHub release automatically and installs from the archive |
-| You already downloaded a release tarball | `node scripts/install-from-release-archive.mjs --archive /path/to/go-beast-release-archive.tar.gz --all --bootstrap` | Installs from your local archive and enables bootstrap mode |
+| You do not want to clone the repo | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all` | Opens a release menu, downloads the selected archive, and installs from it |
+| You want bootstrap mode too | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all --bootstrap` | Runs the same repo-free installer and enables bootstrap mode |
 
 Use the checkout-based path for repo maintenance and the release archive path
 for machines that should stay repo-free.
@@ -252,9 +252,12 @@ Command guide:
 
 | Command | Use when | Outcome |
 |---|---|---|
-| `node scripts/install-from-release-archive.mjs --all` | You want repo-free install and do not want to choose a version manually | Fetches the latest GitHub release automatically and installs from it |
-| `node scripts/install-from-release-archive.mjs --archive-url <url> --all` | You want a specific published release archive | Downloads that archive URL and installs from it |
-| `node scripts/install-from-release-archive.mjs --archive <path> --all --bootstrap` | You already downloaded a tarball and want bootstrap mode in the same run | Installs from the local archive and enables bootstrap mode |
+| `bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all` | You want repo-free install from a terminal | Shows a menu for latest or specific release, then installs everything |
+| `bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all --bootstrap` | You want repo-free install plus bootstrap mode | Shows the same release menu and writes bootstrap instructions |
+
+The menu first asks whether to install the latest release or choose a specific
+release. If you choose a specific release, it lists the published GitHub
+releases and downloads the selected archive.
 
 How it works:
 
@@ -265,7 +268,8 @@ How it works:
 
 Archive source options:
 
-- no archive flags: fetch the latest GitHub release automatically
+- menu option 1: fetch the latest GitHub release automatically
+- menu option 2: show published releases and install the selected one
 - `--archive-url <url>`: fetch a specific archive URL
 - `--archive <path>`: use a local archive you already downloaded
 
@@ -282,9 +286,8 @@ flowchart LR
 ```
 
 ```bash
-node scripts/install-from-release-archive.mjs --all
-node scripts/install-from-release-archive.mjs --archive-url https://github.com/MarcosAlves90/go-beast/archive/refs/tags/v1.40.3.tar.gz --all
-node scripts/install-from-release-archive.mjs --archive /path/to/go-beast-release-archive.tar.gz --all --bootstrap
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all --bootstrap
 ```
 
 The archive-based path keeps the checkout-based installer available for
