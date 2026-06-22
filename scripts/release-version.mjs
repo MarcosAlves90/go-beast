@@ -97,6 +97,22 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+function remoteExists(remoteName) {
+  return gitMaybe(['remote', 'get-url', remoteName]) !== ''
+}
+
+function remoteTagExists(remoteName, tagName) {
+  if (!remoteExists(remoteName)) return false
+  return gitMaybe(['ls-remote', '--tags', remoteName, tagName]) !== ''
+}
+
+function pushTagToRemote(tagName, remoteName = 'origin') {
+  if (!remoteExists(remoteName)) return false
+  if (remoteTagExists(remoteName, tagName)) return false
+  git(['push', remoteName, tagName])
+  return true
+}
+
 async function waitForReleasePublication(tagName, { timeoutMs = 5 * 60 * 1000, intervalMs = 5000 } = {}) {
   const startedAt = Date.now()
 
@@ -408,6 +424,8 @@ async function publish() {
     const notesPath = path.join(tmpDir, 'notes.md')
     const notes = changelogSectionForVersion(state.changelog, version)
     write(notesPath, `${notes}\n`)
+
+    pushTagToRemote(tagName)
 
     gh(['release', 'create', tagName, '--draft', '--title', `go-beast ${version}`, '--notes-file', notesPath, '--verify-tag'])
 

@@ -170,12 +170,12 @@ node scripts/release-version.mjs publish
 Set `GH_BIN` to point the publish step at the GitHub CLI binary you want to
 use when you do not want to use the ambient `gh` binary.
 
-The publish step creates the annotated git tag, dispatches
-`release-finalize.yml`, and waits for the GitHub Release to become public.
-`release-finalize.yml` uploads `release-certificate.sigstore.json` to the
-release and then publishes it. Because immutable releases are enabled for
-the repository, the published release gets a real GitHub release attestation
-automatically.
+The publish step creates the annotated git tag, pushes it to `origin`,
+dispatches `release-finalize.yml`, and waits for the GitHub Release to
+become public. `release-finalize.yml` uploads
+`release-certificate.sigstore.json` to the release and then publishes it.
+Because immutable releases are enabled for the repository, the published
+release gets a real GitHub release attestation automatically.
 
 SemVer policy:
 

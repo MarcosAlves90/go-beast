@@ -9,11 +9,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.40.3] - 2026-06-22
+
+### Changed
+
+- `scripts/release-version.mjs` — the `publish` step now pushes the release tag to `origin`, dispatches `release-finalize.yml` automatically, and waits for the release to leave draft state, so version bumps publish without a manual `gh release edit --draft=false` follow-up.
+
 ## [1.40.2] - 2026-06-22
 
 ### Changed
 
-- `scripts/release-version.mjs` — the `publish` step now dispatches `release-finalize.yml` automatically and waits for the release to leave draft state, so version bumps publish without a manual `gh release edit --draft=false` follow-up.
+- `scripts/release-version.mjs` — the `publish` step now pushes the release tag to `origin`, dispatches `release-finalize.yml` automatically, and waits for the release to leave draft state, so version bumps publish without a manual `gh release edit --draft=false` follow-up.
 
 ## [1.40.1] - 2026-06-22
 

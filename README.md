@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
-**Version 1.40.2** · [Changelog](CHANGELOG.md)
+**Version 1.40.3** · [Changelog](CHANGELOG.md)
 
 
 ## Pipeline
@@ -195,10 +195,10 @@ node scripts/release-version.mjs release --bump <patch|minor|major>
 node scripts/release-version.mjs publish
 ```
 
-`publish` creates the annotated git tag, dispatches `release-finalize.yml`,
-and waits for the GitHub Release to leave draft state. Set `GH_BIN` to point
-the publish step at a GitHub CLI binary when you want isolated credentials or
-a custom wrapper.
+`publish` creates the annotated git tag, pushes it to `origin`, dispatches
+`release-finalize.yml`, and waits for the GitHub Release to leave draft
+state. Set `GH_BIN` to point the publish step at a GitHub CLI binary when
+you want isolated credentials or a custom wrapper.
 
 `.github/workflows/release-finalize.yml` uploads
 `release-certificate.sigstore.json` to the release and publishes it. Because
