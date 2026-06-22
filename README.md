@@ -11,11 +11,25 @@ Each skill is named `go-<animal>`. Each beast owns exactly one phase of the proj
 ## Summary
 
 - [Pipeline](#pipeline) - ordered beast chain and optional branches
+- [Getting started](#getting-started) - the fastest way to install or explore the pack
 - [Skills](#skills) - phase-by-phase skill index
 - [Installation](#installation) - checkout-based install, repo-free archive bootstrap, bootstrap mode
 - [Release archive bootstrap](#release-archive-bootstrap) - repo-free install path with update-safe reruns
 - [Validation](#validation) - repo-local checks and live harness tests
 - [Architecture docs](#architecture-docs) - maintainer-facing design notes and protocols
+
+## Getting Started
+
+Pick the path that matches your situation:
+
+| Situation | Command | What it does |
+|---|---|---|
+| You are maintaining go-beast locally | `git clone <repo-url> <repo-dir>` then `node <repo-dir>/scripts/install.mjs` | Uses the checkout-based installer from the cloned repo |
+| You do not want to clone the repo | `node scripts/install-from-release-archive.mjs --all` | Fetches the latest GitHub release automatically and installs from the archive |
+| You already downloaded a release tarball | `node scripts/install-from-release-archive.mjs --archive /path/to/go-beast-release-archive.tar.gz --all --bootstrap` | Installs from your local archive and enables bootstrap mode |
+
+Use the checkout-based path for repo maintenance. Use the release archive path
+for normal installs on machines that should stay repo-free.
 
 ## Pipeline
 
