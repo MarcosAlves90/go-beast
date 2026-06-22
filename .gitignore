@@ -11,3 +11,4 @@ OBSERVABILITY.md
 **/output/
 workflows/go-workflow-eval-reports/
 logs/
+.vscode/
