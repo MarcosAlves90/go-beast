@@ -84,19 +84,76 @@ STATE_DIR="${GH_FAKE_STATE_DIR:?missing GH_FAKE_STATE_DIR}"
 
 printf '%s\n' "$*" >> "$LOG_FILE"
 
+mark_published() {
+  local release_dir="$1"
+  rm -f "$release_dir/draft"
+  printf '2026-06-19T00:00:00Z\n' > "$release_dir/publishedAt"
+}
+
 case "$1 $2 $3" in
   "release view "*)
     tag="${3:-}"
     if [[ -f "$STATE_DIR/releases/$tag/release-created" ]]; then
-      if [[ "${4:-}" == "--json" && "${5:-}" == "isDraft" ]]; then
+      if [[ "${4:-}" == "--json" ]]; then
         if [[ -f "$STATE_DIR/releases/$tag/draft" ]]; then
-          printf '{"isDraft":true}\n'
+          is_draft=true
+          published_at=null
         else
-          printf '{"isDraft":false}\n'
+          is_draft=false
+          if [[ -f "$STATE_DIR/releases/$tag/publishedAt" ]]; then
+            published_at="\"$(cat "$STATE_DIR/releases/$tag/publishedAt")\""
+          else
+            published_at=null
+          fi
+        fi
+        if [[ "${5:-}" == "isDraft,publishedAt" ]]; then
+          printf '{"isDraft":%s,"publishedAt":%s}\n' "$is_draft" "$published_at"
+        elif [[ "${5:-}" == "isDraft" ]]; then
+          printf '{"isDraft":%s}\n' "$is_draft"
+        else
+          printf '{"tagName":"%s"}\n' "$tag"
         fi
       else
         printf '{"tagName":"%s"}\n' "$tag"
       fi
+      exit 0
+    fi
+    exit 1
+    ;;
+  "workflow run "*)
+    workflow_file="${3:-}"
+    shift 3
+    tag=""
+    while (($# > 0)); do
+      case "$1" in
+        -f|--field|--raw-field)
+          case "$2" in
+            tag_name=*)
+              tag="${2#tag_name=}"
+              ;;
+          esac
+          shift 2
+          ;;
+        --ref)
+          shift 2
+          ;;
+        *)
+          shift
+          ;;
+      esac
+    done
+    if [[ "$workflow_file" == "release-finalize.yml" && -n "$tag" ]]; then
+      release_dir="$STATE_DIR/releases/$tag"
+      mkdir -p "$release_dir"
+      touch "$release_dir/release-certificate.sigstore.json"
+      mark_published "$release_dir"
+    fi
+    ;;
+  "release edit "*)
+    tag="${3:-}"
+    if [[ -f "$STATE_DIR/releases/$tag/release-created" ]]; then
+      release_dir="$STATE_DIR/releases/$tag"
+      mark_published "$release_dir"
       exit 0
     fi
     exit 1
@@ -199,34 +256,27 @@ export GH_FAKE_LOG="$FAKE_GH_ROOT/gh.log"
 export GH_FAKE_STATE_DIR="$FAKE_GH_ROOT/gh-state"
 
 node scripts/release-version.mjs publish > /tmp/go-beast-release-publish.json
-assert_contains /tmp/go-beast-release-publish.json '"status": "draft-created"' "release-version publish creates a draft GitHub release"
+assert_contains /tmp/go-beast-release-publish.json '"status": "published"' "release-version publish publishes the GitHub release"
 assert_contains /tmp/go-beast-release-publish.json '"tagStatus": "created"' "release-version publish creates a git tag"
 git tag --list v1.3.0 > /tmp/go-beast-release-tag.out
 assert_contains /tmp/go-beast-release-tag.out '^v1\.3\.0$' "release-version publish creates the annotated tag"
 
-if [[ ! -e "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/draft" ]]; then
-  echo "[FAIL] release-version creates the release as a draft"
+if [[ ! -e "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/publishedAt" ]]; then
+  echo "[FAIL] release-version finalizes the release"
   exit 1
 fi
-echo "[PASS] release-version creates the release as a draft"
+echo "[PASS] release-version finalizes the release"
 assert_contains "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/notes.md" 'New release command\.' "release-version writes release notes"
-if [[ -e "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/release-certificate.json" ]]; then
-  echo "[FAIL] release-version publish should not upload release-certificate.json"
+if [[ ! -e "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/release-certificate.sigstore.json" ]]; then
+  echo "[FAIL] release-version publish should upload the attestation bundle during finalize"
   exit 1
 fi
-if [[ -e "$FAKE_GH_ROOT/gh-state/releases/v1.3.0/release-certificate.json.sha256" ]]; then
-  echo "[FAIL] release-version publish should not upload release-certificate.json.sha256"
-  exit 1
-fi
-echo "[PASS] release-version publish leaves release assets to the finalize workflow"
+echo "[PASS] release-version publish uploads the attestation bundle during finalize"
 
 node scripts/release-version.mjs publish > /tmp/go-beast-release-publish-update.json
 assert_contains /tmp/go-beast-release-publish-update.json '"status": "already-exists"' "release-version publish no-ops when the release already exists"
 assert_contains "$FAKE_GH_ROOT/gh.log" 'release create v1.3.0' "release-version publish used create on the first run"
-if grep -q 'release upload v1.3.0' "$FAKE_GH_ROOT/gh.log"; then
-  echo "[FAIL] release-version publish should not upload assets"
-  exit 1
-fi
+assert_contains "$FAKE_GH_ROOT/gh.log" 'workflow run release-finalize.yml' "release-version publish dispatches the finalize workflow"
 
 python3 - <<'PY'
 from pathlib import Path

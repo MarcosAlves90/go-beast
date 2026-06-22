@@ -93,6 +93,22 @@ function ghMaybe(args) {
   }
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function waitForReleasePublication(tagName, { timeoutMs = 5 * 60 * 1000, intervalMs = 5000 } = {}) {
+  const startedAt = Date.now()
+
+  while (Date.now() - startedAt < timeoutMs) {
+    const release = JSON.parse(gh(['release', 'view', tagName, '--json', 'isDraft,publishedAt']))
+    if (release.isDraft === false && release.publishedAt) return release
+    await sleep(intervalMs)
+  }
+
+  fail(`Timed out waiting for ${tagName} to be published`)
+}
+
 function parseSemver(version) {
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version)
   if (!match) fail(`Invalid SemVer version: ${version}`)
@@ -299,7 +315,7 @@ function replacePackageMd(packageMd, version, date) {
   return next
 }
 
-function release({ bump, version, date }) {
+async function release({ bump, version, date }) {
   const state = loadState()
   const nextDate = date || todayUtc()
   const nextVersion = version || bumpVersion(state.packageJsonVersion, bump)
@@ -332,7 +348,7 @@ function release({ bump, version, date }) {
   }, null, 2) + '\n')
 }
 
-function publish() {
+async function publish() {
   const state = loadState()
   const { version, date } = releasedVersionDate(state.changelog)
   if (!version || !date) {
@@ -394,11 +410,24 @@ function publish() {
     write(notesPath, `${notes}\n`)
 
     gh(['release', 'create', tagName, '--draft', '--title', `go-beast ${version}`, '--notes-file', notesPath, '--verify-tag'])
+
+    gh([
+      'workflow',
+      'run',
+      'release-finalize.yml',
+      '--ref',
+      'main',
+      '-f',
+      `tag_name=${tagName}`,
+    ])
+
+    await waitForReleasePublication(tagName)
+
     process.stdout.write(JSON.stringify({
       ok: true,
       tag: tagName,
       tagStatus,
-      status: 'draft-created',
+      status: 'published',
     }, null, 2) + '\n')
   } catch (error) {
     fail(`publish requires GitHub CLI access via ${GH_BIN}: ${error.stderr?.toString?.() || error.message}`)
@@ -409,7 +438,7 @@ function publish() {
   }
 }
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.command === 'check') {
     check()
@@ -420,16 +449,18 @@ function main() {
     if (!args.bump && !args.version) {
       fail('release requires --bump <patch|minor|major> or --version <x.y.z>')
     }
-    release(args)
+    await release(args)
     return
   }
 
   if (args.command === 'publish') {
-    publish()
+    await publish()
     return
   }
 
   fail(`Unsupported command: ${args.command}`)
 }
 
-main()
+main().catch(error => {
+  fail(error?.stderr?.toString?.() || error?.message || String(error))
+})

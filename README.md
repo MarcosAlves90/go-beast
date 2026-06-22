@@ -195,14 +195,15 @@ node scripts/release-version.mjs release --bump <patch|minor|major>
 node scripts/release-version.mjs publish
 ```
 
-`publish` creates the annotated git tag and a draft GitHub Release. Set
-`GH_BIN` to point the publish step at a GitHub CLI binary when you want
-isolated credentials or a custom wrapper.
+`publish` creates the annotated git tag, dispatches `release-finalize.yml`,
+and waits for the GitHub Release to leave draft state. Set `GH_BIN` to point
+the publish step at a GitHub CLI binary when you want isolated credentials or
+a custom wrapper.
 
 `.github/workflows/release-finalize.yml` uploads
-`release-certificate.sigstore.json` to the draft release and publishes it.
-Because immutable releases are enabled, GitHub then generates the actual
-release attestation for the published release.
+`release-certificate.sigstore.json` to the release and publishes it. Because
+immutable releases are enabled, GitHub then generates the actual release
+attestation for the published release.
 
 Live harness tests are opt-in because they require a working local harness
 environment:
