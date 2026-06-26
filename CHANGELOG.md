@@ -9,6 +9,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.43.0] - 2026-06-26
+
+### Added
+
+- `skills/go-score/` — new meta-skill for scored code review. Runs a multi-pass review across seven dimensions (correctness, security, maintainability, testability, performance, design, observability) using a calibrated 0–4 rubric with named anchors; requires a code quote for every score; applies a minimum-gate rule (Correctness = 0 or Security ≤ 1 blocks merge); produces OIR-structured findings classified as BLOCKER/WARNING/SUGGESTION/NIT; performs a mandatory calibration self-challenge on scores ≥ 3 to prevent grade inflation; and emits `SCORE_REPORT.md` with a dimensional scorecard, composite score, merge verdict, positives section, and open questions. Invoke after implementation beasts when dimensional accountability is required alongside a merge recommendation.
+- `README.md`, `PACKAGE.md` — added go-score to the meta-skills table and dependency graph.
+- `workflows/go-skill-eval.js` — added go-score checklist and skillOverrides eval scenario.
+
 ## [1.42.0] - 2026-06-26
 
 ### Added
