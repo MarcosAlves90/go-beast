@@ -3,91 +3,91 @@
   "hooks": [
     {
       "name": "go-beast-session-state.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "SessionStart",
       "statusMessage": "Initializing go-beast session state"
     },
     {
       "name": "go-beast-user-prompt-context.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "UserPromptSubmit",
       "statusMessage": "Re-anchoring go-beast context"
     },
     {
       "name": "go-beast-stop-reanchor.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "Stop",
       "statusMessage": "Checking go-beast drift"
     },
     {
       "name": "code-dedup-check.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "PreToolUse",
       "matcher": "Edit|Write|MultiEdit",
       "statusMessage": "Checking for duplicate code"
     },
     {
       "name": "code-verify-flag.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "PostToolUse",
       "matcher": "Edit|Write|MultiEdit",
       "statusMessage": "Flagging code changes"
     },
     {
       "name": "code-verify-run.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "Stop",
       "statusMessage": "Running verification"
     },
     {
       "name": "docs-update-flag.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "PostToolUse",
       "matcher": "Edit|Write|MultiEdit",
       "statusMessage": "Flagging documentation updates"
     },
     {
       "name": "docs-update-remind.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "Stop",
       "statusMessage": "Reminding about documentation"
     },
     {
       "name": "git-commit-guard.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "PreToolUse",
       "matcher": "Bash",
       "statusMessage": "Checking git commit commands"
     },
     {
       "name": "git-commit-remind-flag.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "PostToolUse",
       "matcher": "Edit|Write|MultiEdit",
       "statusMessage": "Flagging commit reminders"
     },
     {
       "name": "git-commit-remind.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "Stop",
       "statusMessage": "Reminding about commit and push"
     },
     {
       "name": "git-strip-coauthored.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "PreToolUse",
       "matcher": "Bash",
       "statusMessage": "Checking commit message"
     },
     {
       "name": "sync-go-beast-skills.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "SessionStart",
       "statusMessage": "Syncing go-beast"
     },
     {
       "name": "version-bump-remind.sh",
-      "targets": ["claude-code", "codex"],
+      "targets": ["claude-code", "codex", "copilot"],
       "event": "Stop",
       "statusMessage": "Reminding about version bumps"
     }

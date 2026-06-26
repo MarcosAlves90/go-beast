@@ -102,13 +102,13 @@ Invoked on demand — not bound to a phase.
 | [go-bee](skills/go-bee/SKILL.md) | Designing and implementing multi-agent Workflow scripts (pipeline, parallel, loop patterns) |
 
 
-## Hooks `[Claude Code · Codex]`
+## Hooks `[Claude Code · Codex · Copilot CLI]`
 
-Automated guards that run on agent lifecycle events. The installer symlinks hook scripts and writes the agent hook config automatically from the shared manifest, while preserving any existing entries. Claude Code uses `~/.claude/settings.json`; Codex uses `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml`, then reviews them with `/hooks`.
+Automated guards that run on agent lifecycle events. The installer symlinks hook scripts and writes the agent hook config automatically from the shared manifest, while preserving any existing entries. Claude Code uses `~/.claude/settings.json`; Codex uses `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml`, then reviews them with `/hooks`; Copilot CLI loads `~/.copilot/hooks/*.json` and the installer writes `~/.copilot/hooks/go-beast.json` with camelCase event names (`sessionStart`, `userPromptSubmitted`, `agentStop`, `preToolUse`, `postToolUse`).
 
 | Hook | Event | What it does |
 |---|---|---|
-| `sync-go-beast-skills.sh` | `SessionStart` | Syncs skills, workflows, hooks, and global instructions for Claude Code and Codex |
+| `sync-go-beast-skills.sh` | `SessionStart` | Syncs skills, workflows, hooks, and global instructions for Claude Code, Codex, and Copilot CLI |
 | `go-beast-session-state.sh` | `SessionStart` | Initializes shared anti-drift session state for go-beast-aware harness hooks |
 | `go-beast-user-prompt-context.sh` | `UserPromptSubmit` | Re-injects the active go-beast workflow frame before each prompt |
 | `go-beast-stop-reanchor.sh` | `Stop` | Forces a re-anchor when bootstrap sessions drift away from beast/artifact framing |
@@ -387,11 +387,20 @@ Codex discovers hook configuration from `~/.codex/hooks.json` or inline
 `~/.codex/hooks.json` only when Codex is installed and selected, and preserves
 existing entries; review new or changed hooks with `/hooks`.
 
-### Other agents (Gemini CLI, Copilot CLI, Cursor…)
+### Copilot CLI hooks (optional)
+
+Copilot CLI discovers hook configuration from `*.json` files in
+`~/.copilot/hooks/`. The installer writes `~/.copilot/hooks/go-beast.json`
+only when Copilot CLI is installed and selected, and preserves existing entries.
+Skills are symlinked into `~/.copilot/skills/` and global instructions are
+written to `~/.copilot/instructions/go-beast.md`. Review new or changed hooks
+with `/hooks` in the Copilot CLI session.
+
+### Other agents (Gemini CLI, Cursor…)
 
 Clone the repo and point your agent at `skills/`. Each skill is a self-contained `SKILL.md` — no dependencies, no platform-specific syntax.
 
-> `go-swift` and `go-wren` support Claude Code and Codex hook schemas. Other agents may still need agent-specific guidance before hooks can be installed.
+> `go-swift` and `go-wren` support Claude Code, Codex, and Copilot CLI hook schemas. Other agents may still need agent-specific guidance before hooks can be installed.
 
 
 ## Design principles

@@ -6,16 +6,35 @@ import path from 'path'
 const REPO = path.resolve(import.meta.dirname, '..')
 const HOME = os.homedir()
 
+// Copilot CLI uses camelCase event names and a flat entry format (no `hooks` wrapper).
+// Event names differ from Claude Code / Codex PascalCase convention.
+const COPILOT_EVENT_MAP = {
+  SessionStart: 'sessionStart',
+  UserPromptSubmit: 'userPromptSubmitted',
+  Stop: 'agentStop',
+  PreToolUse: 'preToolUse',
+  PostToolUse: 'postToolUse',
+}
+
 const AGENTS = {
   'claude-code': {
     hookDir: home => path.join(home, '.claude', 'hooks'),
     configPath: home => path.join(home, '.claude', 'settings.json'),
     commandRoot: '~/.claude/hooks',
+    format: 'claude',
   },
   codex: {
     hookDir: home => path.join(home, '.codex', 'hooks'),
     configPath: home => path.join(home, '.codex', 'hooks.json'),
     commandRoot: '~/.codex/hooks',
+    format: 'claude',
+  },
+  copilot: {
+    hookDir: home => path.join(home, '.copilot', 'hooks'),
+    // Single managed file inside the hooks dir — Copilot loads all *.json from this dir.
+    configPath: home => path.join(home, '.copilot', 'hooks', 'go-beast.json'),
+    commandRoot: '~/.copilot/hooks',
+    format: 'copilot',
   },
 }
 
@@ -50,6 +69,25 @@ function commandFor(agentName, hookName) {
   return `bash ${agent.commandRoot}/${hookName}`
 }
 
+function copilotEventName(event) {
+  return COPILOT_EVENT_MAP[event] ?? event
+}
+
+// Claude / Codex: { matcher?, hooks: [{ type, command, statusMessage? }] }
+// Copilot:        { type, bash, matcher? }  — flat, no wrapper
+function buildEntry(spec, command, agentName) {
+  const agent = AGENTS[agentName]
+  if (agent?.format === 'copilot') {
+    const entry = { type: 'command', bash: command }
+    if (spec.matcher) entry.matcher = spec.matcher
+    return entry
+  }
+  const entry = { hooks: [{ type: 'command', command }] }
+  if (spec.matcher) entry.matcher = spec.matcher
+  if (spec.statusMessage) entry.hooks[0].statusMessage = spec.statusMessage
+  return entry
+}
+
 function readJson(filePath) {
   try {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'))
@@ -64,31 +102,35 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`)
 }
 
-function existingHookKeys(config) {
+// Claude / Codex format: entries are { matcher?, hooks: [...] } wrappers.
+// Copilot format: entries are flat { type, bash, matcher? } objects.
+function existingHookKeys(config, agentName) {
+  const agent = AGENTS[agentName]
   const keys = new Set()
   const buckets = config?.hooks && typeof config.hooks === 'object' ? config.hooks : {}
   for (const [event, entries] of Object.entries(buckets)) {
     if (!Array.isArray(entries)) continue
-    for (const entry of entries) {
-      const matcher = entry?.matcher ?? ''
-      const hooks = Array.isArray(entry?.hooks) ? entry.hooks : []
-      for (const hook of hooks) {
-        if (!hook || hook.type !== 'command' || !hook.command) continue
-        keys.add(`${event}::${matcher}::${hook.command}`)
+    if (agent?.format === 'copilot') {
+      for (const entry of entries) {
+        if (!entry || entry.type !== 'command' || !entry.bash) continue
+        keys.add(`${event}::${entry.matcher ?? ''}::${entry.bash}`)
+      }
+    } else {
+      for (const entry of entries) {
+        const matcher = entry?.matcher ?? ''
+        const hooks = Array.isArray(entry?.hooks) ? entry.hooks : []
+        for (const hook of hooks) {
+          if (!hook || hook.type !== 'command' || !hook.command) continue
+          keys.add(`${event}::${matcher}::${hook.command}`)
+        }
       }
     }
   }
   return keys
 }
 
-function buildEntry(spec, command) {
-  const entry = { hooks: [{ type: 'command', command }] }
-  if (spec.matcher) entry.matcher = spec.matcher
-  if (spec.statusMessage) entry.hooks[0].statusMessage = spec.statusMessage
-  return entry
-}
-
 function refreshManagedConfigEntries(config, agentName, selected) {
+  const agent = AGENTS[agentName]
   if (!config.hooks || typeof config.hooks !== 'object') config.hooks = {}
 
   const managedCommands = new Set(selected.map(spec => commandFor(agentName, spec.name)))
@@ -97,22 +139,31 @@ function refreshManagedConfigEntries(config, agentName, selected) {
   for (const [event, entries] of Object.entries(config.hooks)) {
     if (!Array.isArray(entries)) continue
 
-    const nextEntries = []
-    for (const entry of entries) {
-      const hooks = Array.isArray(entry?.hooks) ? entry.hooks : []
-      const keptHooks = hooks.filter(hook => {
-        if (!hook || hook.type !== 'command' || !hook.command) return true
-        if (!managedCommands.has(hook.command)) return true
+    if (agent?.format === 'copilot') {
+      const nextEntries = entries.filter(entry => {
+        if (!entry || entry.type !== 'command' || !entry.bash) return true
+        if (!managedCommands.has(entry.bash)) return true
         removed++
         return false
       })
+      config.hooks[event] = nextEntries
+    } else {
+      const nextEntries = []
+      for (const entry of entries) {
+        const hooks = Array.isArray(entry?.hooks) ? entry.hooks : []
+        const keptHooks = hooks.filter(hook => {
+          if (!hook || hook.type !== 'command' || !hook.command) return true
+          if (!managedCommands.has(hook.command)) return true
+          removed++
+          return false
+        })
 
-      if (hooks.length > 0 && keptHooks.length === 0) continue
-      if (keptHooks.length !== hooks.length) nextEntries.push({ ...entry, hooks: keptHooks })
-      else nextEntries.push(entry)
+        if (hooks.length > 0 && keptHooks.length === 0) continue
+        if (keptHooks.length !== hooks.length) nextEntries.push({ ...entry, hooks: keptHooks })
+        else nextEntries.push(entry)
+      }
+      config.hooks[event] = nextEntries
     }
-
-    config.hooks[event] = nextEntries
   }
 
   return removed
@@ -122,23 +173,30 @@ function wireAgentConfig({ repoRoot = REPO, home = HOME, agentName, hookNames = 
   const agent = AGENTS[agentName]
   if (!agent) throw new Error(`Unsupported agent: ${agentName}`)
 
+  const isCopilot = agent.format === 'copilot'
   const manifest = loadHookManifest(repoRoot)
   const selected = hooksForAgent(manifest, agentName, hookNames)
   const configPath = agent.configPath(home)
-  const config = readJson(configPath) ?? { hooks: {} }
+
+  // Copilot config requires { version: 1, hooks: {} } as the root shape.
+  const defaultConfig = isCopilot ? { version: 1, hooks: {} } : { hooks: {} }
+  const config = readJson(configPath) ?? defaultConfig
   if (!config.hooks || typeof config.hooks !== 'object') config.hooks = {}
+  if (isCopilot && config.version == null) config.version = 1
 
   const replaced = refreshManagedConfigEntries(config, agentName, selected)
-  const existing = existingHookKeys(config)
+  const existing = existingHookKeys(config, agentName)
   let added = 0
 
   for (const spec of selected) {
     const command = commandFor(agentName, spec.name)
-    const key = `${spec.event}::${spec.matcher ?? ''}::${command}`
+    // Copilot uses camelCase event names; Claude Code / Codex use PascalCase.
+    const eventKey = isCopilot ? copilotEventName(spec.event) : spec.event
+    const key = `${eventKey}::${spec.matcher ?? ''}::${command}`
     if (existing.has(key)) continue
 
-    const bucket = config.hooks[spec.event] ?? (config.hooks[spec.event] = [])
-    bucket.push(buildEntry(spec, command))
+    const bucket = config.hooks[eventKey] ?? (config.hooks[eventKey] = [])
+    bucket.push(buildEntry(spec, command, agentName))
     existing.add(key)
     added++
   }

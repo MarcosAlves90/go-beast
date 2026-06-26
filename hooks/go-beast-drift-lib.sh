@@ -28,8 +28,9 @@ gb_detect_harness() {
 
   local script_path="${1:-$0}"
   case "$script_path" in
-    *"/.codex/hooks/"*) printf 'codex\n' ;;
-    *"/.claude/hooks/"*) printf 'claude-code\n' ;;
+    *"/.codex/hooks/"*)   printf 'codex\n' ;;
+    *"/.claude/hooks/"*)  printf 'claude-code\n' ;;
+    *"/.copilot/hooks/"*) printf 'copilot\n' ;;
     *) printf 'unknown\n' ;;
   esac
 }

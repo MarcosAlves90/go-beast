@@ -6,11 +6,14 @@ This is the go-beast skill pack repository. It contains skills, workflows,
 optional hook integrations, an optional plugin adapter bundle, and a
 cross-platform installer for the go-* family. The pack is agent-agnostic —
 skills are plain Markdown and work with any agent. The sync hook
-(`hooks/sync-go-beast-skills.sh`) supports optional Claude Code and Codex
-integration from the same manifest when those harnesses are installed.
-`go-swift` and `go-wren` support lifecycle hooks for Claude Code and Codex;
-Codex uses `~/.codex/hooks.json` or inline `[hooks]` tables in
-`~/.codex/config.toml` rather than Claude Code's `settings.json` schema.
+(`hooks/sync-go-beast-skills.sh`) supports optional Claude Code, Codex, and
+Copilot CLI integration from the same manifest when those harnesses are
+installed. `go-swift` and `go-wren` support lifecycle hooks for Claude Code,
+Codex, and Copilot CLI. Codex uses `~/.codex/hooks.json` or inline `[hooks]`
+tables in `~/.codex/config.toml`. Copilot CLI loads `~/.copilot/hooks/*.json`
+and uses camelCase event names (`sessionStart`, `userPromptSubmitted`,
+`agentStop`, `preToolUse`, `postToolUse`) with a flat entry format; the
+hook-wire script writes `~/.copilot/hooks/go-beast.json` automatically.
 
 ## What this repo is
 
@@ -200,7 +203,7 @@ go-beast/
 │   ├── go-workflow-eval.js    ← Workflow eval: structural checklist + LLM judge
 │   └── go-deep-analysis.js    ← Deep multi-dimensional codebase analysis
 ├── hooks/
-│   ├── manifest.json                  ← Shared hook manifest for Claude Code and Codex
+│   ├── manifest.json                  ← Shared hook manifest for Claude Code, Codex, and Copilot CLI
 │   ├── sync-go-beast-skills.sh       ← SessionStart: syncs skills/workflows/hooks/global instructions
 │   ├── git-commit-guard.sh           ← PreToolUse(Bash): blocks sensitive file commits
 │   ├── git-strip-coauthored.sh       ← PreToolUse(Bash): blocks Co-Authored-By commits
