@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.42.0] - 2026-06-26
+
 ### Added
 
 - `scripts/hook-wire.mjs`, `hooks/manifest.json`, `hooks/sync-go-beast-skills.sh`, `hooks/go-beast-drift-lib.sh`, `tests/copilot/test-hook-wire.sh`, `README.md`, `AGENTS.md` — added GitHub Copilot CLI as a supported harness alongside Claude Code and Codex. Skills are symlinked into `~/.copilot/skills/`, global instructions are written to `~/.copilot/instructions/go-beast.md`, and hooks are wired into `~/.copilot/hooks/go-beast.json` using Copilot's native camelCase event names (`sessionStart`, `userPromptSubmitted`, `agentStop`, `preToolUse`, `postToolUse`) and flat bash-field entry format. Harness detection in the drift library now recognizes `~/.copilot/hooks/` paths and reports `copilot`.

@@ -2,8 +2,8 @@
 
 ```
 name:    go-beast
-version: 1.41.0
-date:    2026-06-22
+version: 1.42.0
+date:    2026-06-26
 author:  MarcosAlves90
 type:    skill-pack
 scope:   full-stack software development lifecycle

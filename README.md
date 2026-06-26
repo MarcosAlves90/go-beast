@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
-**Version 1.41.0** · [Changelog](CHANGELOG.md)
+**Version 1.42.0** · [Changelog](CHANGELOG.md)
 
 ## Summary
 
@@ -92,8 +92,8 @@ Invoked on demand — not bound to a phase.
 | [go-ant](skills/go-ant/SKILL.md) | A performance problem has a numeric baseline and needs a fix |
 | [go-mule](skills/go-mule/SKILL.md) | Explicitly initializing go-beast for a new agent session or environment, especially without SessionStart hooks |
 | [go-jay](skills/go-jay/SKILL.md) | Authoring or syncing AI context files (CLAUDE.md, AGENTS.md, GEMINI.md…) |
-| [go-swift](skills/go-swift/SKILL.md) `[Claude Code · Codex]` | Creating new lifecycle hook scripts |
-| [go-wren](skills/go-wren/SKILL.md) `[Claude Code · Codex]` | Patching an existing lifecycle hook |
+| [go-swift](skills/go-swift/SKILL.md) `[Claude Code · Codex · Copilot CLI]` | Creating new lifecycle hook scripts |
+| [go-wren](skills/go-wren/SKILL.md) `[Claude Code · Codex · Copilot CLI]` | Patching an existing lifecycle hook |
 | [go-smith](skills/go-smith/SKILL.md) | A gap in the pack is identified and a new beast is needed |
 | [go-tern](skills/go-tern/SKILL.md) | Reviewing a diff, task output, or branch before merge or handoff |
 | [go-marten](skills/go-marten/SKILL.md) | Setting up and governing isolated git worktrees for risky or parallel work |
