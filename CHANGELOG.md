@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.43.1] - 2026-06-26
+
 ### Fixed
 
 - `scripts/install.mjs` — corrected the `copilot` agent entry in the installer registry. Detection path was `~/.github/copilot` (VS Code Copilot extension directory); corrected to `~/.copilot` (Copilot CLI directory). Also added missing `hooks`, `hookConfig`, and `hookConfigHint` fields, and corrected `skills` and `globalMd` paths to match what `hook-wire.mjs` and `sync-go-beast-skills.sh` already used. Without this fix, Copilot CLI was not detected by the installer on machines that do not have the VS Code extension installed.
