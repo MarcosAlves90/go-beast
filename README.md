@@ -6,7 +6,7 @@
 
 Each skill is named `go-<animal>`. Each beast owns exactly one phase of the project lifecycle and produces concrete, named artifacts that feed the next beast in the chain. Skills are plain Markdown — agent-agnostic and usable with Claude Code, Cursor, Gemini, Copilot, and more. The canonical source lives in `skills/`. The repo also ships optional harness-specific adapters in `plugins/go-beast/` for surfaces that expect a manifest plus a dedicated `skills/` directory.
 
-**Version 1.42.0** · [Changelog](CHANGELOG.md)
+**Version 1.43.0** · [Changelog](CHANGELOG.md)
 
 ## Summary
 
@@ -96,6 +96,7 @@ Invoked on demand — not bound to a phase.
 | [go-wren](skills/go-wren/SKILL.md) `[Claude Code · Codex · Copilot CLI]` | Patching an existing lifecycle hook |
 | [go-smith](skills/go-smith/SKILL.md) | A gap in the pack is identified and a new beast is needed |
 | [go-tern](skills/go-tern/SKILL.md) | Reviewing a diff, task output, or branch before merge or handoff |
+| [go-score](skills/go-score/SKILL.md) | Scored code review — 0–4 per dimension, OIR findings, BLOCKER/WARNING/SUGGESTION/NIT severity, merge verdict |
 | [go-marten](skills/go-marten/SKILL.md) | Setting up and governing isolated git worktrees for risky or parallel work |
 | [go-finch](skills/go-finch/SKILL.md) | An existing skill needs improvement after eval feedback |
 | [go-vole](skills/go-vole/SKILL.md) | Designing or restructuring an Obsidian vault / PKM system |

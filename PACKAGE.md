@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.42.0
+version: 1.43.0
 date:    2026-06-26
 author:  MarcosAlves90
 type:    skill-pack
@@ -126,6 +126,7 @@ go-jay     ← AI context files; invoke when instructions cannot express the nee
         └─► go-raven  ← includes hooks in CI/CD and onboarding scripts
 go-smith   ← skill authoring; invoke when a pack gap is identified
 go-tern    ← code review; invoke after implementation and before merge or handoff
+go-score   ← scored code review; invoke when dimensional scores and a merge verdict are required alongside findings
 go-marten  ← isolated git worktrees; invoke before risky or parallel work in a clean repo
 go-finch   ← skill maintenance; invoke when an existing skill needs improvement (not replacement)
 go-wren    ← hook maintenance; invoke when an existing hook needs to be changed (not created)

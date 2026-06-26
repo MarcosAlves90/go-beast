@@ -124,6 +124,10 @@ const SKILLS = {
     description: 'Designs and implements Workflow scripts (.js files that use agent(), pipeline(), parallel(), phase(), log(), and schema) for multi-agent orchestration. Covers decomposing tasks into phases, choosing the correct orchestration primitive, defining JSON schemas, writing the meta block, and registering the workflow.',
     checklist: ['meta', 'phase', 'pipeline', 'schema', 'label', 'return'],
   },
+  'go-score': {
+    description: 'Conducts a multi-pass code review with structured scoring across seven dimensions (correctness, security, maintainability, testability, performance, design, observability), applies a calibrated 0–4 rubric per dimension, produces OIR-structured findings with BLOCKER/WARNING/SUGGESTION/NIT severity classification, and emits a SCORE_REPORT.md with a dimensional scorecard and a merge verdict.',
+    checklist: ['SCORE_REPORT.md', 'Scorecard', 'Correctness', 'Security', 'Maintainability', 'Composite', 'BLOCKER', 'WARNING', 'OIR', 'Verdict', 'Positives'],
+  },
 }
 
 // Input A: simple project without real code — tests planning skills (go-hawk, go-lark, go-fox)
@@ -458,6 +462,29 @@ Produce go-tern's full output:
 2. OPEN QUESTIONS block
 3. MERGE RECOMMENDATION block
 4. State why each finding severity is justified`,
+    'go-score': `EVAL CONTEXT: You ARE the go-score skill executing its workflow. Score the following change and produce the full SCORE_REPORT.md.
+
+Review scope:
+- Stated intent: "Task 3 from docs/plan.md — sanitize all user-controlled SQL inputs and keep login behavior unchanged."
+- Tier classification: High (touches authentication and SQL input handling).
+- Diff summary: the change replaced a parameterized SQL query with string concatenation in the login path, added logging of a password hash on successful login, and removed one integration test covering invalid email input.
+
+Specific code excerpts to use as evidence:
+- Observation A (login handler): \`query = "SELECT * FROM users WHERE email = '" + email + "'"\` — direct string concatenation, previously parameterized.
+- Observation B (log line): \`logger.info("Login success for " + email + ", hash=" + passwordHash)\` — password hash emitted to application log.
+- Observation C (test file): the integration test \`test_login_invalid_email\` was deleted; no replacement test was added.
+- Observation D (input validation): the email parameter is accepted from the request body with no allowlist, length check, or type coercion applied before it reaches the query.
+
+Execute go-score's complete multi-pass workflow and produce ALL required artifacts:
+1. Comprehension Summary (one paragraph — state intent vs. actual behavior)
+2. Risk tier classification (justify High)
+3. Per-dimension scoring for all seven dimensions with: score (0–4), label, and quoted evidence from the excerpts above
+4. OIR findings for every score ≤ 1 — each with Observation (code quote), Impact (failure mode), Request (specific fix)
+5. Calibration pass — for every score ≥ 3, state the strongest argument for a lower score; accept or reject the downgrade with reasoning
+6. Positives pass — name at least one specific thing done well (or note that none is identifiable and explain why)
+7. Complete SCORE_REPORT.md with: Scorecard table (all seven dimensions + Composite), Verdict, BLOCKER/WARNING/SUGGESTION/NIT finding sections, Positives, Open Questions, Scope Notes
+
+Security score 1 must yield a BLOCKER. Correctness = 0 must yield a BLOCKER. Do not compress multiple passes into a single block — show each pass explicitly.`,
     'go-marten': `EVAL CONTEXT: You ARE the go-marten skill executing its workflow. The user wants a safe isolated workspace for a risky auth refactor on a clean git repository. Do not execute commands. Produce:
 1. WORKTREE PLAN block with branch, base, path, and reason
 2. WORKTREE STATE block describing the expected clean state after creation
