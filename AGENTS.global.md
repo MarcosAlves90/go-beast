@@ -238,6 +238,7 @@ phase.
 | go-wren | An existing lifecycle hook needs to be changed — bug fix, new condition, or threshold update |
 | go-smith | A gap in the pack is identified and a new beast is needed |
 | go-tern | Review a diff, task output, or branch against requirements and risk before merge or handoff |
+| go-score | Scored code review with 0–4 dimensional rubric, OIR findings, BLOCKER/WARNING/SUGGESTION/NIT severity, and SCORE_REPORT.md — invoke when a merge verdict with explicit dimensional scores is required |
 | go-marten | Isolated git worktree setup, validation, or cleanup is needed for parallel or risky work |
 | go-finch | An existing go-* skill needs improvement — vague step, missing rule, incomplete output, or eval-driven fix |
 | go-vole | Obsidian vault design, restructuring, plugin configuration, or PKM system setup needed |
