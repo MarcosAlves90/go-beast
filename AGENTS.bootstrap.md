@@ -231,6 +231,7 @@ phase.
 | go-finch | An existing go-* skill needs improvement — vague step, missing rule, incomplete output, or eval-driven fix |
 | go-vole | Obsidian vault design, restructuring, plugin configuration, or PKM system setup needed |
 | go-bee | A multi-agent Workflow script needs to be designed or implemented |
+| go-chat | Technical conversation is needed — code walkthrough, architectural debate, decision support, rubber-duck debugging, or Q&A before work begins or a beast is ready |
 | go-tern | Review a diff, task output, or branch against requirements and risk before merge or handoff |
 | go-score | Scored code review with 0–4 dimensional rubric, OIR findings, BLOCKER/WARNING/SUGGESTION/NIT severity, and SCORE_REPORT.md — invoke when a merge verdict with explicit dimensional scores is required |
 | go-marten | Isolated git worktree setup, validation, or cleanup is needed for parallel or risky work |

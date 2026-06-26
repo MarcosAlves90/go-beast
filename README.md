@@ -95,6 +95,7 @@ Invoked on demand — not bound to a phase.
 | [go-swift](skills/go-swift/SKILL.md) `[Claude Code · Codex · Copilot CLI]` | Creating new lifecycle hook scripts |
 | [go-wren](skills/go-wren/SKILL.md) `[Claude Code · Codex · Copilot CLI]` | Patching an existing lifecycle hook |
 | [go-smith](skills/go-smith/SKILL.md) | A gap in the pack is identified and a new beast is needed |
+| [go-chat](skills/go-chat/SKILL.md) | Technical conversation — code walkthroughs, architectural debates, decision support, rubber-duck debugging, and Q&A before work begins |
 | [go-tern](skills/go-tern/SKILL.md) | Reviewing a diff, task output, or branch before merge or handoff |
 | [go-score](skills/go-score/SKILL.md) | Scored code review — 0–4 per dimension, OIR findings, BLOCKER/WARNING/SUGGESTION/NIT severity, merge verdict |
 | [go-marten](skills/go-marten/SKILL.md) | Setting up and governing isolated git worktrees for risky or parallel work |

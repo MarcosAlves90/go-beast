@@ -124,6 +124,7 @@ go-mule    ← explicit go-beast initialization; invoke before go-mole when Sess
 go-jay     ← AI context files; invoke when instructions cannot express the needed behavior
   └─► go-swift   ← hook automation; invoke after go-jay when shell-level automation is needed
         └─► go-raven  ← includes hooks in CI/CD and onboarding scripts
+go-chat    ← technical conversation; invoke when thinking is the work — before requirements are formal, before options are identified, before a beast is ready
 go-smith   ← skill authoring; invoke when a pack gap is identified
 go-tern    ← code review; invoke after implementation and before merge or handoff
 go-score   ← scored code review; invoke when dimensional scores and a merge verdict are required alongside findings
