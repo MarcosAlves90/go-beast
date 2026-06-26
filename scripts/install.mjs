@@ -91,7 +91,7 @@ const AGENTS = [
   { name: 'cursor',      detect: j(HOME,'.cursor'),           skills: j(HOME,'.cursor','skills'),           globalMd: j(HOME,'.cursor','rules') },
   { name: 'gemini',      detect: j(HOME,'.gemini'),           skills: j(HOME,'.gemini','skills'),           globalMd: j(HOME,'.gemini','GEMINI.md') },
   { name: 'cline',       detect: j(HOME,'.cline'),            skills: j(HOME,'.cline','skills'),            globalMd: j(HOME,'.cline','AGENTS.md') },
-  { name: 'copilot',     detect: j(HOME,'.github','copilot'), skills: j(HOME,'.github','copilot','skills'), globalMd: j(HOME,'.github','copilot-instructions.md') },
+  { name: 'copilot',     detect: j(HOME,'.copilot'),          skills: j(HOME,'.copilot','skills'),          hooks: j(HOME,'.copilot','hooks'), globalMd: j(HOME,'.copilot','instructions','go-beast.md'), hookConfig: j(HOME,'.copilot','hooks','go-beast.json'), hookConfigHint: '~/.copilot/hooks/go-beast.json (wired automatically)' },
   { name: 'codex',       detect: j(HOME,'.codex'),            skills: j(HOME,'.codex','skills'),            hooks: j(HOME,'.codex','hooks'), globalMd: j(HOME,'.codex','AGENTS.md'), hookConfig: j(HOME,'.codex','hooks.json'), hookConfigAlt: j(HOME,'.codex','config.toml'), hookConfigHint: '~/.codex/hooks.json or inline [hooks] in ~/.codex/config.toml, then review with /hooks' },
   { name: 'agents',      detect: j(HOME,'.agents'),           skills: j(HOME,'.agents','skills'),           globalMd: j(HOME,'.agents','AGENTS.md') },
 ]
