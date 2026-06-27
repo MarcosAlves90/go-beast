@@ -9,13 +9,6 @@ export const meta = {
   ],
 }
 
-const {
-  GO_BEAST_REPO_ROOT,
-  readGoBeastVersion,
-  writeMarkdownOutputFile,
-  writeEvalOutputFile,
-} = await import('../scripts/eval-output.mjs')
-
 // ─── Environment discovery ─────────────────────────────────────────────────
 
 const ENV_SCHEMA = {
@@ -39,7 +32,7 @@ const env = args?.home && args?.repoPath
 const REAL_HOME = env.home
 const REPO_ROOT = env.repo_root
 const START_MS = Date.now()
-const GO_BEAST_VERSION = readGoBeastVersion(REPO_ROOT ?? GO_BEAST_REPO_ROOT)
+const GO_BEAST_VERSION = args?.version ?? (await agent(`Run: node -e "process.stdout.write(require('${REPO_ROOT}/package.json').version)" and return only the version string.`, { label: 'discover-version', effort: 'low' }))?.trim() ?? 'unknown'
 const HOOKS_DIR = `${REAL_HOME}/.claude/hooks`
 
 // Each targeted test gets its own isolated HOME to prevent flag-file contamination.
@@ -1033,67 +1026,43 @@ lines.push(`| Adversarially verified failures | ${adversarialResults.filter(Bool
 const reportContent = lines.join('\n')
 const reportPath = `${REPO_ROOT}/workflows/go-workflow-eval-reports/hook-eval-report.md`
 
-writeMarkdownOutputFile({
-  filePath: reportPath,
-  content: reportContent,
-  log,
-})
+await agent(`Save the following Markdown report to the file ${reportPath}.
+Use the Write tool or mcp__filesystem__write_file. Create parent directories if needed.
+Write this exact content (do not modify it):
+
+${reportContent}`, { label: 'write-report', phase: 'Aggregation', effort: 'low' })
 
 log(`Report saved to ${reportPath}`)
 
-writeEvalOutputFile({
-  workflowName: 'go-hook-eval',
-  outputDir: `${REAL_HOME}/.claude/workflows/go-hook-eval/results`,
+const hookEvalPayload = JSON.stringify({
+  schema_version: 1,
+  workflow: 'go-hook-eval',
+  timestamp: new Date().toISOString(),
   summary: {
-    total: valid.length,
-    passed: passed.length,
-    failed: failed.length,
+    total: valid.length, passed: passed.length, failed: failed.length,
     errors: testResults.filter(r => !r).length,
-    confirmed_failures: confirmedFailures.length,
-    spurious_failures: spuriousFailures.length,
-    suites_passed: suitePassCount,
-    suites_total: totalSuites,
-    avg_score: null,
-    estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
+    confirmed_failures: confirmedFailures.length, spurious_failures: spuriousFailures.length,
+    suites_passed: suitePassCount, suites_total: totalSuites,
+    avg_score: null, estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
   },
-  inputs: {
-    filter: null,
-    workflow_version: GO_BEAST_VERSION,
-  },
-  meta: {
-    go_beast_version: GO_BEAST_VERSION,
-    environment: 'claude-code',
-  },
+  inputs: { filter: null, workflow_version: GO_BEAST_VERSION },
+  meta: { go_beast_version: GO_BEAST_VERSION, environment: 'claude-code' },
   detail: {
     type: 'hook-eval',
     runs: valid.map(r => {
       const advEntry = adversarialResults.find(a => a?.test === r.test)
       return {
-        hook: r.test.hook,
-        case_name: r.test.name,
-        expected_exit: r.test.expectExit,
-        result: {
-          passed: r.result?.passed ?? null,
-          exit_code: r.result?.exit_code ?? null,
-          stdout: (r.result?.stdout ?? '').slice(0, 200),
-          stderr: (r.result?.stderr ?? '').slice(0, 200),
-          detail: r.result?.detail ?? null,
-        },
-        adversarial: advEntry ? {
-          run: true,
-          confirmed_failure: advEntry.adversarial?.confirmed_failure ?? null,
-          detail: advEntry.adversarial?.detail ?? null,
-        } : {
-          run: false,
-          confirmed_failure: null,
-          detail: null,
-        },
+        hook: r.test.hook, case_name: r.test.name, expected_exit: r.test.expectExit,
+        result: { passed: r.result?.passed ?? null, exit_code: r.result?.exit_code ?? null, stdout: (r.result?.stdout ?? '').slice(0, 200), stderr: (r.result?.stderr ?? '').slice(0, 200), detail: r.result?.detail ?? null },
+        adversarial: advEntry ? { run: true, confirmed_failure: advEntry.adversarial?.confirmed_failure ?? null, detail: advEntry.adversarial?.detail ?? null } : { run: false, confirmed_failure: null, detail: null },
       }
     }),
   },
-  startedAtMs: START_MS,
-  log,
-})
+}, null, 2)
+const hookEvalOutputDir = `${REAL_HOME}/.claude/workflows/go-hook-eval/results`
+await agent(`Save the following JSON to a timestamped file in ${hookEvalOutputDir}.
+Use the Bash tool: mkdir -p "${hookEvalOutputDir}" && echo '${hookEvalPayload.replace(/'/g, "'\\''")}' > "${hookEvalOutputDir}/go-hook-eval-$(date -u +%Y%m%dT%H%M%S).json"`,
+  { label: 'write-eval-json', phase: 'Aggregation', effort: 'low' })
 
 return {
   suites: { total: totalSuites, passed: suitePassCount, failed: suiteFailed.length },

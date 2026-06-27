@@ -9,15 +9,9 @@ export const meta = {
   ],
 }
 
-const {
-  GO_BEAST_REPO_ROOT,
-  readGoBeastVersion,
-  writeMarkdownOutputFile,
-  writeEvalOutputFile,
-} = await import('../scripts/eval-output.mjs')
-
-const HOME = process?.env?.HOME ?? '.'
-const GO_BEAST_VERSION = readGoBeastVersion(GO_BEAST_REPO_ROOT)
+const HOME = args?.home ?? (await agent('Run: echo "$HOME" and return only the path string.', { label: 'discover-home', effort: 'low' }))?.trim() ?? '~'
+const REPO = args?.repoPath ?? (await agent('Run: git rev-parse --show-toplevel and return only the path string.', { label: 'discover-repo', effort: 'low' }))?.trim() ?? '.'
+const GO_BEAST_VERSION = args?.version ?? (await agent(`Run: node -e "process.stdout.write(require('${REPO}/package.json').version)" and return only the version string.`, { label: 'discover-version', effort: 'low' }))?.trim() ?? 'unknown'
 
 const SKILLS = {
   'go-hawk': {
@@ -1096,18 +1090,20 @@ reportLines.push(`- Runs with errors: ${results.filter(r => !r).length}`)
 
 const reportContent = reportLines.join('\n')
 
-writeMarkdownOutputFile({
-  filePath: `${HOME}/.claude/workflows/go-star-eval/reports/report.md`,
-  content: reportContent,
-  log,
-})
+const reportPath = `${HOME}/.claude/workflows/go-star-eval/reports/report.md`
+await agent(`Save the following Markdown report to the file ${reportPath}.
+Use the Write tool or mcp__filesystem__write_file. Create parent directories if needed.
+Write this exact content (do not modify it):
+
+${reportContent}`, { label: 'write-report', phase: 'Aggregation', effort: 'low' })
 
 log('Report saved to ~/.claude/workflows/go-star-eval/reports/report.md')
 
 // ── JSON output (agent-readable, schema_version 1) ─────────────────────────
-writeEvalOutputFile({
-  workflowName: 'go-skill-eval',
-  outputDir: `${HOME}/.claude/workflows/go-skill-eval/results`,
+const evalPayload = JSON.stringify({
+  schema_version: 1,
+  workflow: 'go-skill-eval',
+  timestamp: new Date().toISOString(),
   summary: {
     total: RUNS.length,
     passed: validResults.filter(r => r.structResult?.pass !== false).length,
@@ -1116,40 +1112,24 @@ writeEvalOutputFile({
     avg_score: parseFloat((skillScores.reduce((s, r) => s + (r.avgScore ?? 0), 0) / (skillScores.filter(r => r.avgScore != null).length || 1)).toFixed(2)),
     estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
   },
-  inputs: {
-    filter: args?.skills ?? null,
-    workflow_version: GO_BEAST_VERSION,
-  },
-  meta: {
-    go_beast_version: GO_BEAST_VERSION,
-    environment: 'claude-code',
-  },
+  inputs: { filter: args?.skills ?? null, workflow_version: GO_BEAST_VERSION },
+  meta: { go_beast_version: GO_BEAST_VERSION, environment: 'claude-code' },
   detail: {
     type: 'skill-eval',
     runs: validResults.map(r => ({
       skill: r.run.skillName,
       input_key: getInputKey(r.run.input),
       input_label: r.run.input.nome ?? null,
-      struct: {
-        pass: r.structResult?.pass ?? null,
-        missing: r.structResult?.missing ?? [],
-        tokens_approx: r.tokens_approx ?? null,
-        latency_ms: r.structResult?.latency_ms ?? null,
-      },
-      judge: r.judgeResult ? {
-        score: r.judgeResult.score ?? null,
-        dimensions: r.judgeResult.dimensions ?? null,
-        rationale: r.judgeResult.rationale ?? null,
-        strengths: r.judgeResult.strengths ?? [],
-        weaknesses: r.judgeResult.weaknesses ?? [],
-      } : null,
-      skipped: false,
-      skip_reason: null,
+      struct: { pass: r.structResult?.pass ?? null, missing: r.structResult?.missing ?? [], tokens_approx: r.tokens_approx ?? null, latency_ms: r.structResult?.latency_ms ?? null },
+      judge: r.judgeResult ? { score: r.judgeResult.score ?? null, dimensions: r.judgeResult.dimensions ?? null, rationale: r.judgeResult.rationale ?? null, strengths: r.judgeResult.strengths ?? [], weaknesses: r.judgeResult.weaknesses ?? [] } : null,
+      skipped: false, skip_reason: null,
     })),
   },
-  startedAtMs: START_MS,
-  log,
-})
+}, null, 2)
+const evalOutputDir = `${HOME}/.claude/workflows/go-skill-eval/results`
+await agent(`Save the following JSON to a timestamped file in ${evalOutputDir}.
+Use the Bash tool: mkdir -p "${evalOutputDir}" && echo '${evalPayload.replace(/'/g, "'\\''")}' > "${evalOutputDir}/go-skill-eval-$(date -u +%Y%m%dT%H%M%S).json"`,
+  { label: 'write-eval-json', phase: 'Aggregation', effort: 'low' })
 
 return {
   totalRuns: RUNS.length,
