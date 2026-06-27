@@ -1,10 +1,3 @@
-import {
-  GO_BEAST_REPO_ROOT,
-  readGoBeastVersion,
-  writeMarkdownOutputFile,
-  writeEvalOutputFile,
-} from '../scripts/eval-output.mjs'
-
 export const meta = {
   name: 'go-workflow-eval',
   description: 'Evaluates go-beast Workflow scripts: reads source via agent, runs structural checklist + LLM-as-judge for code quality, design patterns, and test coverage. Supports args.workflows filter and args.repoPath.',
@@ -15,6 +8,13 @@ export const meta = {
     { title: 'Aggregation', detail: 'Consolidates results and generates report' },
   ],
 }
+
+const {
+  GO_BEAST_REPO_ROOT,
+  readGoBeastVersion,
+  writeMarkdownOutputFile,
+  writeEvalOutputFile,
+} = await import('../scripts/eval-output.mjs')
 
 // args.workflows — array of names to filter, e.g. ['go-skill-eval']. Default: all.
 // args.repoPath  — absolute path to go-beast repo root. Falls back to process.cwd().

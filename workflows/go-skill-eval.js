@@ -1,10 +1,3 @@
-import {
-  GO_BEAST_REPO_ROOT,
-  readGoBeastVersion,
-  writeMarkdownOutputFile,
-  writeEvalOutputFile,
-} from '../scripts/eval-output.mjs'
-
 export const meta = {
   name: 'go-skill-eval',
   description: 'Tests all go-* skills with structural eval + LLM-as-judge and A/B/C/D benchmark',
@@ -15,6 +8,13 @@ export const meta = {
     { title: 'Aggregation', detail: 'Consolidates results and generates report' },
   ],
 }
+
+const {
+  GO_BEAST_REPO_ROOT,
+  readGoBeastVersion,
+  writeMarkdownOutputFile,
+  writeEvalOutputFile,
+} = await import('../scripts/eval-output.mjs')
 
 const HOME = process?.env?.HOME ?? '.'
 const GO_BEAST_VERSION = readGoBeastVersion(GO_BEAST_REPO_ROOT)

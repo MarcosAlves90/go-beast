@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `workflows/go-skill-eval.js`, `workflows/go-hook-eval.js`, `workflows/go-workflow-eval.js` — moved the `import` statement from the top of each file to a `const { ... } = await import(...)` dynamic import placed after `export const meta`. The Workflow tool requires `export const meta` to be the first statement in any script loaded via `scriptPath`; a static `import` before `meta` caused the tool to reject the script with "meta must be the FIRST statement". Behavior and output are unchanged — the same symbols are imported from the same module; only the placement and import syntax changed.
+
 ## [1.44.0] - 2026-06-26
 
 ### Added
