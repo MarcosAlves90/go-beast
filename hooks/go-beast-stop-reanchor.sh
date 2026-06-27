@@ -34,6 +34,7 @@ if [[ "$mode" != "bootstrap" ]]; then
 fi
 
 active_beast="$(printf '%s' "$state" | jq -r '.active_beast // empty')"
+[[ -z "$active_beast" ]] && active_beast="go-chat"
 required_artifact="$(printf '%s' "$state" | jq -r '.required_artifact // empty')"
 task_state="$(printf '%s' "$state" | jq -r '.task_state // "active"')"
 unanchored_stop_count="$(printf '%s' "$state" | jq -r '.unanchored_stop_count // 0')"

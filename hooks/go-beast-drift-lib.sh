@@ -70,7 +70,7 @@ gb_default_state_json() {
       cwd: $cwd,
       harness: $harness,
       mode: $mode,
-      active_beast: "",
+      active_beast: "go-chat",
       required_artifact: "",
       implementation_unlocked: false,
       task_id: "",

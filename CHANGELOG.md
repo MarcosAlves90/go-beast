@@ -9,6 +9,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `hooks/go-beast-drift-lib.sh` — `gb_default_state_json` now initializes `active_beast` to `"go-chat"` instead of `""`. New sessions start with go-chat as the active skill.
+- `hooks/go-beast-user-prompt-context.sh` — added `elif [[ -z "$active_beast" ]]` fallback: when no beast is detected in the prompt and none is persisted in state, `active_beast` defaults to `go-chat` and the state is saved. Removed the "If the active beast is unclear" fallback message — go-beast now always has an active beast. Each turn without an explicit beast reference falls back dynamically to go-chat.
+- `hooks/go-beast-stop-reanchor.sh` — added `[[ -z "$active_beast" ]] && active_beast="go-chat"` guard after loading state, covering legacy sessions with an empty `active_beast` field.
+
 ## [1.45.0] - 2026-06-27
 
 ### Changed

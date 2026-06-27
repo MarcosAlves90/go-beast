@@ -45,6 +45,16 @@ if [[ -n "$prompt_beast" ]]; then
     | .unanchored_stop_count = 0
     | .updated_at = $now')"
   gb_save_state_json "$session_id" "$state"
+elif [[ -z "$active_beast" ]]; then
+  # No beast in prompt and none persisted — default to go-chat so go-beast
+  # is never without an active skill.
+  active_beast="go-chat"
+  state="$(printf '%s' "$state" | jq \
+    --arg beast "$active_beast" \
+    --arg now "$(gb_now_utc)" \
+    '.active_beast = $beast
+    | .updated_at = $now')"
+  gb_save_state_json "$session_id" "$state"
 fi
 
 context="go-beast re-anchor: keep the current task state, active beast, required artifact, and implementation gate in working memory."
@@ -54,8 +64,6 @@ fi
 context="${context} Task state: ${task_state}."
 if [[ -n "$active_beast" ]]; then
   context="${context} Active beast: ${active_beast}."
-else
-  context="${context} If the active beast is unclear, re-anchor from the latest verified artifact before acting."
 fi
 if [[ -n "$required_artifact" ]]; then
   if [[ "$implementation_unlocked" == "true" ]]; then
