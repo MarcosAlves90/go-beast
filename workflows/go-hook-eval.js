@@ -1,10 +1,3 @@
-import {
-  GO_BEAST_REPO_ROOT,
-  readGoBeastVersion,
-  writeMarkdownOutputFile,
-  writeEvalOutputFile,
-} from '../scripts/eval-output.mjs'
-
 export const meta = {
   name: 'go-hook-eval',
   description: 'Tests go-beast hooks: authoritative shell suites, targeted cases, harness variants, channel separation, adversarial verify',
@@ -15,6 +8,13 @@ export const meta = {
     { title: 'Aggregation', detail: 'Consolidate results and write report' },
   ],
 }
+
+const {
+  GO_BEAST_REPO_ROOT,
+  readGoBeastVersion,
+  writeMarkdownOutputFile,
+  writeEvalOutputFile,
+} = await import('../scripts/eval-output.mjs')
 
 // ─── Environment discovery ─────────────────────────────────────────────────
 
