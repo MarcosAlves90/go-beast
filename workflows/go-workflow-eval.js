@@ -86,7 +86,7 @@ if (RUNS.length === 0) {
 
 const HOME = args?.home ?? (await agent('Run: echo "$HOME" and return only the path string.', { label: 'discover-home', effort: 'low' }))?.trim() ?? '~'
 const REPO = args?.repoPath ?? (await agent('Run: git rev-parse --show-toplevel and return only the path string.', { label: 'discover-repo', effort: 'low' }))?.trim() ?? '.'
-const START_MS = Date.now()
+const START_MS = args?.startedAtMs ?? 0
 const GO_BEAST_VERSION = args?.version ?? (await agent(`Run: node -e "process.stdout.write(require('${REPO}/package.json').version)" and return only the version string.`, { label: 'discover-version', effort: 'low' }))?.trim() ?? 'unknown'
 
 phase('Source Collection')
@@ -298,7 +298,7 @@ log(`Report saved to ${reportPath}`)
 const evalPayload = JSON.stringify({
   schema_version: 1,
   workflow: 'go-workflow-eval',
-  timestamp: new Date().toISOString(),
+  timestamp: args?.timestamp ?? 'unknown',
   summary: {
     total: valid.length,
     passed: valid.filter(r => r.structResult?.pass !== false).length,

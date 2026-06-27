@@ -1103,7 +1103,7 @@ log('Report saved to ~/.claude/workflows/go-star-eval/reports/report.md')
 const evalPayload = JSON.stringify({
   schema_version: 1,
   workflow: 'go-skill-eval',
-  timestamp: new Date().toISOString(),
+  timestamp: args?.timestamp ?? 'unknown',
   summary: {
     total: RUNS.length,
     passed: validResults.filter(r => r.structResult?.pass !== false).length,

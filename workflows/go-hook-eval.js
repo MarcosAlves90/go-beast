@@ -31,7 +31,7 @@ const env = args?.home && args?.repoPath
 
 const REAL_HOME = env.home
 const REPO_ROOT = env.repo_root
-const START_MS = Date.now()
+const START_MS = args?.startedAtMs ?? 0
 const GO_BEAST_VERSION = args?.version ?? (await agent(`Run: node -e "process.stdout.write(require('${REPO_ROOT}/package.json').version)" and return only the version string.`, { label: 'discover-version', effort: 'low' }))?.trim() ?? 'unknown'
 const HOOKS_DIR = `${REAL_HOME}/.claude/hooks`
 
@@ -1037,7 +1037,7 @@ log(`Report saved to ${reportPath}`)
 const hookEvalPayload = JSON.stringify({
   schema_version: 1,
   workflow: 'go-hook-eval',
-  timestamp: new Date().toISOString(),
+  timestamp: args?.timestamp ?? 'unknown',
   summary: {
     total: valid.length, passed: passed.length, failed: failed.length,
     errors: testResults.filter(r => !r).length,
