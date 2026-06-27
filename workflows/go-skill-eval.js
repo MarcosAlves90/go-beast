@@ -120,7 +120,7 @@ const SKILLS = {
   },
   'go-score': {
     description: 'Conducts a multi-pass code review with structured scoring across seven dimensions (correctness, security, maintainability, testability, performance, design, observability), applies a calibrated 0–4 rubric per dimension, produces OIR-structured findings with BLOCKER/WARNING/SUGGESTION/NIT severity classification, and emits a SCORE_REPORT.md with a dimensional scorecard and a merge verdict.',
-    checklist: ['SCORE_REPORT.md', 'Scorecard', 'Correctness', 'Security', 'Maintainability', 'Composite', 'BLOCKER', 'WARNING', 'OIR', 'Verdict', 'Positives'],
+    checklist: ['SCORE_REPORT.md', 'Scorecard', 'Correctness', 'Security', 'Maintainability', 'Composite', 'BLOCKER', 'WARNING', 'OIR', 'Verdict', 'Positives', 'Calibration'],
   },
   'go-chat': {
     description: 'Conducts structured technical conversations — code walkthroughs, architectural debates, decision support, rubber-duck debugging, and Q&A — using mode-aware dialogue, one-question-per-turn discipline, explicit assumption labeling, and escalation signals that hand off to the right beast when a conversation has produced enough to warrant a formal artifact.',
@@ -488,9 +488,12 @@ Security score 1 must yield a BLOCKER. Correctness = 0 must yield a BLOCKER. Do 
 Developer message: "I've been going back and forth on whether to use a job queue (like BullMQ) or just a database table with a polling worker for our background email sending. The emails aren't time-sensitive — we're talking about welcome emails and weekly digest sends. I've seen both approaches work but I want to make sure I'm not missing something obvious."
 
 Execute go-chat's complete workflow and produce ALL required artifacts:
+0. Required opening markers — these two lines must appear first, before anything else:
+   **Mode:** [active mode] — [one sentence justifying the mode choice]
+   **Paraphrase:** [developer's request in one sentence]. Correct me if that's off.
 1. Mode identification: which mode is active and why (debate vs decision-support vs explanation)
 2. Ambiguity check: is there anything underspecified that would change the response? If yes, state the single clarifying question you would ask. If no, state why you can proceed.
-3. Assumption labeling: name at least two assumptions embedded in this scenario before proceeding
+3. Assumption labeling: name at least two assumptions embedded in this scenario — each on its own line as **Assumption:** [statement]. If [X] is not true, [what changes].
 4. Mode-appropriate response: for the identified mode, produce the full structured response — for debate mode this means explicit argument for queue, argument for polling table, cases where each wins, cases where it depends, and a conditional lean; for decision-support mode this means establishing reversibility, eliciting criteria, running a brief pre-mortem, and deferring the decision
 5. Escalation check: does this conversation show any signal that warrants handing off to go-lark or go-hawk? State yes/no with justification
 6. Handoff summary (if escalation is warranted): what has been decided, what is open, what has been ruled out, which beast should run next
