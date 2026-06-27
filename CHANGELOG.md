@@ -9,9 +9,11 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.44.2] - 2026-06-27
+
 ### Fixed
 
-- `workflows/go-skill-eval.js`, `workflows/go-hook-eval.js`, `workflows/go-workflow-eval.js` — eliminated dependency on `eval-output.mjs` entirely. The Workflow sandbox does not support any form of `import` (static or dynamic), so the prior `await import('../scripts/eval-output.mjs')` fix was itself broken at runtime. Root cause: the sandbox provides only `agent`, `parallel`, `pipeline`, `phase`, `log`, `args`, `budget`, and `workflow` — no Node.js globals, no filesystem, no `import`. Fix: replaced `GO_BEAST_REPO_ROOT`/`readGoBeastVersion` with lightweight `agent()` discovery calls; replaced `writeMarkdownOutputFile`/`writeEvalOutputFile` with inline `JSON.stringify` + `agent()` calls that write via Bash/filesystem tools. Updated `go-workflow-eval.js` checklists and judge prompts to match the new `write-report`/`write-eval-json` label pattern.
+- `workflows/go-skill-eval.js`, `workflows/go-hook-eval.js`, `workflows/go-workflow-eval.js` — eliminated dependency on `eval-output.mjs` entirely. The Workflow sandbox provides only `agent`, `parallel`, `pipeline`, `phase`, `log`, `args`, `budget`, and `workflow` — no Node.js globals, no filesystem, no `import` of any kind. The prior fix (#37, `await import()`) resolved the parser rejection but failed at runtime for the same reason. Fix: replaced `GO_BEAST_REPO_ROOT`/`readGoBeastVersion` with lightweight `agent()` discovery calls; replaced `writeMarkdownOutputFile` with `agent()` filesystem write; removed `writeEvalOutputFile` entirely (workflow `return` serves the same purpose; large payload via prompt interpolation caused subagent idle). Also removed `Date.now()`/`new Date()` (prohibited in sandbox — breaks resume determinism). Validated end-to-end: `go-skill-eval` runs `go-chat` and `go-score` with `errors: 0`.
 
 ## [1.44.1] - 2026-06-27
 
