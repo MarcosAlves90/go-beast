@@ -1099,41 +1099,6 @@ ${reportContent}`, { label: 'write-report', phase: 'Aggregation', effort: 'low' 
 
 log('Report saved to ~/.claude/workflows/go-star-eval/reports/report.md')
 
-// ── JSON output (agent-readable, schema_version 1) ─────────────────────────
-const evalPayload = JSON.stringify({
-  schema_version: 1,
-  workflow: 'go-skill-eval',
-  timestamp: args?.timestamp ?? 'unknown',
-  summary: {
-    total: RUNS.length,
-    passed: validResults.filter(r => r.structResult?.pass !== false).length,
-    failed: structFails.length,
-    errors: results.filter(r => !r).length,
-    avg_score: parseFloat((skillScores.reduce((s, r) => s + (r.avgScore ?? 0), 0) / (skillScores.filter(r => r.avgScore != null).length || 1)).toFixed(2)),
-    estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
-  },
-  inputs: { filter: args?.skills ?? null, workflow_version: GO_BEAST_VERSION },
-  meta: { go_beast_version: GO_BEAST_VERSION, environment: 'claude-code' },
-  detail: {
-    type: 'skill-eval',
-    runs: validResults.map(r => ({
-      skill: r.run.skillName,
-      input_key: getInputKey(r.run.input),
-      input_label: r.run.input.nome ?? null,
-      struct: { pass: r.structResult?.pass ?? null, missing: r.structResult?.missing ?? [], tokens_approx: r.tokens_approx ?? null, latency_ms: r.structResult?.latency_ms ?? null },
-      judge: r.judgeResult ? { score: r.judgeResult.score ?? null, dimensions: r.judgeResult.dimensions ?? null, rationale: r.judgeResult.rationale ?? null, strengths: r.judgeResult.strengths ?? [], weaknesses: r.judgeResult.weaknesses ?? [] } : null,
-      skipped: false, skip_reason: null,
-    })),
-  },
-}, null, 2)
-const evalOutputDir = `${HOME}/.claude/workflows/go-skill-eval/results`
-const evalOutputPath = `${evalOutputDir}/go-skill-eval-${args?.runId ?? 'run'}.json`
-await agent(`Save the following JSON to the file ${evalOutputPath}.
-Use the Write tool or mcp__filesystem__write_file. Create parent directories if needed.
-Write this exact content (do not modify it):
-
-${evalPayload}`, { label: 'write-eval-json', phase: 'Aggregation', effort: 'low' })
-
 return {
   totalRuns: RUNS.length,
   validResults: validResults.length,

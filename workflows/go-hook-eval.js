@@ -31,7 +31,6 @@ const env = args?.home && args?.repoPath
 
 const REAL_HOME = env.home
 const REPO_ROOT = env.repo_root
-const START_MS = args?.startedAtMs ?? 0
 const GO_BEAST_VERSION = args?.version ?? (await agent(`Run: node -e "process.stdout.write(require('${REPO_ROOT}/package.json').version)" and return only the version string.`, { label: 'discover-version', effort: 'low' }))?.trim() ?? 'unknown'
 const HOOKS_DIR = `${REAL_HOME}/.claude/hooks`
 
@@ -1033,39 +1032,6 @@ Write this exact content (do not modify it):
 ${reportContent}`, { label: 'write-report', phase: 'Aggregation', effort: 'low' })
 
 log(`Report saved to ${reportPath}`)
-
-const hookEvalPayload = JSON.stringify({
-  schema_version: 1,
-  workflow: 'go-hook-eval',
-  timestamp: args?.timestamp ?? 'unknown',
-  summary: {
-    total: valid.length, passed: passed.length, failed: failed.length,
-    errors: testResults.filter(r => !r).length,
-    confirmed_failures: confirmedFailures.length, spurious_failures: spuriousFailures.length,
-    suites_passed: suitePassCount, suites_total: totalSuites,
-    avg_score: null, estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
-  },
-  inputs: { filter: null, workflow_version: GO_BEAST_VERSION },
-  meta: { go_beast_version: GO_BEAST_VERSION, environment: 'claude-code' },
-  detail: {
-    type: 'hook-eval',
-    runs: valid.map(r => {
-      const advEntry = adversarialResults.find(a => a?.test === r.test)
-      return {
-        hook: r.test.hook, case_name: r.test.name, expected_exit: r.test.expectExit,
-        result: { passed: r.result?.passed ?? null, exit_code: r.result?.exit_code ?? null, stdout: (r.result?.stdout ?? '').slice(0, 200), stderr: (r.result?.stderr ?? '').slice(0, 200), detail: r.result?.detail ?? null },
-        adversarial: advEntry ? { run: true, confirmed_failure: advEntry.adversarial?.confirmed_failure ?? null, detail: advEntry.adversarial?.detail ?? null } : { run: false, confirmed_failure: null, detail: null },
-      }
-    }),
-  },
-}, null, 2)
-const hookEvalOutputDir = `${REAL_HOME}/.claude/workflows/go-hook-eval/results`
-const hookEvalOutputPath = `${hookEvalOutputDir}/go-hook-eval-${args?.runId ?? 'run'}.json`
-await agent(`Save the following JSON to the file ${hookEvalOutputPath}.
-Use the Write tool or mcp__filesystem__write_file. Create parent directories if needed.
-Write this exact content (do not modify it):
-
-${hookEvalPayload}`, { label: 'write-eval-json', phase: 'Aggregation', effort: 'low' })
 
 return {
   suites: { total: totalSuites, passed: suitePassCount, failed: suiteFailed.length },

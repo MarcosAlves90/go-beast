@@ -86,7 +86,6 @@ if (RUNS.length === 0) {
 
 const HOME = args?.home ?? (await agent('Run: echo "$HOME" and return only the path string.', { label: 'discover-home', effort: 'low' }))?.trim() ?? '~'
 const REPO = args?.repoPath ?? (await agent('Run: git rev-parse --show-toplevel and return only the path string.', { label: 'discover-repo', effort: 'low' }))?.trim() ?? '.'
-const START_MS = args?.startedAtMs ?? 0
 const GO_BEAST_VERSION = args?.version ?? (await agent(`Run: node -e "process.stdout.write(require('${REPO}/package.json').version)" and return only the version string.`, { label: 'discover-version', effort: 'low' }))?.trim() ?? 'unknown'
 
 phase('Source Collection')
@@ -293,41 +292,6 @@ Write this exact content (do not modify it):
 ${reportContent}`, { label: 'write-report', phase: 'Aggregation', effort: 'low' })
 
 log(`Report saved to ${reportPath}`)
-
-// ── JSON output (agent-readable, schema_version 1) ─────────────────────────
-const evalPayload = JSON.stringify({
-  schema_version: 1,
-  workflow: 'go-workflow-eval',
-  timestamp: args?.timestamp ?? 'unknown',
-  summary: {
-    total: valid.length,
-    passed: valid.filter(r => r.structResult?.pass !== false).length,
-    failed: valid.filter(r => r.structResult?.pass === false).length,
-    errors: results.filter(r => !r).length,
-    avg_score: parseFloat(avgScore.toFixed(2)),
-    estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
-  },
-  inputs: { filter: args?.workflows ?? null, workflow_version: GO_BEAST_VERSION },
-  meta: { go_beast_version: GO_BEAST_VERSION, environment: 'claude-code' },
-  detail: {
-    type: 'workflow-eval',
-    runs: valid.map(r => ({
-      workflow: r.name,
-      type: r.wf.type,
-      total_lines: r.extracted?.total_lines ?? null,
-      struct: { pass: r.structResult?.pass ?? null, missing: r.structResult?.missing ?? [], issues: r.structResult?.issues ?? [] },
-      judge: r.judgeResult ? { score: r.judgeResult.score ?? null, dimensions: r.judgeResult.dimensions ?? null, rationale: r.judgeResult.rationale ?? null, strengths: r.judgeResult.strengths ?? [], weaknesses: r.judgeResult.weaknesses ?? [] } : null,
-    })),
-  },
-  startedAtMs: START_MS,
-}, null, 2)
-const evalOutputDir = `${HOME}/.claude/workflows/go-workflow-eval/results`
-const evalOutputPath = `${evalOutputDir}/go-workflow-eval-${args?.runId ?? 'run'}.json`
-await agent(`Save the following JSON to the file ${evalOutputPath}.
-Use the Write tool or mcp__filesystem__write_file. Create parent directories if needed.
-Write this exact content (do not modify it):
-
-${evalPayload}`, { label: 'write-eval-json', phase: 'Aggregation', effort: 'low' })
 
 return {
   total: valid.length,
