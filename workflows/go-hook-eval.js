@@ -1060,9 +1060,12 @@ const hookEvalPayload = JSON.stringify({
   },
 }, null, 2)
 const hookEvalOutputDir = `${REAL_HOME}/.claude/workflows/go-hook-eval/results`
-await agent(`Save the following JSON to a timestamped file in ${hookEvalOutputDir}.
-Use the Bash tool: mkdir -p "${hookEvalOutputDir}" && echo '${hookEvalPayload.replace(/'/g, "'\\''")}' > "${hookEvalOutputDir}/go-hook-eval-$(date -u +%Y%m%dT%H%M%S).json"`,
-  { label: 'write-eval-json', phase: 'Aggregation', effort: 'low' })
+const hookEvalOutputPath = `${hookEvalOutputDir}/go-hook-eval-${args?.runId ?? 'run'}.json`
+await agent(`Save the following JSON to the file ${hookEvalOutputPath}.
+Use the Write tool or mcp__filesystem__write_file. Create parent directories if needed.
+Write this exact content (do not modify it):
+
+${hookEvalPayload}`, { label: 'write-eval-json', phase: 'Aggregation', effort: 'low' })
 
 return {
   suites: { total: totalSuites, passed: suitePassCount, failed: suiteFailed.length },

@@ -1127,9 +1127,12 @@ const evalPayload = JSON.stringify({
   },
 }, null, 2)
 const evalOutputDir = `${HOME}/.claude/workflows/go-skill-eval/results`
-await agent(`Save the following JSON to a timestamped file in ${evalOutputDir}.
-Use the Bash tool: mkdir -p "${evalOutputDir}" && echo '${evalPayload.replace(/'/g, "'\\''")}' > "${evalOutputDir}/go-skill-eval-$(date -u +%Y%m%dT%H%M%S).json"`,
-  { label: 'write-eval-json', phase: 'Aggregation', effort: 'low' })
+const evalOutputPath = `${evalOutputDir}/go-skill-eval-${args?.runId ?? 'run'}.json`
+await agent(`Save the following JSON to the file ${evalOutputPath}.
+Use the Write tool or mcp__filesystem__write_file. Create parent directories if needed.
+Write this exact content (do not modify it):
+
+${evalPayload}`, { label: 'write-eval-json', phase: 'Aggregation', effort: 'low' })
 
 return {
   totalRuns: RUNS.length,
