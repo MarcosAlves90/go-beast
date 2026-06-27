@@ -9,6 +9,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `skills/go-chat/SKILL.md` (v1.1.0) — added mandatory `**Mode:**` and `**Paraphrase:**` output markers that must open every response (resolves struct eval miss on `paraphrase`); added `**Assumption:**` marker convention; hardened one-question gate (question is the entire response — no partial answer alongside the question); added Step 8 self-check pass enumerating all compliance items; updated Rules section to reference markers explicitly. Techniques applied: artifact-based output enforcement, gate patterns with negative-space instruction, self-check step (Anthropic prompting docs 2025).
+
+- `skills/go-score/SKILL.md` (v1.1.0) — added Step 6 dimension completeness gate (enumerate all scored dimensions before calibration; missing dimension = scope gap, must return to Step 4); made `## Calibration` section mandatory in SCORE_REPORT.md template with explicit per-score challenge format; moved `## Calibration` into report template after `## Positives`; added Step 9 self-check gate (7-item checklist before writing report); added Honesty requirement section; updated Rules to make Positives and Calibration sections non-negotiable. Techniques applied: gate patterns with checklist format, mandatory visible artifact per phase, honesty contract (Anthropic Constitutional AI pattern).
+
 ## [1.44.2] - 2026-06-27
 
 ### Fixed
