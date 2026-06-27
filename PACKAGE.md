@@ -2,7 +2,7 @@
 
 ```
 name:    go-beast
-version: 1.44.1
+version: 1.44.2
 date:    2026-06-27
 author:  MarcosAlves90
 type:    skill-pack
