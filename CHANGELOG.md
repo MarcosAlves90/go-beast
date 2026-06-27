@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.44.0] - 2026-06-26
+
 ### Added
 
 - `skills/go-chat/` — new meta-skill for structured technical conversation. Covers six modes (explanation, debate, decision support, rubber-duck debugging, code Q&A, architecture); enforces one-question-per-turn; requires explicit assumption labeling before building on assumptions; runs mode-appropriate patterns (scaffolded explanation, explicit debate chain, structured decision space with pre-mortem, minimal rubber-duck intervention, confidence-labeled code claims); includes anti-sycophancy calibration (position change only on new information, not pushback); runs escalation-signal checks every 4–6 exchanges with named handoff to go-hawk, go-lark, go-fox, go-tern, or go-score; produces a handoff summary when escalation is confirmed. Invoke when thinking is the work — before a beast is ready or requirements are formal.
