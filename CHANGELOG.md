@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `workflows/go-skill-eval.js`, `workflows/go-hook-eval.js`, `workflows/go-workflow-eval.js` — eliminated dependency on `eval-output.mjs` entirely. The Workflow sandbox does not support any form of `import` (static or dynamic), so the prior `await import('../scripts/eval-output.mjs')` fix was itself broken at runtime. Root cause: the sandbox provides only `agent`, `parallel`, `pipeline`, `phase`, `log`, `args`, `budget`, and `workflow` — no Node.js globals, no filesystem, no `import`. Fix: replaced `GO_BEAST_REPO_ROOT`/`readGoBeastVersion` with lightweight `agent()` discovery calls; replaced `writeMarkdownOutputFile`/`writeEvalOutputFile` with inline `JSON.stringify` + `agent()` calls that write via Bash/filesystem tools. Updated `go-workflow-eval.js` checklists and judge prompts to match the new `write-report`/`write-eval-json` label pattern.
+
 ## [1.44.1] - 2026-06-27
 
 ### Fixed

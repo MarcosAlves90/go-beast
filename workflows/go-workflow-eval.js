@@ -9,13 +9,6 @@ export const meta = {
   ],
 }
 
-const {
-  GO_BEAST_REPO_ROOT,
-  readGoBeastVersion,
-  writeMarkdownOutputFile,
-  writeEvalOutputFile,
-} = await import('../scripts/eval-output.mjs')
-
 // args.workflows — array of names to filter, e.g. ['go-skill-eval']. Default: all.
 // args.repoPath  — absolute path to go-beast repo root. Falls back to process.cwd().
 
@@ -23,12 +16,12 @@ const WORKFLOWS = {
   'go-skill-eval': {
     description: 'Evaluates all go-* skills with structural checklist, LLM-as-judge, and adversarial A/B/C/D inputs.',
     type: 'skill-eval',
-    checklist: ['SKILLS', 'skillOverrides', 'FILESYSTEM_SKILLS', 'pipeline', 'STRUCT_SCHEMA', 'JUDGE_SCHEMA', 'label', 'return', 'writeMarkdownOutputFile', 'writeEvalOutputFile'],
+    checklist: ['SKILLS', 'skillOverrides', 'FILESYSTEM_SKILLS', 'pipeline', 'STRUCT_SCHEMA', 'JUDGE_SCHEMA', 'label', 'return', 'write-report', 'write-eval-json'],
   },
   'go-hook-eval': {
     description: 'Tests go-beast hooks with positive, negative, and edge cases including jq fallback and stop_hook_active.',
     type: 'hook-eval',
-    checklist: ['TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'parallel', 'return', 'setup', 'writeMarkdownOutputFile', 'writeEvalOutputFile'],
+    checklist: ['TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'parallel', 'return', 'setup', 'write-report', 'write-eval-json'],
   },
   'go-deep-analysis': {
     description: 'Performs deep multi-dimensional analysis of a codebase and produces a complete Markdown document for each dimension: architecture, security, performance, testing, documentation gaps, and dependency health.',
@@ -91,10 +84,9 @@ if (RUNS.length === 0) {
   return { total: 0, results: [] }
 }
 
-const REPO = args?.repoPath ?? GO_BEAST_REPO_ROOT
-const HOME = process?.env?.HOME ?? '.'
-const START_MS = Date.now()
-const GO_BEAST_VERSION = readGoBeastVersion(REPO)
+const HOME = args?.home ?? (await agent('Run: echo "$HOME" and return only the path string.', { label: 'discover-home', effort: 'low' }))?.trim() ?? '~'
+const REPO = args?.repoPath ?? (await agent('Run: git rev-parse --show-toplevel and return only the path string.', { label: 'discover-repo', effort: 'low' }))?.trim() ?? '.'
+const GO_BEAST_VERSION = args?.version ?? (await agent(`Run: node -e "process.stdout.write(require('${REPO}/package.json').version)" and return only the version string.`, { label: 'discover-version', effort: 'low' }))?.trim() ?? 'unknown'
 
 phase('Source Collection')
 log(`Reading ${RUNS.length} workflow source file(s)...`)
@@ -121,7 +113,7 @@ Extract:
 - agent_calls_sample: first label from each distinct agent() call (up to 15) — look for both label: '...' and label: \`...\` patterns
 - has_return: does the file end with a return statement?
 - total_lines: approximate line count
-- patterns_found: which of these appear anywhere: ['pipeline', 'parallel', 'filter(Boolean)', 'skillOverrides', 'FILESYSTEM_SKILLS', 'TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'setup', 'label', 'schema', 'DIMENSIONS', 'outputDir', 'repoPath', 'args?.repoPath', 'args?.outputDir', 'writeMarkdownOutputFile', 'writeEvalOutputFile']`,
+- patterns_found: which of these appear anywhere: ['pipeline', 'parallel', 'filter(Boolean)', 'skillOverrides', 'FILESYSTEM_SKILLS', 'TESTS', 'expectExit', 'expectOutput', 'stop_hook_active', 'setup', 'label', 'schema', 'DIMENSIONS', 'outputDir', 'repoPath', 'args?.repoPath', 'args?.outputDir', 'write-report', 'write-eval-json']`,
       { label: `extract:${name}`, phase: 'Source Collection', schema: EXTRACT_SCHEMA }
     )
     if (!extracted) {
@@ -180,15 +172,15 @@ Return ONLY the structured JSON.`,
 - Is FILESYSTEM_SKILLS present in patterns_found? (controls which skills get real-file inputs)
 - Are there 4+ phases in phases_called (Skill Execution, Structural Eval, LLM Judge, Aggregation)?
 - Are STRUCT_SCHEMA and JUDGE_SCHEMA both declared (check schemas)?
-- Does patterns_found include writeMarkdownOutputFile or writeEvalOutputFile for direct report persistence?
-- Does the workflow persist the report directly via the shared Markdown writer?`
+- Does agent_calls_sample include 'write-report' and 'write-eval-json'? (direct I/O via agent() — replaces writeMarkdownOutputFile/writeEvalOutputFile)
+- Does the workflow persist the report and JSON via agent() calls?`
       : `This is a HOOK TEST HARNESS. Judge based on the extract:
 - Is TESTS present in patterns_found? (the test cases array)
 - Are both expectExit patterns present (blocking exit:1 AND passing exit:0)?
 - Is stop_hook_active present (prevents infinite loops)?
 - Is setup present (for test isolation — creating/removing files before test)?
 - Are parallel and filter(Boolean) present (parallel execution, null guard)?
-- Does patterns_found include writeMarkdownOutputFile or writeEvalOutputFile for direct report persistence?`
+- Does agent_calls_sample include 'write-report' and 'write-eval-json'? (direct I/O via agent() — replaces writeMarkdownOutputFile/writeEvalOutputFile)`
 
     const judgeResult = await agent(
       `You are an adversarial code reviewer evaluating the Workflow script "${name}".
@@ -293,57 +285,13 @@ for (const r of valid) {
 const reportContent = reportLines.join('\n')
 const reportPath = `${REPO}/workflows/go-workflow-eval-reports/report.md`
 
-writeMarkdownOutputFile({
-  filePath: reportPath,
-  content: reportContent,
-  log,
-})
+await agent(`Save the following Markdown report to the file ${reportPath}.
+Use the Write tool or mcp__filesystem__write_file. Create parent directories if needed.
+Write this exact content (do not modify it):
+
+${reportContent}`, { label: 'write-report', phase: 'Aggregation', effort: 'low' })
 
 log(`Report saved to ${reportPath}`)
-
-// ── JSON output (agent-readable, schema_version 1) ─────────────────────────
-writeEvalOutputFile({
-  workflowName: 'go-workflow-eval',
-  outputDir: `${HOME}/.claude/workflows/go-workflow-eval/results`,
-  summary: {
-    total: valid.length,
-    passed: valid.filter(r => r.structResult?.pass !== false).length,
-    failed: valid.filter(r => r.structResult?.pass === false).length,
-    errors: results.filter(r => !r).length,
-    avg_score: parseFloat(avgScore.toFixed(2)),
-    estimated_cost_usd: parseFloat(estimatedCostUSD.toFixed(4)),
-  },
-  inputs: {
-    filter: args?.workflows ?? null,
-    workflow_version: GO_BEAST_VERSION,
-  },
-  meta: {
-    go_beast_version: GO_BEAST_VERSION,
-    environment: 'claude-code',
-  },
-  detail: {
-    type: 'workflow-eval',
-    runs: valid.map(r => ({
-      workflow: r.name,
-      type: r.wf.type,
-      total_lines: r.extracted?.total_lines ?? null,
-      struct: {
-        pass: r.structResult?.pass ?? null,
-        missing: r.structResult?.missing ?? [],
-        issues: r.structResult?.issues ?? [],
-      },
-      judge: r.judgeResult ? {
-        score: r.judgeResult.score ?? null,
-        dimensions: r.judgeResult.dimensions ?? null,
-        rationale: r.judgeResult.rationale ?? null,
-        strengths: r.judgeResult.strengths ?? [],
-        weaknesses: r.judgeResult.weaknesses ?? [],
-      } : null,
-    })),
-  },
-  startedAtMs: START_MS,
-  log,
-})
 
 return {
   total: valid.length,
