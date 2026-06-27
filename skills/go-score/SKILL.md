@@ -1,6 +1,6 @@
 ---
 name: go-score
-version: 1.0.0
+version: 1.1.0
 description: Conducts a multi-pass code review with structured scoring across seven dimensions (correctness, security, maintainability, testability, performance, design, observability), applies a calibrated 0–4 rubric per dimension, produces OIR-structured findings with BLOCKER/WARNING/SUGGESTION/NIT severity classification, and emits a SCORE_REPORT.md with a dimensional scorecard and a merge verdict.
 when_to_use: Use when a change, diff, branch, or PR needs an evidence-based quality assessment with explicit scores and a merge verdict — not just a list of findings. Invoke after go-wolf, go-lynx, go-swift, or any change-producing beast when the caller needs dimensional accountability. Invoke go-tern instead when only a pass/fail merge recommendation is required without scoring.
 ---
@@ -14,7 +14,7 @@ go-score reads every changed line before scoring any of them. It assigns no scor
 ```
 User: "Score this PR before I merge it."
 → invoke go-score
-→ comprehension pass → per-dimension scoring → calibration → synthesis → SCORE_REPORT.md
+→ comprehension pass → per-dimension scoring → calibration → positives → synthesis → SCORE_REPORT.md
 ```
 
 ## Rubric — 0–4 per dimension
@@ -30,6 +30,12 @@ Each score must be paired with a quoted evidence line from the reviewed code. A 
 | 4 | Strong | Handles edge cases explicitly, is defensively coded, and exceeds the minimum contract. Evidence of proactive design required. |
 
 **Default assumption:** treat each dimension as score 2 (Minor defect) until evidence for 3 or 4 is identified. This prevents grade inflation. A score of 3 or 4 requires a specific code excerpt proving adequacy; a score of 0 or 1 requires a specific code excerpt proving the defect.
+
+## Honesty requirement
+
+State problems plainly. Do not soften findings that represent genuine risk. A finding that is correct but unwelcome is more valuable than a comfortable assessment that obscures a problem.
+
+Do not upgrade a score because the code "looks reasonable." Evidence is required. Do not downgrade a score because a finding might seem harsh. If the evidence supports it, record it.
 
 ## Workflow
 
@@ -134,7 +140,18 @@ Severity mapping:
 
 A BLOCKER must be resolved before merge. A WARNING should be resolved; the author must acknowledge it if not. A SUGGESTION is optional with no merge gate. A NIT is purely informational.
 
-### 6. Calibration pass
+### 6. Dimension completeness gate
+
+Before proceeding to calibration, enumerate every dimension that was scored in this tier:
+
+```
+Dimensions scored: [list each dimension with its score]
+Missing: [any dimension in the tier that has not been scored]
+```
+
+If any dimension in the assigned tier is missing a score, return to Step 4 and complete it. Do not advance to Step 7 with an incomplete scorecard — a missing dimension score is equivalent to a scope gap and must be declared.
+
+### 7. Calibration pass
 
 After all dimensions are scored:
 
@@ -142,13 +159,31 @@ After all dimensions are scored:
 - [ ] For every BLOCKER finding: confirm that the specific evidence quote is present and the failure mode is described precisely.
 - [ ] For segmented diffs: take the minimum score per dimension across all segments.
 
-Record the calibration outcome explicitly. If a score was downgraded, note the reason.
+Record the calibration outcome explicitly in a `## Calibration` section. For each score ≥ 3, state: "Challenged [dimension] (score [N]): strongest argument for 2 is [argument]. Retained / downgraded because [reason]." If no score ≥ 3 exists, write "No scores ≥ 3 — no calibration challenges required."
 
-### 7. Positives pass
+### 8. Positives pass
 
-Name at least one specific thing done well in the reviewed code. This is mandatory, not optional. A review that produces only negative findings is incomplete. Positives must reference specific code, not vague praise.
+Name at least one specific thing done well in the reviewed code. This is mandatory, not optional — an absent Positives section makes the report incomplete regardless of finding quality.
 
-### 8. Synthesis
+Positives must reference specific code, not vague praise. "The parameterized query in line 42 correctly prevents SQL injection" is a positive. "Good code" is not.
+
+Record positives in a `## Positives` section before writing the verdict.
+
+### 9. Self-check gate
+
+Before writing SCORE_REPORT.md, confirm:
+
+- [ ] Comprehension Summary written (one paragraph)?
+- [ ] Tier declared explicitly?
+- [ ] All dimensions in the tier have a score with a quoted evidence line?
+- [ ] OIR findings written for every score ≤ 1?
+- [ ] Dimension completeness gate passed (Step 6)?
+- [ ] Calibration section written (Step 7)?
+- [ ] Positives section written with at least one specific, evidence-backed positive (Step 8)?
+
+If any item is unchecked, complete it before writing the report. A SCORE_REPORT.md produced without satisfying these conditions is invalid.
+
+### 10. Synthesis
 
 Produce the final verdict:
 
@@ -157,13 +192,13 @@ Produce the final verdict:
 
 Compute the **composite score**: the mean of all dimension scores, rounded to one decimal place. The composite score is informational only — the minimum-gate rule governs the verdict, not the composite.
 
-### 9. Write SCORE_REPORT.md
+### 11. Write SCORE_REPORT.md
 
 Produce the report at the project root (or prefix the filename with the PR/branch name if multiple reviews coexist):
 
 ```markdown
 # Score Report — <PR title or branch name>
-> date: YYYY-MM-DD | scope: <commit range or files reviewed> | tier: <High | Medium | Low> | reviewed by: go-score v1.0.0
+> date: YYYY-MM-DD | scope: <commit range or files reviewed> | tier: <High | Medium | Low> | reviewed by: go-score v1.1.0
 
 ## Scorecard
 
@@ -202,6 +237,10 @@ Produce the report at the project root (or prefix the filename with the PR/branc
 
 <specific things done well, with code references>
 
+## Calibration
+
+<For each score ≥ 3: the challenge and outcome. If none: "No scores ≥ 3 — no calibration challenges required.">
+
 ## Open Questions
 
 <assumptions or missing context that reduced review confidence>
@@ -219,13 +258,15 @@ Produce the report at the project root (or prefix the filename with the PR/branc
 - Do not fabricate performance concerns. If no algorithmic problem is visible, assign Performance = 3 without comment.
 - Do not skip the Comprehension pass. No scoring may begin before the Comprehension Summary is written.
 - Do not collapse segment scores to a mean. Take the minimum per dimension across all segments.
-- The Positives pass is mandatory. A report with no positives is incomplete.
-- The calibration self-challenge is mandatory for every score ≥ 3. A score accepted without challenge is not calibrated.
+- The Positives pass is mandatory. A report with no `## Positives` section is incomplete.
+- The Calibration pass is mandatory. A report with no `## Calibration` section is incomplete.
+- The dimension completeness gate (Step 6) must be passed before calibration. Missing a dimension score is a scope gap.
 - Do not invent requirements. If the stated intent is absent, record a scope gap and review what is observable.
+- State problems plainly. Do not soften findings that represent genuine risk.
 
 ## Output
 
-- `SCORE_REPORT.md` — dimensional scorecard (0–4 per dimension), composite score, BLOCKER/WARNING/SUGGESTION/NIT findings with OIR structure, merge verdict, positives, open questions, scope notes
+- `SCORE_REPORT.md` — dimensional scorecard (0–4 per dimension), composite score, BLOCKER/WARNING/SUGGESTION/NIT findings with OIR structure, merge verdict, positives, calibration record, open questions, scope notes
 
 ## Position in the pack
 
