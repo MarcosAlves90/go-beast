@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.45.0] - 2026-06-27
+
 ### Changed
 
 - `skills/go-chat/SKILL.md` (v1.1.0) — added mandatory `**Mode:**` and `**Paraphrase:**` output markers that must open every response (resolves struct eval miss on `paraphrase`); added `**Assumption:**` marker convention; hardened one-question gate (question is the entire response — no partial answer alongside the question); added Step 8 self-check pass enumerating all compliance items; updated Rules section to reference markers explicitly. Techniques applied: artifact-based output enforcement, gate patterns with negative-space instruction, self-check step (Anthropic prompting docs 2025).
