@@ -110,7 +110,12 @@ gb_save_state_json() {
 
 gb_extract_beast() {
   local text="${1:-}"
-  printf '%s\n' "$text" | grep -Eo 'go-[a-z]+' | head -n 1 || true
+  # Only extract a beast when it appears after an affirmative framing marker
+  # ("Active beast:", "beast:", "<beast>", "using go-X", "invoking go-X").
+  # Avoids extracting from negations ("don't use go-hawk") or incidental
+  # mentions ("go-hawk would be premature here").
+  printf '%s\n' "$text" | grep -Eoi '(active beast|<beast>|using|invoking|running|invoke)[[:space:]:]+(go-[a-z]+)' \
+    | grep -Eo 'go-[a-z]+' | head -n 1 || true
 }
 
 gb_extract_artifact() {
@@ -131,11 +136,18 @@ gb_message_is_anchored() {
   local text="${1:-}"
   [[ -z "$text" ]] && return 1
 
-  if printf '%s\n' "$text" | grep -Eqi 'go-[a-z]+'; then
+  # Require at least one explicit state frame marker — incidental beast mentions
+  # ("go-hawk would be useful") do not constitute anchoring. The response must
+  # declare the current state, not merely reference a beast name in passing.
+  # Research basis: permissive matching (any go-X mention) caused false anchoring
+  # where drift persisted because casual mentions satisfied the check.
+  if printf '%s\n' "$text" | grep -Eqi \
+    'active beast[[:space:]]*:[[:space:]]*go-[a-z]+|<beast>[[:space:]]*go-[a-z]+|beast ativo[[:space:]]*:[[:space:]]*go-[a-z]+'; then
     return 0
   fi
 
-  if printf '%s\n' "$text" | grep -Eqi 'active beast|required artifact|implementation (is )?unlocked|re-anchor|bootstrap gate'; then
+  if printf '%s\n' "$text" | grep -Eqi \
+    'required artifact|implementation (is |not )?(un)?locked|re-anchor|bootstrap gate|implementation_unlocked|<implementation>|<required_artifact>'; then
     return 0
   fi
 
