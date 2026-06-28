@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.46.0] - 2026-06-28
+
 ### Changed
 
 - `hooks/go-beast-drift-lib.sh` — `gb_default_state_json` now initializes `active_beast` to `"go-chat"` instead of `""`. New sessions start with go-chat as the active skill. `gb_extract_beast` now requires affirmative framing context (`active beast:`, `<beast>`, `using go-X`, `invoking go-X`) before extracting — eliminates false positives from negations ("don't use go-hawk") and incidental mentions. `gb_message_is_anchored` now requires explicit state frame markers (`active beast: go-X`, `<beast>go-X`, or implementation/artifact field names) rather than any casual `go-[a-z]+` mention — eliminates false anchoring where drift persisted undetected.
