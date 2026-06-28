@@ -34,6 +34,7 @@ if [[ "$mode" != "bootstrap" ]]; then
 fi
 
 active_beast="$(printf '%s' "$state" | jq -r '.active_beast // empty')"
+[[ -z "$active_beast" ]] && active_beast="go-chat"
 required_artifact="$(printf '%s' "$state" | jq -r '.required_artifact // empty')"
 task_state="$(printf '%s' "$state" | jq -r '.task_state // "active"')"
 unanchored_stop_count="$(printf '%s' "$state" | jq -r '.unanchored_stop_count // 0')"
@@ -79,7 +80,23 @@ if (( unanchored_stop_count < 2 )); then
   exit 0
 fi
 
-msg="go-beast re-anchor required: the last response did not preserve the current workflow frame. State the active beast, the required artifact, whether implementation is unlocked, and continue from the latest verified artifact before doing more work."
+# Re-anchor block: factual XML state declaration, not an imperative.
+# Research basis: asserting current state as fact forces the model to reconcile
+# its next output against stated reality. Asking for compliance invites
+# "yes I will" sycophancy without behavioral change. (Anthropic hooks docs;
+# Constitutional AI study on intrinsic self-correction limits.)
+artifact_el=""
+[[ -n "$required_artifact" ]] && artifact_el="
+  <required_artifact>${required_artifact}</required_artifact>
+  <implementation>blocked — ${required_artifact} missing</implementation>"
+
+msg="go-beast drift detected — workflow frame absent from last response.
+
+<go_beast_state>
+  <beast>${active_beast}</beast>
+  <task>${task_state}</task>${artifact_el}
+  <drift>state frame missing — next response must open with beast, artifact, and implementation gate</drift>
+</go_beast_state>"
 
 echo "$msg"
 echo "$msg" >&2

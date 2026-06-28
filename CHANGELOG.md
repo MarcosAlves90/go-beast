@@ -9,6 +9,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `hooks/go-beast-drift-lib.sh` — `gb_default_state_json` now initializes `active_beast` to `"go-chat"` instead of `""`. New sessions start with go-chat as the active skill. `gb_extract_beast` now requires affirmative framing context (`active beast:`, `<beast>`, `using go-X`, `invoking go-X`) before extracting — eliminates false positives from negations ("don't use go-hawk") and incidental mentions. `gb_message_is_anchored` now requires explicit state frame markers (`active beast: go-X`, `<beast>go-X`, or implementation/artifact field names) rather than any casual `go-[a-z]+` mention — eliminates false anchoring where drift persisted undetected.
+
+- `hooks/go-beast-user-prompt-context.sh` — replaced prose concatenation with a compact XML `<go_beast_state>` block injected as `additionalContext`. Declarative fields (`<beast>`, `<task>`, `<implementation>`, `<required_artifact>`, `<bootstrap>`) replace imperative sentences. Stays under 500 characters in the common case to remain in the attention-reliable window. Added `elif [[ -z "$active_beast" ]]` fallback defaulting to go-chat. Removed the "If the active beast is unclear" fallback message. Techniques: XML semantic tags (20-40% better Claude compliance over prose per Anthropic docs and Liu et al. 2023); factual state assertion over imperative correction (Constitutional AI; Anthropic hooks guidance).
+
+- `hooks/go-beast-stop-reanchor.sh` — re-anchor message replaced with an XML `<go_beast_state>` block containing `<beast>`, `<task>`, `<drift>`, and (when applicable) `<required_artifact>` and `<implementation>` fields. Asserts current state as fact rather than requesting compliance — removes the sycophantic exit where the model acknowledges the re-anchor without changing behavior. Added `[[ -z "$active_beast" ]] && active_beast="go-chat"` guard for legacy state files.
+
 ## [1.45.0] - 2026-06-27
 
 ### Changed
