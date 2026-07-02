@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.47.0] - 2026-07-02
+
 ### Added
 
 - **scripts/install.mjs**: interactive mode now opens with a mode selector (`i` install / `u` uninstall) before the agent/skill flow. Previously uninstall was only reachable via the `--uninstall` flag.
