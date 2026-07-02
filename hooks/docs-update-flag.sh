@@ -56,7 +56,10 @@ fi
 STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
 mkdir -p "$STATE_DIR"
 
-# Flag the project for a docs reminder
-printf '%s' "$project_dir" > "$STATE_DIR/docs-update.pending"
+# Flag the project for a docs reminder, scoped to this session to prevent
+# cross-session bleed when multiple sessions are active concurrently.
+session_id=$(echo "$input" | jq -r '.session_id // empty' 2>/dev/null || true)
+session_id="${session_id:-default}"
+printf '%s' "$project_dir" > "$STATE_DIR/docs-update.${session_id}.pending"
 
 exit 0

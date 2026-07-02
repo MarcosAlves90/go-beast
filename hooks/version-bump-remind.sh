@@ -5,12 +5,15 @@
 set -uo pipefail
 
 STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
-FLAG_FILE="$STATE_DIR/docs-update.pending"
 
 input=$(cat)
 stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
 [[ "$stop_hook_active" == "true" ]] && exit 0
+
+session_id=$(echo "$input" | jq -r '.session_id // empty' 2>/dev/null || echo "")
+session_id="${session_id:-default}"
+FLAG_FILE="$STATE_DIR/docs-update.${session_id}.pending"
 
 # Only fire when a docs-update flag exists (source was modified this session)
 [[ ! -f "$FLAG_FILE" ]] && exit 0

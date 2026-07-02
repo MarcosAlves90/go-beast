@@ -22,5 +22,8 @@ git_root=$(git -C "$project_dir" rev-parse --show-toplevel 2>/dev/null || echo "
 
 STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
 mkdir -p "$STATE_DIR"
-echo "$git_root" > "$STATE_DIR/git-commit-remind.pending"
+
+session_id=$(echo "$input" | jq -r '.session_id // empty' 2>/dev/null || echo "")
+session_id="${session_id:-default}"
+echo "$git_root" > "$STATE_DIR/git-commit-remind.${session_id}.pending"
 exit 0

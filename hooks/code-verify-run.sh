@@ -5,13 +5,16 @@
 set -uo pipefail
 
 STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
-FLAG_FILE="$STATE_DIR/code-verify.pending"
 
 input=$(cat)
 stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 
 # Prevent infinite loop when the hook itself re-triggers the agent
 [[ "$stop_hook_active" == "true" ]] && exit 0
+
+session_id=$(echo "$input" | jq -r '.session_id // empty' 2>/dev/null || echo "")
+session_id="${session_id:-default}"
+FLAG_FILE="$STATE_DIR/code-verify.${session_id}.pending"
 
 [[ ! -f "$FLAG_FILE" ]] && exit 0
 

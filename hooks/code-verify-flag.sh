@@ -23,7 +23,9 @@ esac
 STATE_DIR="${GO_BEAST_STATE_DIR:-$HOME/.go-beast}"
 if echo "$file_path" | grep -qE '\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|cs|rb|php|swift|c|cpp|h|hpp)$'; then
   mkdir -p "$STATE_DIR"
-  printf '%s' "$(dirname "$file_path")" > "$STATE_DIR/code-verify.pending"
+  session_id=$(echo "$input" | jq -r '.session_id // empty' 2>/dev/null || true)
+  session_id="${session_id:-default}"
+  printf '%s' "$(dirname "$file_path")" > "$STATE_DIR/code-verify.${session_id}.pending"
 fi
 
 exit 0

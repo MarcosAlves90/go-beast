@@ -66,6 +66,13 @@ if gb_message_is_anchored "$last_message"; then
   exit 0
 fi
 
+# If last_message is absent the harness did not provide it — treat as neutral,
+# not as drift. Incrementing here caused false positives on every turn in
+# harnesses that do not expose last_assistant_message (e.g. Codex, Copilot).
+if [[ -z "$last_message" ]]; then
+  exit 0
+fi
+
 unanchored_stop_count=$((unanchored_stop_count + 1))
 state="$(printf '%s' "$state" | jq \
   --arg now "$(gb_now_utc)" \
@@ -76,7 +83,9 @@ state="$(printf '%s' "$state" | jq \
   | .updated_at = $now')"
 gb_save_state_json "$session_id" "$state"
 
-if (( unanchored_stop_count < 2 )); then
+# Threshold raised from 2 to 5: a single prose response is not drift.
+# Re-anchor only after 5 consecutive unanchored stops with a real last_message.
+if (( unanchored_stop_count < 5 )); then
   exit 0
 fi
 
@@ -98,6 +107,15 @@ msg="go-beast drift detected — workflow frame absent from last response.
   <drift>state frame missing — next response must open with beast, artifact, and implementation gate</drift>
 </go_beast_state>"
 
-echo "$msg"
-echo "$msg" >&2
-exit 2
+# Emit in the format the harness expects.
+# Claude Code: plain text on stdout + exit 2 re-triggers the agent.
+# Copilot: requires {"decision":"block","reason":"..."} JSON on stdout; ignores exit codes.
+# Codex: plain text on stdout + exit 2 re-triggers the agent (same as Claude Code).
+if [[ "$harness" == "copilot" ]]; then
+  printf '{"decision":"block","reason":"%s"}\n' \
+    "$(printf '%s' "$msg" | tr '\n' ' ' | sed 's/"/\\"/g')"
+else
+  echo "$msg"
+  echo "$msg" >&2
+  exit 2
+fi
