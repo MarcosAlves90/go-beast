@@ -64,7 +64,7 @@ message_file=$(extract_commit_message_file "$command")
 if [[ -n "$message_file" && -f "$message_file" ]]; then
   grep -iqE 'co-authored' "$message_file" && {
     echo "git-strip-coauthored: blocked — Co-Authored-By in commit message" >&2
-    echo "Blocked: commit message contains a Co-Authored-By tag. Remove it and resend the commit."
+    printf '{"decision":"block","reason":"Commit message contains a Co-Authored-By tag. Remove it and resend the commit."}\n'
     exit 1
   }
 fi
@@ -73,5 +73,5 @@ fi
 echo "$command" | grep -iqE 'co-authored' || exit 0
 
 echo "git-strip-coauthored: blocked — Co-Authored-By in commit message" >&2
-echo "Blocked: commit message contains a Co-Authored-By tag. Remove it and resend the commit."
+printf '{"decision":"block","reason":"Commit message contains a Co-Authored-By tag. Remove it and resend the commit."}\n'
 exit 1

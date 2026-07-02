@@ -9,6 +9,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **hooks/git-strip-coauthored.sh**: both blocking paths now emit `{"decision":"block","reason":"..."}` JSON on stdout instead of plain text. Previously `exit 1` alone did not block the tool call in Claude Code — the hook was treated as an observer and commits went through regardless.
+
+- **hooks/\*-flag.sh / \*-remind.sh / code-verify-\*.sh / version-bump-remind.sh**: flag files are now scoped by `session_id` (e.g. `docs-update.<session_id>.pending`). Previously all hooks used a single global flag path, causing Stop hooks in unrelated sessions to consume flags written by a different session — triggering docs/commit/version reminders for the wrong repo.
+
+- **hooks/go-beast-stop-reanchor.sh**: absent `last_assistant_message` (harness did not provide it) is now treated as neutral rather than drift — the unanchored counter no longer increments when the field is missing. Re-anchor threshold raised from 2 to 5 consecutive unanchored stops. Combined, these two changes eliminate the false-positive re-anchor that fired on every third turn in normal sessions. Under Copilot, the hook now emits `{"decision":"block","reason":"..."}` JSON instead of plain text + `exit 2`, matching Copilot's `agentStop` hook contract.
+
+- **hooks/go-beast-user-prompt-context.sh**: under Copilot, `additionalContext` is now emitted at the top level of the JSON object instead of nested inside `hookSpecificOutput`. Copilot's `userPromptSubmitted` transformer reads the field at the root level; the previous nesting caused the context injection to be silently dropped on every prompt.
+
 ## [1.47.0] - 2026-07-02
 
 ### Added

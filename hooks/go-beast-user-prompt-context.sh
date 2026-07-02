@@ -88,11 +88,18 @@ ${artifact_line}}${bootstrap_line:+
 ${bootstrap_line}}
 </go_beast_state>"
 
-jq -nc \
-  --arg context "$context" \
-  '{
-    hookSpecificOutput: {
-      hookEventName: "UserPromptSubmit",
-      additionalContext: $context
-    }
-  }'
+# Claude Code expects additionalContext nested inside hookSpecificOutput.
+# Copilot CLI reads additionalContext at the top level of the JSON object.
+# Emit the format the harness expects.
+if [[ "$harness" == "copilot" ]]; then
+  jq -nc --arg context "$context" '{"additionalContext": $context}'
+else
+  jq -nc \
+    --arg context "$context" \
+    '{
+      hookSpecificOutput: {
+        hookEventName: "UserPromptSubmit",
+        additionalContext: $context
+      }
+    }'
+fi
