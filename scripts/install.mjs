@@ -103,7 +103,23 @@ const collectHooks     = () => HOOK_MANIFEST.map(h => h.name).sort()
 const collectWorkflows = () => fs.readdirSync(j(REPO,'workflows')).filter(n => n.endsWith('.js')).sort()
 
 // ── Symlink ───────────────────────────────────────────────────────────────────
-function linkItem(src, dir, results) {
+
+// Returns the current symlink target if the dst is a symlink pointing elsewhere,
+// null otherwise.
+function detectConflict(src, dir) {
+  const dst = j(dir, path.basename(src))
+  let stat = null
+  try { stat = fs.lstatSync(dst) } catch {}
+  if (!stat || !stat.isSymbolicLink()) return null
+  try {
+    const cur  = path.normalize(fs.readlinkSync(dst)).replace(/[/\\]+$/, '')
+    const srcN = path.normalize(src).replace(/[/\\]+$/, '')
+    if (cur !== srcN) return cur
+  } catch {}
+  return null
+}
+
+function linkItem(src, dir, results, replaceConflicts = false) {
   const name = path.basename(src)
   const dst  = j(dir, name)
   fs.mkdirSync(dir, { recursive: true })
@@ -117,6 +133,11 @@ function linkItem(src, dir, results) {
         const cur  = path.normalize(fs.readlinkSync(dst)).replace(/[/\\]+$/, '')
         const srcN = path.normalize(src).replace(/[/\\]+$/, '')
         if (cur === srcN) { results.push({ ico: icon.skip, name, note: 'already linked' }); return }
+        if (replaceConflicts) {
+          fs.unlinkSync(dst)
+          fs.symlinkSync(src, dst, fs.statSync(src).isDirectory() ? 'dir' : 'file')
+          results.push({ ico: icon.ok, name, note: 'replaced' }); return
+        }
         results.push({ ico: icon.warn, name, note: 'linked elsewhere — skipped' }); return
       } catch {}
     }
@@ -129,6 +150,23 @@ function linkItem(src, dir, results) {
   } catch (e) {
     results.push({ ico: icon.err, name, note: e.message })
   }
+}
+
+// Scans target dirs for symlinks pointing to a different path than src.
+// Returns the total count of conflicting entries found.
+function scanConflicts(skills, agents, hooks, workflows, cc) {
+  let count = 0
+  for (const agent of agents) {
+    for (const skill of skills) {
+      if (detectConflict(j(CANONICAL_SKILLS_DIR, skill), agent.skills)) count++
+    }
+  }
+  if (cc && workflows.length) {
+    for (const wf of workflows) {
+      if (detectConflict(j(REPO, 'workflows', wf), cc.workflows)) count++
+    }
+  }
+  return count
 }
 
 function cleanStale(dir) {
@@ -250,6 +288,21 @@ async function main() {
     dim(REPO.replace(HOME, '~')),
   ])
 
+  // 0. Mode selection (interactive only — --all skips straight to install)
+  if (!installAll) {
+    ln()
+    box('Mode', [
+      `${cyan('i')}  install`,
+      `${cyan('u')}  uninstall`,
+    ])
+    while (true) {
+      const v = (await ask(`  ${cyan('›')} `)).trim().toLowerCase()
+      if (v === 'i' || v === 'install') break
+      if (v === 'u' || v === 'uninstall') { rl.close(); uninstall(); return }
+      ln(`  ${gray('type i or u')}`)
+    }
+  }
+
   // 1. Agents
   section('Detected agents')
   const detected = AGENTS.filter(a => fs.existsSync(a.detect))
@@ -295,6 +348,15 @@ async function main() {
 
   const useBootstrap = installAll ? bootstrapFlag : await askYesNo('Enable optional bootstrap mode?', false)
 
+  // Pre-scan: detect symlinks pointing to a different go-beast path (e.g. after repo move/rename)
+  const conflictCount = scanConflicts(selSkills, selAgents, selHooks, selWorkflows, cc)
+  let replaceConflicts = installAll  // --all always replaces without prompting
+  if (!installAll && conflictCount > 0) {
+    ln()
+    ln(row(icon.warn, `${conflictCount} existing symlink(s) point to a different go-beast path`))
+    replaceConflicts = await askYesNo('Replace them with the current path?', false)
+  }
+
   rl.close()
 
   // 6. Install
@@ -307,7 +369,7 @@ async function main() {
       ln(); ln(`  ${icon.link} ${bold('skills')} ${dim('→')} ${cyan(agent.name)}`)
       cleanStale(agent.skills)
       const results = []
-      for (const skill of selSkills) linkItem(j(CANONICAL_SKILLS_DIR, skill), agent.skills, results)
+      for (const skill of selSkills) linkItem(j(CANONICAL_SKILLS_DIR, skill), agent.skills, results, replaceConflicts)
       printResults(results)
       for (const r of results) {
         if (r.ico === icon.new)  counts.new++
@@ -349,7 +411,7 @@ async function main() {
     ln(); ln(`  ${icon.link} ${bold('workflows')} ${dim('→')} ${cyan('claude-code')}`)
     cleanStale(cc.workflows)
     const results = []
-    for (const wf of selWorkflows) linkItem(j(REPO, 'workflows', wf), cc.workflows, results)
+    for (const wf of selWorkflows) linkItem(j(REPO, 'workflows', wf), cc.workflows, results, replaceConflicts)
     printResults(results)
   }
 
