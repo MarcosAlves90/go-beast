@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.47.1] - 2026-07-02
+
 ### Fixed
 
 - **hooks/git-strip-coauthored.sh**: both blocking paths now emit `{"decision":"block","reason":"..."}` JSON on stdout instead of plain text. Previously `exit 1` alone did not block the tool call in Claude Code — the hook was treated as an observer and commits went through regardless.
