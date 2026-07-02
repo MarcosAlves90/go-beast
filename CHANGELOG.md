@@ -9,6 +9,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **scripts/install.mjs**: interactive mode now opens with a mode selector (`i` install / `u` uninstall) before the agent/skill flow. Previously uninstall was only reachable via the `--uninstall` flag.
+
+### Fixed
+
+- **scripts/install.mjs**: when existing symlinks point to a different go-beast path (e.g. after repo rename or move), the installer now detects the conflict before closing readline and prompts "Replace them with the current path? (y/N)". Previously these were silently skipped with a warning. In `--all` mode, conflicts are replaced automatically without prompting.
+
 ## [1.46.0] - 2026-06-28
 
 ### Changed

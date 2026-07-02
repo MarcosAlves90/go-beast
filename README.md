@@ -214,9 +214,10 @@ Command guide:
 
 | Command | Use when | Outcome |
 |---|---|---|
-| `node scripts/install.mjs` | You have a local checkout and want to choose what to install | Opens the interactive installer against the checkout |
+| `node scripts/install.mjs` | You have a local checkout and want to choose what to install or uninstall | Opens the interactive installer; first prompt selects install or uninstall mode |
 | `node scripts/install.mjs --all` | You want everything from a local checkout without prompts | Installs all supported skills, hooks, and workflows |
 | `node scripts/install.mjs --all --bootstrap` | You want the checkout install plus stricter bootstrap mode | Installs everything and writes `AGENTS.bootstrap.md` |
+| `node scripts/install.mjs --uninstall` | You want to uninstall without prompts | Removes all symlinks that point back to the checkout |
 
 ```bash
 git clone <repo-url> <repo-dir>
@@ -227,8 +228,10 @@ Use this path when you have a local checkout.
 
 What it does:
 
+- opens with a mode selector: `i` to install, `u` to uninstall
 - detects which agents are installed
 - lets you choose which skills, hooks, and Claude Code workflows to install
+- if existing symlinks point to a different go-beast path (e.g. after a repo rename or move), asks whether to replace them
 - creates symlinks from the checkout into each selected agent
 - writes hook config only for the agents you actually have installed and selected
 - copies the selected global instructions file for each selected agent
