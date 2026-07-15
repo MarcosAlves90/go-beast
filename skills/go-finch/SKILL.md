@@ -7,6 +7,23 @@ when_to_use: "Use when an existing go-* skill needs improvement — a step is va
 
 # go-finch — Skill Maintenance
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-finch`
+- **Alias:** `skill-maintenance` (documentation only)
+- **Phase:** maintenance
+- **When to use:** An existing skill has a documented weakness
+- **Prerequisites:** A concrete finding
+- **Input artifacts:** SKILL.md and finding
+- **Output artifacts:** Updated SKILL.md; CHECKLIST ASSESSMENT
+- **Gates:** Minimal edit and consistency check
+- **Dependencies:** go-skill-eval when applicable
+- **Conflicts:** go-smith
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-finch sharpens what go-smith built. It does not create new skills — it refines existing ones with surgical precision. The discipline: fix the smallest thing that produces the largest improvement, then prove it.
 
 ## Quick start

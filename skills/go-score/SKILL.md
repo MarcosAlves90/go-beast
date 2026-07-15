@@ -7,6 +7,23 @@ when_to_use: Use when a change, diff, branch, or PR needs an evidence-based qual
 
 # go-score — Scored Code Review
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-score`
+- **Alias:** `scored-review` (documentation only)
+- **Phase:** review
+- **When to use:** A scored quality assessment and merge verdict are needed
+- **Prerequisites:** Completed change or diff
+- **Input artifacts:** Diff and requirements
+- **Output artifacts:** SCORE_REPORT.md
+- **Gates:** Evidence per dimension and calibrated rubric
+- **Dependencies:** None
+- **Conflicts:** go-tern when scoring is not required
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-score reads every changed line before scoring any of them. It assigns no score without a code quote, upgrades no score without evidence, and blocks merges when any Correctness or Security dimension reaches 0.
 
 ## Quick start

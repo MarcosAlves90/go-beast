@@ -7,6 +7,23 @@ when_to_use: Use when building or extending backend services, implementing endpo
 
 # go-wolf — Backend API Development
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-wolf`
+- **Alias:** `backend` (documentation only)
+- **Phase:** backend
+- **When to use:** Backend APIs or server-side business logic work
+- **Prerequisites:** Scaffold and contracts
+- **Input artifacts:** CONTRACTS.md and SPEC.md when applicable
+- **Output artifacts:** API; business logic; validation
+- **Gates:** Layered architecture and server validation
+- **Dependencies:** go-beaver and go-fox
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-wolf is the pack leader on the server side. It enforces disciplined API design, handles auth, and makes sure the backend is correct before the frontend touches it.
 
 ## Quick start

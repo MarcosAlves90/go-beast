@@ -7,6 +7,23 @@ when_to_use: Use when the work is thinking, not yet building — a developer wan
 
 # go-chat — Technical Conversation
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-chat`
+- **Alias:** `conversation` (documentation only)
+- **Phase:** meta
+- **When to use:** Thinking; debate; decision support; or clarification
+- **Prerequisites:** None
+- **Input artifacts:** User question or design context
+- **Output artifacts:** Decision or handoff summary
+- **Gates:** One-question ambiguity gate; explicit assumptions
+- **Dependencies:** None
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-chat thinks before answering. It identifies what kind of conversation is needed, asks one question when something is unclear, surfaces assumptions before building on them, and signals when the conversation has produced enough to hand off to another beast.
 
 ## Quick start

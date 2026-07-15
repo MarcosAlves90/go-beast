@@ -7,6 +7,23 @@ when_to_use: Use when establishing a testing strategy for a new project, adding 
 
 # go-eagle — Testing Strategy & QA
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-eagle`
+- **Alias:** `testing` (documentation only)
+- **Phase:** testing
+- **When to use:** Test strategy; coverage; or CI gates are needed
+- **Prerequisites:** Working implementation or contracts
+- **Input artifacts:** Requirements and implementation
+- **Output artifacts:** docs/TESTING.md; Test files; CI gate
+- **Gates:** Critical paths covered; flaky tests addressed
+- **Dependencies:** go-wolf or go-lynx
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-eagle sees everything from above. It identifies what matters to test, at what level, and makes sure the safety net is real — not just numbers on a coverage report.
 
 ## Quick start

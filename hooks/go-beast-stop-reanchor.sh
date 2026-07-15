@@ -2,6 +2,14 @@
 # Forces a re-anchor when bootstrap sessions drift away from go-beast state framing.
 # Event: Stop
 
+# BEGIN GENERATED: anti-drift-prompt
+# <go_beast_policy>
+#   <precedence>System and harness rules | Repository-local AGENTS.md | AGENTS.bootstrap.md when bootstrap mode is active | AGENTS.global.md</precedence>
+#   <phases>discovery | solution exploration | validation</phases>
+#   <gates>Do not fabricate requirements, validation results, or compatibility claims. | Do not implement while a required discovery artifact is missing. | Use the strongest relevant validation available before declaring completion.</gates>
+# </go_beast_policy>
+# END GENERATED: anti-drift-prompt
+
 set -euo pipefail
 
 SCRIPT_PATH="${BASH_SOURCE[0]}"

@@ -7,6 +7,23 @@ when_to_use: Use when REQUIREMENTS.md exists and the problem space is ambiguous 
 
 # go-lark — Solution Space Exploration
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-lark`
+- **Alias:** `explore` (documentation only)
+- **Phase:** solution-exploration
+- **When to use:** Approved requirements allow multiple valid approaches
+- **Prerequisites:** Approved discovery output
+- **Input artifacts:** Discovery output
+- **Output artifacts:** Approach decision held in session context
+- **Gates:** At least three approaches and scored evaluation
+- **Dependencies:** go-hawk
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-lark sings before the sun rises. It explores freely before any commitment is made — generating multiple approaches, stress-testing each against real constraints, and selecting one with a defensible rationale.
 
 ## Quick start

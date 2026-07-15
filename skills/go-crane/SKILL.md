@@ -7,6 +7,23 @@ when_to_use: Use when a service is deployed or nearing deployment and lacks prod
 
 # go-crane — Observability & Monitoring
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-crane`
+- **Alias:** `observability` (documentation only)
+- **Phase:** observability
+- **When to use:** A deployed or deployable system lacks production visibility
+- **Prerequisites:** Running system or deployment context
+- **Input artifacts:** Service and deployment context
+- **Output artifacts:** OBSERVABILITY.md
+- **Gates:** Signal inventory and alert thresholds
+- **Dependencies:** go-raven or go-wolf
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-crane stands still and watches everything. It instruments a running system so that failures surface as signals, not surprises.
 
 ## Quick start

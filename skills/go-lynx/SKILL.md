@@ -7,6 +7,23 @@ when_to_use: Use when building or extending frontend applications, designing com
 
 # go-lynx — Frontend UI Development
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-lynx`
+- **Alias:** `frontend` (documentation only)
+- **Phase:** frontend
+- **When to use:** Frontend UI; state; API; or accessibility work
+- **Prerequisites:** Backend or API contract
+- **Input artifacts:** CONTRACTS.md and SPEC.md when applicable
+- **Output artifacts:** Components; state; API integration
+- **Gates:** Accessibility and real integration
+- **Dependencies:** go-wolf or go-snipe
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-lynx moves fast and precise. It builds UIs that are functional, accessible, and integrated with the backend — not just pretty mocks.
 
 ## Quick start

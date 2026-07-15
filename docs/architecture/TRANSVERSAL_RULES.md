@@ -37,17 +37,21 @@ Hook contract: `hooks/manifest.json`; wiring: `scripts/hook-wire.mjs`; session s
 ## Scope
 
 `go-beast.manifest.yaml` is the canonical source for transversal maintainer
-rules. It does not replace domain-specific sources: skills remain canonical in
-`skills/`, hook behavior remains defined by `hooks/manifest.json`, and release
-version remains owned by `package.json`.
+rules and structural skill contracts. It does not replace domain-specific
+procedures: skills remain canonical in `skills/`, hook behavior remains defined
+by `hooks/manifest.json`, workflow orchestration remains canonical in
+`workflows/`, and release version remains owned by `package.json`.
 
 ## Workflow
 
 Run `npm run rules:generate` after changing the manifest. Review the generated
-diff, then run `npm run rules:check` or `npm run verify`. CI and local
+diff, then run `npm run rules:check` or `npm run verify`. This updates marked
+contracts in `AGENTS*`, `SKILL.md` files, anti-drift hook prompts, workflow
+policy prompts, the phase/gate reference, and the alias catalog. CI and local
 validation use `check`; they never rewrite the working tree.
 
 Generated blocks are delimited by markers and must not be edited manually.
 Manual content outside those blocks is preserved. The first implementation
-validates structure and synchronization; it does not attempt to infer every
-semantic contradiction in prose across the repository.
+validates structure and synchronization; it does not promote skill-specific
+procedures into transversal policy or infer arbitrary semantic contradictions
+in prose across the repository.

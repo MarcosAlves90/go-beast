@@ -7,6 +7,23 @@ when_to_use: Use when setting up a deployment pipeline, configuring GitHub Actio
 
 # go-raven — CI/CD & Deployment
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-raven`
+- **Alias:** `cicd` (documentation only)
+- **Phase:** cicd
+- **When to use:** Deployment pipelines; environments; or release automation
+- **Prerequisites:** Passing tests and security context
+- **Input artifacts:** Test and security results
+- **Output artifacts:** Pipeline and environment strategy
+- **Gates:** Secrets and promotion boundaries explicit
+- **Dependencies:** go-eagle and go-bear
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-raven carries things from one place to another, reliably. It builds the pipeline that takes code from a developer's machine to production without surprises.
 
 ## Quick start

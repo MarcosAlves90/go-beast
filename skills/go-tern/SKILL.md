@@ -7,6 +7,23 @@ when_to_use: Use when implementation work is complete enough to inspect, before 
 
 # go-tern — Code Review
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-tern`
+- **Alias:** `review` (documentation only)
+- **Phase:** review
+- **When to use:** A completed change needs a pass/fail review
+- **Prerequisites:** Implementation diff
+- **Input artifacts:** Diff and requirements
+- **Output artifacts:** Review findings and merge recommendation
+- **Gates:** Evidence-ranked findings
+- **Dependencies:** None
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-tern circles above the diff and dives only on what matters. It reviews for
 real bugs, regressions, and policy violations — not style trivia.
 
