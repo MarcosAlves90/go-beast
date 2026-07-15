@@ -9,6 +9,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Validation commands:** added canonical `npm run lint`, `npm run test`,
+  `npm run verify`, and separate `npm run test:live` commands. CI now uses only
+  `verify` for pull requests and pushes to `main`, while preserving the
+  existing validation scripts and live-test boundary.
+
+### Fixed
+
+- **tests/helpers.sh:** replaced the implicit `ripgrep` dependency in test
+  assertions with POSIX `grep`, keeping the mandatory test suites compatible
+  with the minimal GitHub Actions environment.
+
 ## [1.47.1] - 2026-07-02
 
 ### Fixed

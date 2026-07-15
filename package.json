@@ -5,6 +5,10 @@
   "type": "module",
   "description": "Agent-agnostic go-* skill pack with hooks, workflows, and plugin adapter bundles for coding agents.",
   "scripts": {
+    "lint": "node scripts/validate.mjs lint",
+    "test": "node scripts/validate.mjs test",
+    "test:live": "node scripts/validate.mjs test:live",
+    "verify": "node scripts/validate.mjs verify",
     "release:version:check": "node scripts/release-version.mjs check",
     "release:version:publish": "node scripts/release-version.mjs publish",
     "sync:plugin-skills": "node scripts/sync-plugin-skills.mjs",

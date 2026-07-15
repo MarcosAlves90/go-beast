@@ -40,7 +40,7 @@ assert_contains() {
   local file="$1"
   local pattern="$2"
   local test_name="$3"
-  if rg -q "$pattern" "$file"; then
+  if grep -Eq -- "$pattern" "$file"; then
     echo "[PASS] $test_name"
   else
     echo "[FAIL] $test_name"
