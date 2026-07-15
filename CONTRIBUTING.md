@@ -15,7 +15,9 @@ Transversal maintainer rules are defined in `go-beast.manifest.yaml`. Generate
 the committed instruction and architecture surfaces with `npm run rules:generate`
 and verify that they are synchronized with `npm run rules:check`. Do not edit
 generated marker blocks manually; domain-specific rules remain canonical in
-their own sources.
+their own sources. See [the generated policy reference](docs/architecture/TRANSVERSAL_RULES.md),
+[the generated skill catalog](docs/PIPELINE.md), and the marked contracts in
+each `skills/*/SKILL.md` for the current derived surfaces.
 
 ## Before you start
 
