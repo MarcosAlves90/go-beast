@@ -36,6 +36,100 @@ federated_sources:
     source: hooks/manifest.json
   - domain: release version
     source: package.json
+reserved_aliases:
+  - go-beast
+  - help
+  - install
+  - lint
+  - release
+  - test
+  - test-live
+  - verify
+skills:
+  go-ant:
+    alias: performance
+    description: Profile and optimize proven performance bottlenecks.
+  go-bear:
+    alias: security
+    description: Review security posture and harden sensitive systems.
+  go-beaver:
+    alias: scaffold
+    description: Create a runnable project skeleton and setup.
+  go-bee:
+    alias: workflow
+    description: Design multi-agent Workflow orchestration scripts.
+  go-chat:
+    alias: conversation
+    description: Conduct structured technical discussion and decision support.
+  go-crane:
+    alias: observability
+    description: Add logs, metrics, traces, health signals, and alerts.
+  go-eagle:
+    alias: testing
+    description: Design tests, CI gates, and coverage policy.
+  go-finch:
+    alias: skill-maintenance
+    description: Make minimal evidence-based improvements to existing skills.
+  go-fox:
+    alias: architecture
+    description: Turn approved requirements into architecture decisions and contracts.
+  go-hawk:
+    alias: discover
+    description: Discover requirements, scope, risks, and unknowns.
+  go-jay:
+    alias: context
+    description: Author and synchronize AI agent context files.
+  go-kite:
+    alias: architecture-audit
+    description: Audit architecture health and prioritize improvements.
+  go-lark:
+    alias: explore
+    description: Compare solution approaches and select a direction.
+  go-lynx:
+    alias: frontend
+    description: Build accessible frontend interfaces and integrations.
+  go-marten:
+    alias: worktree
+    description: Create and manage isolated Git worktrees safely.
+  go-mole:
+    alias: docs-scan
+    description: Scan project documentation and produce a compact briefing.
+  go-mule:
+    alias: initialize
+    description: Initialize go-beast and optional harness integrations explicitly.
+  go-otter:
+    alias: database
+    description: Design schemas, migrations, indexes, and query strategy.
+  go-owl:
+    alias: documentation
+    description: Audit and write accurate technical documentation.
+  go-raven:
+    alias: cicd
+    description: Design CI/CD pipelines, environments, and release automation.
+  go-score:
+    alias: scored-review
+    description: Produce a dimensional code review with calibrated scores.
+  go-smith:
+    alias: skill-authoring
+    description: Design and validate new go-beast skills.
+  go-snipe:
+    alias: bdd
+    description: Define behavioral specifications and acceptance scenarios.
+  go-swift:
+    alias: hook-authoring
+    description: Design and wire lifecycle hooks for supported agents.
+  go-tern:
+    alias: review
+    description: Review changes for correctness, risk, and merge readiness.
+  go-vole:
+    alias: obsidian
+    description: Design and maintain Obsidian vault structures.
+  go-wolf:
+    alias: backend
+    description: Build backend APIs, business logic, and server validation.
+  go-wren:
+    alias: hook-maintenance
+    description: Audit and minimally change existing lifecycle hooks.
 derived_surfaces:
   - path: AGENTS.global.md
     marker: transversal-rules
@@ -45,5 +139,7 @@ derived_surfaces:
     marker: transversal-rules
   - path: docs/architecture/TRANSVERSAL_RULES.md
     marker: transversal-rules
+  - path: docs/PIPELINE.md
+    marker: semantic-skill-aliases
   - path: docs/architecture/transversal-rules-index.json
     marker: json-document

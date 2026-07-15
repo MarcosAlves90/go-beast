@@ -6,6 +6,8 @@ import process from 'node:process'
 
 const START = '<!-- BEGIN GENERATED: transversal-rules -->'
 const END = '<!-- END GENERATED: transversal-rules -->'
+const ALIAS_START = '<!-- BEGIN GENERATED: semantic-skill-aliases -->'
+const ALIAS_END = '<!-- END GENERATED: semantic-skill-aliases -->'
 const manifestName = 'go-beast.manifest.yaml'
 const schemaName = 'go-beast.manifest.schema.json'
 
@@ -124,7 +126,7 @@ function assertKeys(value, keys, label) {
   for (const key of keys) if (!Object.hasOwn(value, key)) fail(`${label} is missing ${key}`)
 }
 
-function validateManifest(manifest, schema) {
+function validateManifest(manifest, schema, root) {
   assertType(manifest, 'object', 'manifest')
   const required = schema.required
   for (const key of required) if (!Object.hasOwn(manifest, key)) fail(`missing required key ${key}`)
@@ -134,9 +136,28 @@ function validateManifest(manifest, schema) {
   if (!Number.isInteger(manifest.schema_version) || !Number.isInteger(manifest.manifest_version)) fail('schema and manifest versions must be integers')
   if (manifest.schema_version !== 1) fail(`unsupported schema_version ${manifest.schema_version}`)
   if (typeof manifest.title !== 'string' || !manifest.title.trim()) fail('title must be a non-empty string')
-  for (const key of ['principles', 'precedence', 'expected_artifacts', 'execution_constraints', 'required_phases', 'federated_sources', 'derived_surfaces']) assertType(manifest[key], 'array', key)
+  for (const key of ['principles', 'precedence', 'expected_artifacts', 'execution_constraints', 'required_phases', 'federated_sources', 'reserved_aliases', 'derived_surfaces']) assertType(manifest[key], 'array', key)
   for (const key of ['principles', 'precedence', 'expected_artifacts', 'execution_constraints']) {
     if (!manifest[key].length || manifest[key].some(item => typeof item !== 'string' || !item.trim())) fail(`${key} must contain non-empty strings`)
+  }
+  if (manifest.reserved_aliases.some(alias => typeof alias !== 'string' || !alias.trim())) fail('reserved_aliases must contain non-empty strings')
+  assertType(manifest.skills, 'object', 'skills')
+  const canonicalSkills = fs.readdirSync(path.join(root, 'skills'))
+    .filter(name => name.startsWith('go-') && fs.existsSync(path.join(root, 'skills', name, 'SKILL.md')))
+  const manifestSkills = Object.keys(manifest.skills).sort()
+  if (canonicalSkills.sort().join('\n') !== manifestSkills.join('\n')) fail('skills aliases must cover exactly every canonical go-* skill')
+  const officialNames = new Set(canonicalSkills.map(name => name.toLowerCase()))
+  const reserved = new Set(manifest.reserved_aliases.map(alias => alias.toLowerCase()))
+  const aliases = new Set()
+  for (const [name, entry] of Object.entries(manifest.skills)) {
+    assertKeys(entry, ['alias', 'description'], `skills.${name}`)
+    if (!/^[a-z0-9-]+$/.test(entry.alias)) fail(`skills.${name}.alias must match ^[a-z0-9-]+$`)
+    if (!entry.description.trim()) fail(`skills.${name}.description must be non-empty`)
+    const normalized = entry.alias.toLowerCase()
+    if (aliases.has(normalized)) fail(`duplicate skill alias: ${entry.alias}`)
+    if (reserved.has(normalized)) fail(`reserved skill alias: ${entry.alias}`)
+    if (officialNames.has(normalized) || normalized.startsWith('go-')) fail(`skill alias cannot be a go-* identifier: ${entry.alias}`)
+    aliases.add(normalized)
   }
   assertType(manifest.hook_integration, 'object', 'hook_integration')
   assertKeys(manifest.hook_integration, ['contract', 'wiring', 'session_sync'], 'hook_integration')
@@ -186,6 +207,21 @@ function markerBlock(manifest, audience) {
   return lines.join('\n')
 }
 
+function aliasBlock(manifest) {
+  const lines = [
+    ALIAS_START,
+    '## Semantic skill aliases',
+    '',
+    'Aliases are descriptive documentation only. The official identifiers remain the `go-*` names.',
+    '',
+    '| Official skill | Semantic alias | Purpose |',
+    '|---|---|---|',
+    ...Object.entries(manifest.skills).sort(([left], [right]) => left.localeCompare(right)).map(([name, entry]) => `| [${name}](../skills/${name}/SKILL.md) | \`${entry.alias}\` | ${entry.description} |`),
+    ALIAS_END,
+  ]
+  return lines.join('\n')
+}
+
 function replaceBlock(content, manifest, audience, filePath) {
   const startCount = content.split(START).length - 1
   const endCount = content.split(END).length - 1
@@ -196,8 +232,18 @@ function replaceBlock(content, manifest, audience, filePath) {
   return `${content.slice(0, start)}${markerBlock(manifest, audience)}${content.slice(end + END.length)}`
 }
 
+function replaceAliasBlock(content, manifest, filePath) {
+  const startCount = content.split(ALIAS_START).length - 1
+  const endCount = content.split(ALIAS_END).length - 1
+  if (startCount !== 1 || endCount !== 1) fail(`${filePath} must contain exactly one semantic alias marker pair`)
+  const start = content.indexOf(ALIAS_START)
+  const end = content.indexOf(ALIAS_END)
+  if (end < start) fail(`${filePath} has reversed semantic alias markers`)
+  return `${content.slice(0, start)}${aliasBlock(manifest)}${content.slice(end + ALIAS_END.length)}`
+}
+
 function renderIndex(manifest) {
-  return `${JSON.stringify({ schema_version: manifest.schema_version, manifest_version: manifest.manifest_version, manifest: manifestName, schema: schemaName, derived_surfaces: manifest.derived_surfaces, federated_sources: manifest.federated_sources }, null, 2)}\n`
+  return `${JSON.stringify({ schema_version: manifest.schema_version, manifest_version: manifest.manifest_version, manifest: manifestName, schema: schemaName, reserved_aliases: manifest.reserved_aliases, skills: manifest.skills, derived_surfaces: manifest.derived_surfaces, federated_sources: manifest.federated_sources }, null, 2)}\n`
 }
 
 function parseArgs() {
@@ -212,13 +258,14 @@ function main() {
   const { mode, root } = parseArgs()
   const manifest = parseYaml(fs.readFileSync(path.join(root, manifestName), 'utf8'))
   const schema = JSON.parse(fs.readFileSync(path.join(root, schemaName), 'utf8'))
-  validateManifest(manifest, schema)
+  validateManifest(manifest, schema, root)
   const surfaces = new Map(manifest.derived_surfaces.map(item => [item.path, item]))
   const expected = new Map([
     ['AGENTS.global.md', null],
     ['AGENTS.bootstrap.md', null],
     ['AGENTS.md', null],
     ['docs/architecture/TRANSVERSAL_RULES.md', null],
+    ['docs/PIPELINE.md', null],
     ['docs/architecture/transversal-rules-index.json', renderIndex(manifest)],
   ])
   if (surfaces.size !== expected.size || [...expected.keys()].some(file => !surfaces.has(file))) fail('derived_surfaces does not match the supported generated surface list')
@@ -226,7 +273,9 @@ function main() {
     const filePath = path.join(root, relative)
     const current = fs.readFileSync(filePath, 'utf8')
     let desired = generated
-    if (relative.endsWith('.md')) {
+    if (relative === 'docs/PIPELINE.md') {
+      desired = replaceAliasBlock(current, manifest, filePath)
+    } else if (relative.endsWith('.md')) {
       const audience = relative === 'AGENTS.global.md' ? 'global contract' : relative === 'AGENTS.bootstrap.md' ? 'bootstrap contract' : relative === 'AGENTS.md' ? 'repository contract' : 'architecture reference'
       desired = replaceBlock(current, manifest, audience, filePath)
     }
