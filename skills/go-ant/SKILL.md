@@ -7,6 +7,23 @@ when_to_use: Use when there is a proven performance problem — slow endpoint, h
 
 # go-ant — Performance Profiling & Optimization
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-ant`
+- **Alias:** `performance` (documentation only)
+- **Phase:** performance
+- **When to use:** A measured performance bottleneck exists.
+- **Prerequisites:** A numeric baseline
+- **Input artifacts:** Performance baseline
+- **Output artifacts:** PERF.md
+- **Gates:** Baseline before optimization; after-measurement validation
+- **Dependencies:** go-crane or go-eagle
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-ant carries weight far beyond its size. It does not optimize speculatively — it profiles first, proves the problem, then removes exactly what is slow.
 
 ## Quick start

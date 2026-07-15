@@ -7,6 +7,23 @@ when_to_use: Use when the user wants to improve how an AI agent understands a pr
 
 # go-jay — AI Context File Editor
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-jay`
+- **Alias:** `context` (documentation only)
+- **Phase:** context
+- **When to use:** Agent instructions or context need authoring or synchronization
+- **Prerequisites:** Existing context contract inspected
+- **Input artifacts:** AGENTS.md or equivalent
+- **Output artifacts:** Updated context files; Change report
+- **Gates:** No contradictions or duplicate rules
+- **Dependencies:** None
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-jay writes and maintains the files that shape AI agent behavior: instructions, rules, context, and memory. It is agent-agnostic — the workflow applies to CLAUDE.md, AGENTS.md, GEMINI.md, COPILOT.md, or any other context format.
 
 ## Quick start

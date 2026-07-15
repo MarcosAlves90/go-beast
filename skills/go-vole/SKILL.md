@@ -7,6 +7,23 @@ when_to_use: "Use when setting up a new Obsidian vault, restructuring an existin
 
 # go-vole — Obsidian Vault Design & Maintenance
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-vole`
+- **Alias:** `obsidian` (documentation only)
+- **Phase:** knowledge
+- **When to use:** An Obsidian vault or PKM system needs design
+- **Prerequisites:** Vault context
+- **Input artifacts:** Vault and plugin context
+- **Output artifacts:** Vault specification and templates
+- **Gates:** Findable structure and intentional links
+- **Dependencies:** None
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-vole builds the underground network. It designs knowledge structures, configures tools, and keeps notes findable and interconnected. Its discipline: every note serves a purpose and every connection is intentional.
 
 ## Quick start

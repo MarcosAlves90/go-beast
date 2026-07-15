@@ -8,6 +8,23 @@ when_to_use: "Use when a Claude Code or Codex hook already exists and needs to b
 
 # go-wren — Hook Maintenance `[Claude Code · Codex]`
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-wren`
+- **Alias:** `hook-maintenance` (documentation only)
+- **Phase:** hooks
+- **When to use:** An existing lifecycle hook needs a behavior or bug fix
+- **Prerequisites:** Existing hook contract
+- **Input artifacts:** Hook script and direct tests
+- **Output artifacts:** Minimal hook diff and test evidence
+- **Gates:** Exit-code and happy-path compatibility
+- **Dependencies:** None
+- **Conflicts:** go-swift
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-wren patches what go-swift built. It does not design new hooks — it audits, edits, and re-validates existing ones. The discipline is surgical: change the minimum, preserve the contract, prove no regression.
 
 ## Quick start

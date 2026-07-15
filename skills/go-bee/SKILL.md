@@ -7,6 +7,23 @@ when_to_use: "Use when a task requires fan-out to multiple agents, parallel exec
 
 # go-bee — Workflow Authoring
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-bee`
+- **Alias:** `workflow` (documentation only)
+- **Phase:** workflow
+- **When to use:** Fan-out; parallel; multi-phase; or evaluation automation
+- **Prerequisites:** A well-understood task
+- **Input artifacts:** Task scope
+- **Output artifacts:** Workflow script
+- **Gates:** Schema; labels; phases; and return contract
+- **Dependencies:** go-hawk
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-bee orchestrates swarms. It designs and implements multi-agent Workflow scripts — the `.js` files that fan work out across many agents, pipeline results through stages, and synthesize findings at scale. Its discipline: every workflow is deterministic in structure, even when agents are non-deterministic in output.
 
 ## Quick start

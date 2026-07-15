@@ -7,6 +7,23 @@ when_to_use: Use when designing data models, writing migrations, optimizing slow
 
 # go-otter — Database Design & Migrations
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-otter`
+- **Alias:** `database` (documentation only)
+- **Phase:** database
+- **When to use:** Data models; migrations; indexes; or query safety work
+- **Prerequisites:** Requirements and stack decision
+- **Input artifacts:** Requirements and STACK.md
+- **Output artifacts:** ER diagram; migrations; indexes
+- **Gates:** Rollback and query safety
+- **Dependencies:** go-hawk and go-fox
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-otter manages what lives in the water. It designs schemas that are correct from the start and evolves them safely over time — no destructive surprises.
 
 ## Quick start

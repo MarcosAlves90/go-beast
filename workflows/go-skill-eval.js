@@ -9,6 +9,14 @@ export const meta = {
   ],
 }
 
+// BEGIN GENERATED: workflow-policy
+// <go_beast_policy>
+//   <precedence>System and harness rules | Repository-local AGENTS.md | AGENTS.bootstrap.md when bootstrap mode is active | AGENTS.global.md</precedence>
+//   <phases>discovery | solution exploration | validation</phases>
+//   <gates>Do not fabricate requirements, validation results, or compatibility claims. | Do not implement while a required discovery artifact is missing. | Use the strongest relevant validation available before declaring completion.</gates>
+// </go_beast_policy>
+// END GENERATED: workflow-policy
+
 const HOME = args?.home ?? (await agent('Run: echo "$HOME" and return only the path string.', { label: 'discover-home', effort: 'low' }))?.trim() ?? '~'
 const REPO = args?.repoPath ?? (await agent('Run: git rev-parse --show-toplevel and return only the path string.', { label: 'discover-repo', effort: 'low' }))?.trim() ?? '.'
 const GO_BEAST_VERSION = args?.version ?? (await agent(`Run: node -e "process.stdout.write(require('${REPO}/package.json').version)" and return only the version string.`, { label: 'discover-version', effort: 'low' }))?.trim() ?? 'unknown'

@@ -7,6 +7,23 @@ when_to_use: Use when the user wants a strategic view of an existing system's he
 
 # go-kite — Architecture Health Audit
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-kite`
+- **Alias:** `architecture-audit` (documentation only)
+- **Phase:** architecture-audit
+- **When to use:** A strategic architecture health view is needed
+- **Prerequisites:** Repository context
+- **Input artifacts:** Repository and architecture docs
+- **Output artifacts:** Architecture audit report
+- **Gates:** Evidence from relevant source files
+- **Dependencies:** go-mole
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-kite is the scout of the go-beast pack. It flies above the system, maps the terrain, and returns with a ranked report of what is healthy, what is fragile, and what is missing.
 
 ## Quick start

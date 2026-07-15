@@ -7,6 +7,23 @@ when_to_use: "Use when a developer wants to bootstrap go-beast explicitly instea
 
 # go-mule — Agent Initialization & Instrumentation
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-mule`
+- **Alias:** `initialize` (documentation only)
+- **Phase:** initialization
+- **When to use:** Explicit setup is needed or SessionStart automation is unavailable
+- **Prerequisites:** Target harness classification
+- **Input artifacts:** Harness and installation context
+- **Output artifacts:** Initialization plan and validation report
+- **Gates:** Canonical core separated from optional wiring
+- **Dependencies:** None
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-mule carries the pack into place before the rest of the beasts start moving. It turns initialization into an explicit, repeatable workflow instead of hidden background sync.
 
 ## Quick start

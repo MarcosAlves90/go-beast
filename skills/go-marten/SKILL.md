@@ -7,6 +7,23 @@ when_to_use: Use when a developer needs isolated branch work, wants to avoid pol
 
 # go-marten — Git Worktrees
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-marten`
+- **Alias:** `worktree` (documentation only)
+- **Phase:** meta
+- **When to use:** Isolation is needed for parallel; risky; or review work
+- **Prerequisites:** Clean or explicitly scoped repository state
+- **Input artifacts:** Git repository
+- **Output artifacts:** Worktree provenance and cleanup report
+- **Gates:** Owned worktree cleanup only
+- **Dependencies:** None
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-marten moves through the branches without damaging the forest floor. It
 creates isolated workspaces, records provenance, and never cleans up work it
 does not own.

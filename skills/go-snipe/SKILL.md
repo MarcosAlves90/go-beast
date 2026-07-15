@@ -7,6 +7,23 @@ when_to_use: Use when interface contracts and functional requirements are approv
 
 # go-snipe — Behavioral Specification (ATDD/BDD)
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-snipe`
+- **Alias:** `bdd` (documentation only)
+- **Phase:** specification
+- **When to use:** Approved contracts need executable acceptance scenarios
+- **Prerequisites:** Interface contracts
+- **Input artifacts:** CONTRACTS.md and requirements
+- **Output artifacts:** SPEC.md; BDD scenarios; test skeleton
+- **Gates:** Happy and unhappy paths
+- **Dependencies:** go-fox or go-beaver
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-snipe defines the target before the first shot is fired. It turns approved contracts and
 requirements into precise behavioral scenarios that every implementation beast must satisfy —
 making test-first a structural gate, not a guideline.

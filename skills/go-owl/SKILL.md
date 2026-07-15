@@ -7,6 +7,23 @@ when_to_use: Use when setting up documentation for a new project, filling gaps i
 
 # go-owl — Documentation
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-owl`
+- **Alias:** `documentation` (documentation only)
+- **Phase:** documentation
+- **When to use:** Documentation setup; audit; reference; runbook; or release work
+- **Prerequisites:** Verified behavior
+- **Input artifacts:** Source and existing docs
+- **Output artifacts:** README.md; docs/; CHANGELOG.md
+- **Gates:** Commands verified and links checked
+- **Dependencies:** None
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-owl sees in the dark. It produces documentation that actually helps the next person — not documentation that exists to check a box.
 
 ## Quick start

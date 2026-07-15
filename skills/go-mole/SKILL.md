@@ -7,6 +7,23 @@ when_to_use: Use at the start of any session involving an unfamiliar or partiall
 
 # go-mole — Documentation Briefing
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-mole`
+- **Alias:** `docs-scan` (documentation only)
+- **Phase:** meta
+- **When to use:** An unfamiliar or partially known project needs briefing
+- **Prerequisites:** None
+- **Input artifacts:** Project documentation
+- **Output artifacts:** Project briefing held in session context
+- **Gates:** Missing and contradictory docs reported
+- **Dependencies:** None
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-mole digs through the project's written knowledge and surfaces it as a compact briefing. Its output stays live in session context, feeding every other beast without repetition.
 
 ## Quick start

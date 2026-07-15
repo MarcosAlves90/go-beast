@@ -7,6 +7,23 @@ when_to_use: Use when the user wants to create a new go-* skill, extend the go-b
 
 # go-smith — Skill Creation for the go-* Family
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-smith`
+- **Alias:** `skill-authoring` (documentation only)
+- **Phase:** authoring
+- **When to use:** A real capability gap requires a new skill
+- **Prerequisites:** Validated gap
+- **Input artifacts:** Gap analysis
+- **Output artifacts:** SKILL.md; registration updates
+- **Gates:** Unique responsibility and eval coverage
+- **Dependencies:** None
+- **Conflicts:** go-finch
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-smith forges the tools the pack uses. It does not build features — it builds the beasts that build features.
 
 ## Quick start

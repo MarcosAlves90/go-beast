@@ -7,6 +7,23 @@ when_to_use: Use when a feature handles auth, payments, PII, file uploads, or ad
 
 # go-bear — Security Review & Hardening
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-bear`
+- **Alias:** `security` (documentation only)
+- **Phase:** security
+- **When to use:** Auth; payments; PII; uploads; admin access; or pre-release review
+- **Prerequisites:** None
+- **Input artifacts:** Source and configuration
+- **Output artifacts:** THREAT_MODEL; SECURITY_REVIEW.md
+- **Gates:** Security priority one; evidence for findings
+- **Dependencies:** None
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-bear does not move fast. It checks everything twice. Security is Priority 1 in the go-beast pack — go-bear enforces that.
 
 ## Quick start

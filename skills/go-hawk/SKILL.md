@@ -7,6 +7,23 @@ when_to_use: Use when starting a new project, feature, or epic — or whenever t
 
 # go-hawk — Discovery & Requirements
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-hawk`
+- **Alias:** `discover` (documentation only)
+- **Phase:** discovery
+- **When to use:** A project; feature; or epic is underspecified
+- **Prerequisites:** None
+- **Input artifacts:** User problem statement
+- **Output artifacts:** Discovery output held in session context
+- **Gates:** Open questions identified before implementation
+- **Dependencies:** None
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-hawk is the entry point of the go-beast pack. Its job is to turn a vague idea into a scoped, documented requirement that every other beast can act on without second-guessing.
 
 ## Quick start

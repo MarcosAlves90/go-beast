@@ -7,6 +7,23 @@ when_to_use: Use after go-hawk has produced an approved REQUIREMENTS.md — or w
 
 # go-fox — Architecture & Design
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-fox`
+- **Alias:** `architecture` (documentation only)
+- **Phase:** architecture
+- **When to use:** Approved requirements need a technical design
+- **Prerequisites:** Approved discovery output
+- **Input artifacts:** Discovery output
+- **Output artifacts:** ADR; STACK.md; DIAGRAM.md; CONTRACTS.md
+- **Gates:** Requirements approved before design
+- **Dependencies:** go-hawk
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-fox is the strategist of the go-beast pack. It converts approved requirements into a concrete, defensible technical design before a single line of code is written.
 
 ## Quick start

@@ -7,6 +7,23 @@ when_to_use: Use when starting a new project from scratch or restructuring an ex
 
 # go-beaver — Scaffolding & Project Init
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-beaver`
+- **Alias:** `scaffold` (documentation only)
+- **Phase:** scaffolding
+- **When to use:** A new project or repository restructure
+- **Prerequisites:** STACK.md from go-fox
+- **Input artifacts:** STACK.md
+- **Output artifacts:** Runnable repository skeleton
+- **Gates:** Install and startup validation
+- **Dependencies:** go-fox
+- **Conflicts:** None
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-beaver builds the dam before the water flows. It takes the stack decision from go-fox and produces a working, runnable project skeleton that every other beast can build on.
 
 ## Quick start

@@ -8,6 +8,23 @@ when_to_use: "Use when the user wants to automate a behavior on a supported agen
 
 # go-swift — Lifecycle Hook Authoring `[Claude Code · Codex]`
 
+<!-- BEGIN GENERATED: skill-contract -->
+## Generated skill contract
+
+- **ID:** `go-swift`
+- **Alias:** `hook-authoring` (documentation only)
+- **Phase:** hooks
+- **When to use:** A new lifecycle automation is needed
+- **Prerequisites:** Target harness and event
+- **Input artifacts:** Hook behavior contract
+- **Output artifacts:** Hook script and wiring
+- **Gates:** Direct happy and blocked-path tests
+- **Dependencies:** go-jay
+- **Conflicts:** go-wren
+
+The manifest defines this contract; the remainder of this skill defines how to fulfill it.
+<!-- END GENERATED: skill-contract -->
+
 go-swift reacts before the moment passes. It does not build features — it wires automated responses to lifecycle events in hook-capable coding agents. Claude Code and Codex use different configuration files, so choose the target agent before writing the hook.
 
 ## Quick start
