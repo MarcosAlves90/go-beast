@@ -120,7 +120,8 @@ function commitsSince(tag) {
 
 function pullRequestMetadata(commit) {
   const repository = process.env.GITHUB_REPOSITORY
-  if (!repository) return { numbers: [], labels: [] }
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+  if (!repository || !token) return { numbers: [], labels: [] }
 
   let pulls
   try {

@@ -17,11 +17,13 @@ git -C "$FIXTURE" config user.email "release-test@example.com"
 git -C "$FIXTURE" -c tag.gpgSign=false tag v1.47.2
 git -C "$FIXTURE" commit --allow-empty -q -m "fix(test): exercise release preparation"
 
-node "$FIXTURE/scripts/prepare-release.mjs" --dry-run > "$TEST_DIR/dry-run.json"
+env -u GH_TOKEN -u GITHUB_TOKEN GITHUB_REPOSITORY=example/repo \
+  node "$FIXTURE/scripts/prepare-release.mjs" --dry-run > "$TEST_DIR/dry-run.json"
 assert_contains "$TEST_DIR/dry-run.json" '"dryRun": true' 'release preparation supports dry-run mode'
 assert_contains "$TEST_DIR/dry-run.json" '"bump": "patch"' 'fix commits calculate a patch bump'
 
-node "$FIXTURE/scripts/prepare-release.mjs" --version 9.9.9 > "$TEST_DIR/release.json"
+env -u GH_TOKEN -u GITHUB_TOKEN GITHUB_REPOSITORY=example/repo \
+  node "$FIXTURE/scripts/prepare-release.mjs" --version 9.9.9 > "$TEST_DIR/release.json"
 assert_contains "$FIXTURE/package.json" '"version": "9.9.9"' 'release preparation updates package version'
 assert_contains "$FIXTURE/CHANGELOG.md" '^## \[9\.9\.9\] - ' 'release preparation creates released changelog section'
 assert_contains "$FIXTURE/CHANGELOG.md" 'exercise release preparation' 'release preparation includes commit description'
