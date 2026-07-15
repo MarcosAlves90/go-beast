@@ -37,10 +37,13 @@ go-beast/
 ├── package.json           ← Package metadata and maintenance scripts
 ├── .github/
 │   ├── ISSUE_TEMPLATE.md        ← Issue body pattern for repo changes
-│   └── pull_request_template.md ← PR body pattern for repo changes
+│   ├── pull_request_template.md ← PR body pattern for repo changes
+│   └── workflows/
+│       └── prepare-release.yml  ← Manual release-train preparation workflow
 ├── skills/
 │   └── go-*/              ← Canonical skill directories
 ├── docs/
+│   ├── RELEASES.md          ← Release-train preparation and publication flow
 │   └── architecture/
 │       ├── ADR-001-plugin-adapter-bundle.md ← Plugin adapter architecture decision
 │       ├── ADR-002-canonical-skills-directory.md ← Canonical skills directory decision
@@ -66,13 +69,14 @@ go-beast/
 │   ├── eval-output.mjs   ← Shared JSON output helper for eval workflows
 │   ├── hook-wire.mjs          ← Shared hook manifest wiring helper for config and symlinks
 │   ├── install.mjs            ← Cross-platform installer (Node.js 18+, no deps)
+│   ├── prepare-release.mjs     ← Generates release PR version and changelog surfaces
 │   ├── release-version.mjs    ← Canonical release/versioning contract: check and cut releases from package.json
 │   └── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
 ├── tests/
 │   ├── helpers.sh             ← Shared shell assertions for integration tests
 │   ├── claude-code/           ← Claude Code real-session integration tests
 │   ├── codex/                 ← Codex real-session integration tests
-│   └── plugin/                ← Plugin bundle and shell integration checks
+│   └── plugin/                ← Plugin bundle and shell integration checks, including release preparation
 └── hooks/
     ├── manifest.json             ← Shared hook manifest for Claude Code and Codex
     ├── sync-go-beast-skills.sh    ← SessionStart: syncs skills/workflows/hooks/global instructions

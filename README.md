@@ -328,9 +328,13 @@ compatibility, but they are not the canonical contribution or CI flow.
 
 Release flow:
 
+Use the manual [release-train workflow](docs/RELEASES.md) to calculate the
+version, generate `CHANGELOG.md`, and open a release PR. After that PR is merged,
+publish the prepared release from a clean checkout:
+
 ```bash
-node scripts/release-version.mjs release --bump <patch|minor|major>
-node scripts/release-version.mjs publish
+npm run release:version:check
+npm run release:version:publish
 ```
 
 `publish` creates the annotated git tag, pushes it to `origin`, dispatches
