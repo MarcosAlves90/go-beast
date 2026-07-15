@@ -157,7 +157,21 @@ not add new validation entrypoints outside the consolidated command contract.
 
 ## Release and versioning
 
-Update [CHANGELOG.md](CHANGELOG.md) before bumping version metadata.
+Ordinary pull requests must not edit release version metadata or `CHANGELOG.md`
+release sections. Maintainers group merged work through the manual
+[release-train workflow](docs/RELEASES.md), which creates a reviewable release
+PR from Conventional Commits.
+
+Use **Actions → Prepare Release → Run workflow** on `main`. Leave the version
+input empty for automatic SemVer calculation or provide an explicit `x.y.z`
+override. Review and merge the generated `release/next` PR before publishing.
+
+See [docs/RELEASES.md](docs/RELEASES.md) for commit grouping, label overrides,
+idempotency, and the post-merge publication flow.
+
+Update [CHANGELOG.md](CHANGELOG.md) manually only when maintaining historical
+documentation or the release automation itself; normal feature PRs should let
+the release workflow generate the release entry.
 
 Canonical version source:
 

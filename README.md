@@ -69,6 +69,15 @@ issues, pull requests, versioning, and the canonical validation flow.
 4. Security can interrupt any phase.
 5. Repository content is written in English.
 
+Use the manual [release-train workflow](docs/RELEASES.md) to calculate the
+version, generate `CHANGELOG.md`, and open a release PR. After that PR is merged,
+publish the prepared release from a clean checkout:
+
+```bash
+npm run release:version:check
+npm run release:version:publish
+```
+
 ## License
 
 MIT.
