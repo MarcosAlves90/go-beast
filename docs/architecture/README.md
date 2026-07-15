@@ -14,6 +14,5 @@ question you are answering.
 | Where are transversal rules defined and generated? | [Transversal rules](TRANSVERSAL_RULES.md) |
 | What are the recurring maintainer protocols? | [Maintainer protocols](MAINTAINER_PROTOCOLS.md) |
 
-Task-specific discovery artifacts, when deliberately retained, live under
-[`task-artifacts/`](task-artifacts/). They are not part of the end-user
-installation flow.
+Discovery and solution-exploration outputs are transient session artifacts.
+They are not part of the repository or the end-user installation flow.

@@ -17,8 +17,8 @@ These rules are generated. Edit the manifest and run the generator; do not edit 
 4. AGENTS.global.md
 
 ### Required phases
-- **discovery:** `REQUIREMENTS.md`
-- **solution exploration:** `APPROACH.md`
+- **discovery:** `go-hawk discovery output`
+- **solution exploration:** `go-lark approach decision`
 - **validation:** `npm run verify`
 
 ### Execution constraints
