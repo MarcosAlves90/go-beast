@@ -9,6 +9,8 @@
     "test": "node scripts/validate.mjs test",
     "test:live": "node scripts/validate.mjs test:live",
     "verify": "node scripts/validate.mjs verify",
+    "rules:generate": "node scripts/transversal-rules.mjs generate",
+    "rules:check": "node scripts/transversal-rules.mjs check",
     "release:version:check": "node scripts/release-version.mjs check",
     "release:prepare": "node scripts/prepare-release.mjs",
     "release:version:publish": "node scripts/release-version.mjs publish",

@@ -1,0 +1,49 @@
+schema_version: 1
+manifest_version: 1
+title: Transversal go-beast rules
+principles:
+  - Security and correctness take priority over convenience.
+  - Investigate before implementation and validate before completion.
+  - Keep canonical sources federated by domain and derive shared surfaces deterministically.
+precedence:
+  - System and harness rules
+  - Repository-local AGENTS.md
+  - AGENTS.bootstrap.md when bootstrap mode is active
+  - AGENTS.global.md
+required_phases:
+  - name: discovery
+    artifact: REQUIREMENTS.md
+  - name: solution exploration
+    artifact: APPROACH.md
+  - name: validation
+    artifact: npm run verify
+expected_artifacts:
+  - REQUIREMENTS.md for approved requirements
+  - APPROACH.md for selected solution direction
+  - npm run verify output before completion
+execution_constraints:
+  - Do not fabricate requirements, validation results, or compatibility claims.
+  - Do not implement while a required discovery artifact is missing.
+  - Use the strongest relevant validation available before declaring completion.
+hook_integration:
+  contract: hooks/manifest.json
+  wiring: scripts/hook-wire.mjs
+  session_sync: hooks/sync-go-beast-skills.sh
+federated_sources:
+  - domain: canonical skills
+    source: skills/
+  - domain: shared hook contract
+    source: hooks/manifest.json
+  - domain: release version
+    source: package.json
+derived_surfaces:
+  - path: AGENTS.global.md
+    marker: transversal-rules
+  - path: AGENTS.bootstrap.md
+    marker: transversal-rules
+  - path: AGENTS.md
+    marker: transversal-rules
+  - path: docs/architecture/TRANSVERSAL_RULES.md
+    marker: transversal-rules
+  - path: docs/architecture/transversal-rules-index.json
+    marker: json-document

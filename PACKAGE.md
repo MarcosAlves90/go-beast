@@ -33,6 +33,8 @@ go-beast/
 ├── README.md              ← Landing page and documentation map
 ├── PACKAGE.md             ← This file — manifest and metadata
 ├── CHANGELOG.md           ← Version history
+├── go-beast.manifest.yaml ← Canonical transversal rules manifest
+├── go-beast.manifest.schema.json ← Structural contract for the manifest
 ├── release-certificate.json ← Signed-style release attestation for the latest cut
 ├── package.json           ← Package metadata and maintenance scripts
 ├── .github/
@@ -54,6 +56,8 @@ go-beast/
 │       ├── ADR-002-canonical-skills-directory.md ← Canonical skills directory decision
 │       ├── ADR-003-harness-bootstrap-architecture.md ← Harness versus bootstrap architecture decision
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Maintainer guide for global, bootstrap, and repo-local instruction layering
+│       ├── TRANSVERSAL_RULES.md ← Generated transversal rules reference
+│       ├── transversal-rules-index.json ← Generated validator-facing manifest index
 │       ├── MAINTAINER_PROTOCOLS.md ← Maintainer protocol layer for recurring AI workflows
 │       ├── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Maintainer guide for harness and bootstrap boundaries
 │       └── task-artifacts/    ← Task-scoped go-fox/go-lark outputs (ADR.md, STACK.md, DIAGRAM.md, CONTRACTS.md, etc.) — overwritten per task
@@ -76,7 +80,8 @@ go-beast/
 │   ├── install.mjs            ← Cross-platform installer (Node.js 18+, no deps)
 │   ├── prepare-release.mjs     ← Generates release PR version and changelog surfaces
 │   ├── release-version.mjs    ← Canonical release/versioning contract: check and cut releases from package.json
-│   └── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
+│   ├── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
+│   └── transversal-rules.mjs  ← Generates and checks transversal rule surfaces
 ├── tests/
 │   ├── helpers.sh             ← Shared shell assertions for integration tests
 │   ├── claude-code/           ← Claude Code real-session integration tests

@@ -11,6 +11,12 @@ documented boundaries between:
 - optional harness adapters
 - maintainer-facing instruction and protocol layers
 
+Transversal maintainer rules are defined in `go-beast.manifest.yaml`. Generate
+the committed instruction and architecture surfaces with `npm run rules:generate`
+and verify that they are synchronized with `npm run rules:check`. Do not edit
+generated marker blocks manually; domain-specific rules remain canonical in
+their own sources.
+
 ## Before you start
 
 1. Read [README.md](README.md) for the pack overview and install model.

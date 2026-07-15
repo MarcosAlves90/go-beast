@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "manifest_version": 1,
+  "manifest": "go-beast.manifest.yaml",
+  "schema": "go-beast.manifest.schema.json",
+  "derived_surfaces": [
+    {
+      "path": "AGENTS.global.md",
+      "marker": "transversal-rules"
+    },
+    {
+      "path": "AGENTS.bootstrap.md",
+      "marker": "transversal-rules"
+    },
+    {
+      "path": "AGENTS.md",
+      "marker": "transversal-rules"
+    },
+    {
+      "path": "docs/architecture/TRANSVERSAL_RULES.md",
+      "marker": "transversal-rules"
+    },
+    {
+      "path": "docs/architecture/transversal-rules-index.json",
+      "marker": "json-document"
+    }
+  ],
+  "federated_sources": [
+    {
+      "domain": "canonical skills",
+      "source": "skills/"
+    },
+    {
+      "domain": "shared hook contract",
+      "source": "hooks/manifest.json"
+    },
+    {
+      "domain": "release version",
+      "source": "package.json"
+    }
+  ]
+}

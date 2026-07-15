@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "go-beast transversal rules manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_version",
+    "title",
+    "principles",
+    "precedence",
+    "required_phases",
+    "expected_artifacts",
+    "execution_constraints",
+    "hook_integration",
+    "federated_sources",
+    "derived_surfaces"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "manifest_version": { "type": "integer", "minimum": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "principles": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+    "precedence": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+    "required_phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "artifact"],
+        "additionalProperties": false,
+        "properties": { "name": { "type": "string" }, "artifact": { "type": "string" } }
+      },
+      "minItems": 1
+    },
+    "expected_artifacts": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "execution_constraints": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "hook_integration": {
+      "type": "object",
+      "required": ["contract", "wiring", "session_sync"],
+      "additionalProperties": false,
+      "properties": {
+        "contract": { "type": "string" },
+        "wiring": { "type": "string" },
+        "session_sync": { "type": "string" }
+      }
+    },
+    "federated_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["domain", "source"],
+        "additionalProperties": false,
+        "properties": { "domain": { "type": "string" }, "source": { "type": "string" } }
+      },
+      "minItems": 1
+    },
+    "derived_surfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "marker"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" }, "marker": { "type": "string" } }
+      },
+      "minItems": 1
+    }
+  }
+}
