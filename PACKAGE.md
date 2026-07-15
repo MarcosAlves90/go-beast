@@ -27,8 +27,6 @@ go-beast/
 ├── AGENTS.md              ← Agent context: conventions, eval usage, adding new beasts
 ├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
 ├── AGENTS.bootstrap.md    ← Optional stricter bootstrap instructions for discovery-first sessions
-├── REQUIREMENTS.md        ← Task-scoped requirement artifacts when discovery outputs are checked into the repo
-├── APPROACH.md            ← Task-scoped approach decisions when solution exploration outputs are checked into the repo
 ├── CONTRIBUTING.md        ← Canonical contributor workflow for issues, PRs, validation, and releases
 ├── README.md              ← Landing page and documentation map
 ├── PACKAGE.md             ← This file — manifest and metadata
@@ -60,7 +58,6 @@ go-beast/
 │       ├── transversal-rules-index.json ← Generated validator-facing manifest index
 │       ├── MAINTAINER_PROTOCOLS.md ← Maintainer protocol layer for recurring AI workflows
 │       ├── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Maintainer guide for harness and bootstrap boundaries
-│       └── task-artifacts/    ← Task-scoped go-fox/go-lark outputs (ADR.md, STACK.md, DIAGRAM.md, CONTRACTS.md, etc.) — overwritten per task
 ├── plugins/
 │   └── go-beast/
 │       ├── .codex-plugin/

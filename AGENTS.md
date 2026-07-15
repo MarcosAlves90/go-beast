@@ -21,8 +21,8 @@ These rules are generated. Edit the manifest and run the generator; do not edit 
 4. AGENTS.global.md
 
 ### Required phases
-- **discovery:** `REQUIREMENTS.md`
-- **solution exploration:** `APPROACH.md`
+- **discovery:** `go-hawk discovery output`
+- **solution exploration:** `go-lark approach decision`
 - **validation:** `npm run verify`
 
 ### Execution constraints
@@ -197,8 +197,6 @@ go-beast/
 ├── AGENTS.md              ← This file (context for the repo maintainer agent)
 ├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
 ├── AGENTS.bootstrap.md    ← Optional stricter bootstrap instructions synced when bootstrap mode is enabled
-├── REQUIREMENTS.md        ← Task-scoped discovery artifacts when maintainers check them into the repo
-├── APPROACH.md            ← Task-scoped approach decisions when maintainers check them into the repo
 ├── CONTRIBUTING.md        ← Canonical contributor workflow for issues, PRs, validation, and releases
 ├── README.md              ← Pack index, pipeline map, install instructions
 ├── PACKAGE.md             ← Manifest, directory tree, versioning policy
@@ -232,7 +230,6 @@ go-beast/
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Explains how global, bootstrap, and repo-local agent contracts relate
 │       ├── MAINTAINER_PROTOCOLS.md ← Defines discovery, implementation, validation, PR/release, and blocker protocols
 │       ├── HARNESS_BOOTSTRAP_ARCHITECTURE.md ← Explains source-of-truth boundaries for maintainers
-│       └── task-artifacts/    ← Task-scoped go-fox/go-lark outputs (ADR.md, STACK.md, DIAGRAM.md, CONTRACTS.md, etc.) — overwritten per task
 ├── workflows/
 │   ├── go-skill-eval.js       ← Skill eval: structural checklist + LLM-as-judge (A/B/C/D)
 │   ├── go-hook-eval.js        ← Hook eval: test cases across all hooks

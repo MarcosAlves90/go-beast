@@ -12,14 +12,14 @@ precedence:
   - AGENTS.global.md
 required_phases:
   - name: discovery
-    artifact: REQUIREMENTS.md
+    artifact: go-hawk discovery output
   - name: solution exploration
-    artifact: APPROACH.md
+    artifact: go-lark approach decision
   - name: validation
     artifact: npm run verify
 expected_artifacts:
-  - REQUIREMENTS.md for approved requirements
-  - APPROACH.md for selected solution direction
+  - go-hawk discovery output held in session context
+  - go-lark approach decision held in session context
   - npm run verify output before completion
 execution_constraints:
   - Do not fabricate requirements, validation results, or compatibility claims.
