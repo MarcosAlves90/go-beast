@@ -62,11 +62,19 @@
       "minProperties": 1,
       "additionalProperties": {
         "type": "object",
-        "required": ["alias", "description"],
+        "required": ["alias", "description", "phase", "when_to_use", "prerequisites", "input_artifacts", "output_artifacts", "gates", "depends_on", "conflicts_with"],
         "additionalProperties": false,
         "properties": {
           "alias": { "type": "string", "pattern": "^[a-z0-9-]+$" },
-          "description": { "type": "string", "minLength": 1 }
+          "description": { "type": "string", "minLength": 1 },
+          "phase": { "type": "string", "minLength": 1 },
+          "when_to_use": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+          "prerequisites": { "type": "array", "items": { "type": "string" } },
+          "input_artifacts": { "type": "array", "items": { "type": "string" } },
+          "output_artifacts": { "type": "array", "items": { "type": "string" } },
+          "gates": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "depends_on": { "type": "array", "items": { "type": "string" } },
+          "conflicts_with": { "type": "array", "items": { "type": "string" } }
         }
       }
     },

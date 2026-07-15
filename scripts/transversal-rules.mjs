@@ -8,6 +8,8 @@ const START = '<!-- BEGIN GENERATED: transversal-rules -->'
 const END = '<!-- END GENERATED: transversal-rules -->'
 const ALIAS_START = '<!-- BEGIN GENERATED: semantic-skill-aliases -->'
 const ALIAS_END = '<!-- END GENERATED: semantic-skill-aliases -->'
+const SKILL_START = '<!-- BEGIN GENERATED: skill-contract -->'
+const SKILL_END = '<!-- END GENERATED: skill-contract -->'
 const manifestName = 'go-beast.manifest.yaml'
 const schemaName = 'go-beast.manifest.schema.json'
 
@@ -18,13 +20,17 @@ function fail(message) {
 function scalar(raw) {
   const value = raw.trim()
   if (!value) return null
+  if (value.startsWith('[') && value.endsWith(']')) {
+    const inner = value.slice(1, -1).trim()
+    return inner ? inner.split(',').map(item => scalar(item)) : []
+  }
   if (value.startsWith('"') && value.endsWith('"')) return JSON.parse(value)
   if (value.startsWith("'") && value.endsWith("'")) return value.slice(1, -1).replaceAll("''", "'")
   if (/^-?\d+$/.test(value)) return Number(value)
   if (value === 'true') return true
   if (value === 'false') return false
   if (value === 'null') return null
-  if (/^[{}[\],&*!|>]/.test(value)) fail(`unsupported YAML scalar: ${value}`)
+  if (/^[{}\],&*!|>]/.test(value)) fail(`unsupported YAML scalar: ${value}`)
   return value
 }
 
@@ -150,9 +156,14 @@ function validateManifest(manifest, schema, root) {
   const reserved = new Set(manifest.reserved_aliases.map(alias => alias.toLowerCase()))
   const aliases = new Set()
   for (const [name, entry] of Object.entries(manifest.skills)) {
-    assertKeys(entry, ['alias', 'description'], `skills.${name}`)
+    assertKeys(entry, ['alias', 'description', 'phase', 'when_to_use', 'prerequisites', 'input_artifacts', 'output_artifacts', 'gates', 'depends_on', 'conflicts_with'], `skills.${name}`)
     if (!/^[a-z0-9-]+$/.test(entry.alias)) fail(`skills.${name}.alias must match ^[a-z0-9-]+$`)
     if (!entry.description.trim()) fail(`skills.${name}.description must be non-empty`)
+    if (typeof entry.phase !== 'string' || !entry.phase.trim()) fail(`skills.${name}.phase must be non-empty`)
+    for (const field of ['when_to_use', 'prerequisites', 'input_artifacts', 'output_artifacts', 'gates', 'depends_on', 'conflicts_with']) {
+      if (!Array.isArray(entry[field]) || entry[field].some(item => typeof item !== 'string')) fail(`skills.${name}.${field} must be an array of strings`)
+    }
+    if (entry.when_to_use.length === 0 || entry.gates.length === 0) fail(`skills.${name} requires when_to_use and gates`)
     const normalized = entry.alias.toLowerCase()
     if (aliases.has(normalized)) fail(`duplicate skill alias: ${entry.alias}`)
     if (reserved.has(normalized)) fail(`reserved skill alias: ${entry.alias}`)
@@ -222,6 +233,28 @@ function aliasBlock(manifest) {
   return lines.join('\n')
 }
 
+function skillBlock(name, entry) {
+  const lines = [
+    SKILL_START,
+    '## Generated skill contract',
+    '',
+    `- **ID:** \`${name}\``,
+    `- **Alias:** \`${entry.alias}\` (documentation only)`,
+    `- **Phase:** ${entry.phase}`,
+    `- **When to use:** ${entry.when_to_use.join('; ')}`,
+    `- **Prerequisites:** ${entry.prerequisites.length ? entry.prerequisites.join('; ') : 'None'}`,
+    `- **Input artifacts:** ${entry.input_artifacts.length ? entry.input_artifacts.join('; ') : 'None'}`,
+    `- **Output artifacts:** ${entry.output_artifacts.length ? entry.output_artifacts.join('; ') : 'None'}`,
+    `- **Gates:** ${entry.gates.join('; ')}`,
+    `- **Dependencies:** ${entry.depends_on.length ? entry.depends_on.join('; ') : 'None'}`,
+    `- **Conflicts:** ${entry.conflicts_with.length ? entry.conflicts_with.join('; ') : 'None'}`,
+    '',
+    'The manifest defines this contract; the remainder of this skill defines how to fulfill it.',
+    SKILL_END,
+  ]
+  return lines.join('\n')
+}
+
 function replaceBlock(content, manifest, audience, filePath) {
   const startCount = content.split(START).length - 1
   const endCount = content.split(END).length - 1
@@ -240,6 +273,37 @@ function replaceAliasBlock(content, manifest, filePath) {
   const end = content.indexOf(ALIAS_END)
   if (end < start) fail(`${filePath} has reversed semantic alias markers`)
   return `${content.slice(0, start)}${aliasBlock(manifest)}${content.slice(end + ALIAS_END.length)}`
+}
+
+function replaceSkillBlock(content, name, entry, filePath) {
+  const startCount = content.split(SKILL_START).length - 1
+  const endCount = content.split(SKILL_END).length - 1
+  if (startCount !== 1 || endCount !== 1) fail(`${filePath} must contain exactly one skill contract marker pair`)
+  const start = content.indexOf(SKILL_START)
+  const end = content.indexOf(SKILL_END)
+  if (end < start) fail(`${filePath} has reversed skill contract markers`)
+  return `${content.slice(0, start)}${skillBlock(name, entry)}${content.slice(end + SKILL_END.length)}`
+}
+
+function policyXml(manifest) {
+  return [
+    '<go_beast_policy>',
+    `  <precedence>${manifest.precedence.join(' | ')}</precedence>`,
+    `  <phases>${manifest.required_phases.map(item => item.name).join(' | ')}</phases>`,
+    `  <gates>${manifest.execution_constraints.join(' | ')}</gates>`,
+    '</go_beast_policy>',
+  ]
+}
+
+function replaceCommentBlock(content, manifest, start, end, prefix, filePath) {
+  const startCount = content.split(start).length - 1
+  const endCount = content.split(end).length - 1
+  if (startCount !== 1 || endCount !== 1) fail(`${filePath} must contain exactly one generated policy marker pair`)
+  const begin = content.indexOf(start)
+  const finish = content.indexOf(end)
+  if (finish < begin) fail(`${filePath} has reversed generated policy markers`)
+  const body = [start, ...policyXml(manifest).map(line => `${prefix} ${line}`), end].join('\n')
+  return `${content.slice(0, begin)}${body}${content.slice(finish + end.length)}`
 }
 
 function renderIndex(manifest) {
@@ -266,15 +330,34 @@ function main() {
     ['AGENTS.md', null],
     ['docs/architecture/TRANSVERSAL_RULES.md', null],
     ['docs/PIPELINE.md', null],
+    ['skills/*/SKILL.md', null],
+    ['hooks/go-beast-user-prompt-context.sh', null],
+    ['hooks/go-beast-stop-reanchor.sh', null],
+    ['workflows/go-skill-eval.js', null],
+    ['workflows/go-hook-eval.js', null],
     ['docs/architecture/transversal-rules-index.json', renderIndex(manifest)],
   ])
   if (surfaces.size !== expected.size || [...expected.keys()].some(file => !surfaces.has(file))) fail('derived_surfaces does not match the supported generated surface list')
   for (const [relative, generated] of expected) {
+    if (relative === 'skills/*/SKILL.md') {
+      for (const name of Object.keys(manifest.skills).sort()) {
+        const skillPath = path.join(root, 'skills', name, 'SKILL.md')
+        const current = fs.readFileSync(skillPath, 'utf8')
+        const desired = replaceSkillBlock(current, name, manifest.skills[name], skillPath)
+        if (mode === 'check' && current !== desired) fail(`${path.relative(root, skillPath)} is out of date; run npm run rules:generate`)
+        if (mode === 'generate' && current !== desired) fs.writeFileSync(skillPath, desired)
+      }
+      continue
+    }
     const filePath = path.join(root, relative)
     const current = fs.readFileSync(filePath, 'utf8')
     let desired = generated
     if (relative === 'docs/PIPELINE.md') {
       desired = replaceAliasBlock(current, manifest, filePath)
+    } else if (relative.startsWith('hooks/')) {
+      desired = replaceCommentBlock(current, manifest, '# BEGIN GENERATED: anti-drift-prompt', '# END GENERATED: anti-drift-prompt', '#', filePath)
+    } else if (relative.startsWith('workflows/')) {
+      desired = replaceCommentBlock(current, manifest, '// BEGIN GENERATED: workflow-policy', '// END GENERATED: workflow-policy', '//', filePath)
     } else if (relative.endsWith('.md')) {
       const audience = relative === 'AGENTS.global.md' ? 'global contract' : relative === 'AGENTS.bootstrap.md' ? 'bootstrap contract' : relative === 'AGENTS.md' ? 'repository contract' : 'architecture reference'
       desired = replaceBlock(current, manifest, audience, filePath)

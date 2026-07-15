@@ -49,87 +49,311 @@ skills:
   go-ant:
     alias: performance
     description: Profile and optimize proven performance bottlenecks.
+    phase: performance
+    when_to_use: [A measured performance bottleneck exists.]
+    prerequisites: [A numeric baseline]
+    input_artifacts: [Performance baseline]
+    output_artifacts: [PERF.md]
+    gates: [Baseline before optimization, after-measurement validation]
+    depends_on: [go-crane or go-eagle]
+    conflicts_with: []
   go-bear:
     alias: security
     description: Review security posture and harden sensitive systems.
+    phase: security
+    when_to_use: [Auth, payments, PII, uploads, admin access, or pre-release review]
+    prerequisites: []
+    input_artifacts: [Source and configuration]
+    output_artifacts: [THREAT_MODEL, SECURITY_REVIEW.md]
+    gates: [Security priority one, evidence for findings]
+    depends_on: []
+    conflicts_with: []
   go-beaver:
     alias: scaffold
     description: Create a runnable project skeleton and setup.
+    phase: scaffolding
+    when_to_use: [A new project or repository restructure]
+    prerequisites: [STACK.md from go-fox]
+    input_artifacts: [STACK.md]
+    output_artifacts: [Runnable repository skeleton]
+    gates: [Install and startup validation]
+    depends_on: [go-fox]
+    conflicts_with: []
   go-bee:
     alias: workflow
     description: Design multi-agent Workflow orchestration scripts.
+    phase: workflow
+    when_to_use: [Fan-out, parallel, multi-phase, or evaluation automation]
+    prerequisites: [A well-understood task]
+    input_artifacts: [Task scope]
+    output_artifacts: [Workflow script]
+    gates: [Schema, labels, phases, and return contract]
+    depends_on: [go-hawk]
+    conflicts_with: []
   go-chat:
     alias: conversation
     description: Conduct structured technical discussion and decision support.
+    phase: meta
+    when_to_use: [Thinking, debate, decision support, or clarification]
+    prerequisites: []
+    input_artifacts: [User question or design context]
+    output_artifacts: [Decision or handoff summary]
+    gates: [One-question ambiguity gate, explicit assumptions]
+    depends_on: []
+    conflicts_with: []
   go-crane:
     alias: observability
     description: Add logs, metrics, traces, health signals, and alerts.
+    phase: observability
+    when_to_use: [A deployed or deployable system lacks production visibility]
+    prerequisites: [Running system or deployment context]
+    input_artifacts: [Service and deployment context]
+    output_artifacts: [OBSERVABILITY.md]
+    gates: [Signal inventory and alert thresholds]
+    depends_on: [go-raven or go-wolf]
+    conflicts_with: []
   go-eagle:
     alias: testing
     description: Design tests, CI gates, and coverage policy.
+    phase: testing
+    when_to_use: [Test strategy, coverage, or CI gates are needed]
+    prerequisites: [Working implementation or contracts]
+    input_artifacts: [Requirements and implementation]
+    output_artifacts: [docs/TESTING.md, Test files, CI gate]
+    gates: [Critical paths covered, flaky tests addressed]
+    depends_on: [go-wolf or go-lynx]
+    conflicts_with: []
   go-finch:
     alias: skill-maintenance
     description: Make minimal evidence-based improvements to existing skills.
+    phase: maintenance
+    when_to_use: [An existing skill has a documented weakness]
+    prerequisites: [A concrete finding]
+    input_artifacts: [SKILL.md and finding]
+    output_artifacts: [Updated SKILL.md, CHECKLIST ASSESSMENT]
+    gates: [Minimal edit and consistency check]
+    depends_on: [go-skill-eval when applicable]
+    conflicts_with: [go-smith]
   go-fox:
     alias: architecture
     description: Turn approved requirements into architecture decisions and contracts.
+    phase: architecture
+    when_to_use: [Approved requirements need a technical design]
+    prerequisites: [Approved discovery output]
+    input_artifacts: [Discovery output]
+    output_artifacts: [ADR, STACK.md, DIAGRAM.md, CONTRACTS.md]
+    gates: [Requirements approved before design]
+    depends_on: [go-hawk]
+    conflicts_with: []
   go-hawk:
     alias: discover
     description: Discover requirements, scope, risks, and unknowns.
+    phase: discovery
+    when_to_use: [A project, feature, or epic is underspecified]
+    prerequisites: []
+    input_artifacts: [User problem statement]
+    output_artifacts: [Discovery output held in session context]
+    gates: [Open questions identified before implementation]
+    depends_on: []
+    conflicts_with: []
   go-jay:
     alias: context
     description: Author and synchronize AI agent context files.
+    phase: context
+    when_to_use: [Agent instructions or context need authoring or synchronization]
+    prerequisites: [Existing context contract inspected]
+    input_artifacts: [AGENTS.md or equivalent]
+    output_artifacts: [Updated context files, Change report]
+    gates: [No contradictions or duplicate rules]
+    depends_on: []
+    conflicts_with: []
   go-kite:
     alias: architecture-audit
     description: Audit architecture health and prioritize improvements.
+    phase: architecture-audit
+    when_to_use: [A strategic architecture health view is needed]
+    prerequisites: [Repository context]
+    input_artifacts: [Repository and architecture docs]
+    output_artifacts: [Architecture audit report]
+    gates: [Evidence from relevant source files]
+    depends_on: [go-mole]
+    conflicts_with: []
   go-lark:
     alias: explore
     description: Compare solution approaches and select a direction.
+    phase: solution-exploration
+    when_to_use: [Approved requirements allow multiple valid approaches]
+    prerequisites: [Approved discovery output]
+    input_artifacts: [Discovery output]
+    output_artifacts: [Approach decision held in session context]
+    gates: [At least three approaches and scored evaluation]
+    depends_on: [go-hawk]
+    conflicts_with: []
   go-lynx:
     alias: frontend
     description: Build accessible frontend interfaces and integrations.
+    phase: frontend
+    when_to_use: [Frontend UI, state, API, or accessibility work]
+    prerequisites: [Backend or API contract]
+    input_artifacts: [CONTRACTS.md and SPEC.md when applicable]
+    output_artifacts: [Components, state, API integration]
+    gates: [Accessibility and real integration]
+    depends_on: [go-wolf or go-snipe]
+    conflicts_with: []
   go-marten:
     alias: worktree
     description: Create and manage isolated Git worktrees safely.
+    phase: meta
+    when_to_use: [Isolation is needed for parallel, risky, or review work]
+    prerequisites: [Clean or explicitly scoped repository state]
+    input_artifacts: [Git repository]
+    output_artifacts: [Worktree provenance and cleanup report]
+    gates: [Owned worktree cleanup only]
+    depends_on: []
+    conflicts_with: []
   go-mole:
     alias: docs-scan
     description: Scan project documentation and produce a compact briefing.
+    phase: meta
+    when_to_use: [An unfamiliar or partially known project needs briefing]
+    prerequisites: []
+    input_artifacts: [Project documentation]
+    output_artifacts: [Project briefing held in session context]
+    gates: [Missing and contradictory docs reported]
+    depends_on: []
+    conflicts_with: []
   go-mule:
     alias: initialize
     description: Initialize go-beast and optional harness integrations explicitly.
+    phase: initialization
+    when_to_use: [Explicit setup is needed or SessionStart automation is unavailable]
+    prerequisites: [Target harness classification]
+    input_artifacts: [Harness and installation context]
+    output_artifacts: [Initialization plan and validation report]
+    gates: [Canonical core separated from optional wiring]
+    depends_on: []
+    conflicts_with: []
   go-otter:
     alias: database
     description: Design schemas, migrations, indexes, and query strategy.
+    phase: database
+    when_to_use: [Data models, migrations, indexes, or query safety work]
+    prerequisites: [Requirements and stack decision]
+    input_artifacts: [Requirements and STACK.md]
+    output_artifacts: [ER diagram, migrations, indexes]
+    gates: [Rollback and query safety]
+    depends_on: [go-hawk and go-fox]
+    conflicts_with: []
   go-owl:
     alias: documentation
     description: Audit and write accurate technical documentation.
+    phase: documentation
+    when_to_use: [Documentation setup, audit, reference, runbook, or release work]
+    prerequisites: [Verified behavior]
+    input_artifacts: [Source and existing docs]
+    output_artifacts: [README.md, docs/, CHANGELOG.md]
+    gates: [Commands verified and links checked]
+    depends_on: []
+    conflicts_with: []
   go-raven:
     alias: cicd
     description: Design CI/CD pipelines, environments, and release automation.
+    phase: cicd
+    when_to_use: [Deployment pipelines, environments, or release automation]
+    prerequisites: [Passing tests and security context]
+    input_artifacts: [Test and security results]
+    output_artifacts: [Pipeline and environment strategy]
+    gates: [Secrets and promotion boundaries explicit]
+    depends_on: [go-eagle and go-bear]
+    conflicts_with: []
   go-score:
     alias: scored-review
     description: Produce a dimensional code review with calibrated scores.
+    phase: review
+    when_to_use: [A scored quality assessment and merge verdict are needed]
+    prerequisites: [Completed change or diff]
+    input_artifacts: [Diff and requirements]
+    output_artifacts: [SCORE_REPORT.md]
+    gates: [Evidence per dimension and calibrated rubric]
+    depends_on: []
+    conflicts_with: [go-tern when scoring is not required]
   go-smith:
     alias: skill-authoring
     description: Design and validate new go-beast skills.
+    phase: authoring
+    when_to_use: [A real capability gap requires a new skill]
+    prerequisites: [Validated gap]
+    input_artifacts: [Gap analysis]
+    output_artifacts: [SKILL.md, registration updates]
+    gates: [Unique responsibility and eval coverage]
+    depends_on: []
+    conflicts_with: [go-finch]
   go-snipe:
     alias: bdd
     description: Define behavioral specifications and acceptance scenarios.
+    phase: specification
+    when_to_use: [Approved contracts need executable acceptance scenarios]
+    prerequisites: [Interface contracts]
+    input_artifacts: [CONTRACTS.md and requirements]
+    output_artifacts: [SPEC.md, BDD scenarios, test skeleton]
+    gates: [Happy and unhappy paths]
+    depends_on: [go-fox or go-beaver]
+    conflicts_with: []
   go-swift:
     alias: hook-authoring
     description: Design and wire lifecycle hooks for supported agents.
+    phase: hooks
+    when_to_use: [A new lifecycle automation is needed]
+    prerequisites: [Target harness and event]
+    input_artifacts: [Hook behavior contract]
+    output_artifacts: [Hook script and wiring]
+    gates: [Direct happy and blocked-path tests]
+    depends_on: [go-jay]
+    conflicts_with: [go-wren]
   go-tern:
     alias: review
     description: Review changes for correctness, risk, and merge readiness.
+    phase: review
+    when_to_use: [A completed change needs a pass/fail review]
+    prerequisites: [Implementation diff]
+    input_artifacts: [Diff and requirements]
+    output_artifacts: [Review findings and merge recommendation]
+    gates: [Evidence-ranked findings]
+    depends_on: []
+    conflicts_with: []
   go-vole:
     alias: obsidian
     description: Design and maintain Obsidian vault structures.
+    phase: knowledge
+    when_to_use: [An Obsidian vault or PKM system needs design]
+    prerequisites: [Vault context]
+    input_artifacts: [Vault and plugin context]
+    output_artifacts: [Vault specification and templates]
+    gates: [Findable structure and intentional links]
+    depends_on: []
+    conflicts_with: []
   go-wolf:
     alias: backend
     description: Build backend APIs, business logic, and server validation.
+    phase: backend
+    when_to_use: [Backend APIs or server-side business logic work]
+    prerequisites: [Scaffold and contracts]
+    input_artifacts: [CONTRACTS.md and SPEC.md when applicable]
+    output_artifacts: [API, business logic, validation]
+    gates: [Layered architecture and server validation]
+    depends_on: [go-beaver and go-fox]
+    conflicts_with: []
   go-wren:
     alias: hook-maintenance
     description: Audit and minimally change existing lifecycle hooks.
+    phase: hooks
+    when_to_use: [An existing lifecycle hook needs a behavior or bug fix]
+    prerequisites: [Existing hook contract]
+    input_artifacts: [Hook script and direct tests]
+    output_artifacts: [Minimal hook diff and test evidence]
+    gates: [Exit-code and happy-path compatibility]
+    depends_on: []
+    conflicts_with: [go-swift]
 derived_surfaces:
   - path: AGENTS.global.md
     marker: transversal-rules
@@ -141,5 +365,15 @@ derived_surfaces:
     marker: transversal-rules
   - path: docs/PIPELINE.md
     marker: semantic-skill-aliases
+  - path: skills/*/SKILL.md
+    marker: skill-contract
+  - path: hooks/go-beast-user-prompt-context.sh
+    marker: anti-drift-prompt
+  - path: hooks/go-beast-stop-reanchor.sh
+    marker: anti-drift-prompt
+  - path: workflows/go-skill-eval.js
+    marker: workflow-policy
+  - path: workflows/go-hook-eval.js
+    marker: workflow-policy
   - path: docs/architecture/transversal-rules-index.json
     marker: json-document
