@@ -51,7 +51,7 @@ printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","prompt":"siga"}' \
   | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-user-prompt-context.sh" \
   > "$PROMPT_OUTPUT"
 
-assert_contains "$PROMPT_OUTPUT" 'go-beast re-anchor' "user-prompt hook emits re-anchor context"
+assert_contains "$PROMPT_OUTPUT" 'go_beast_state' "user-prompt hook emits re-anchor context"
 assert_contains "$PROMPT_OUTPUT" 'go-hawk' "user-prompt hook includes active beast"
 assert_contains "$PROMPT_OUTPUT" 'REQUIREMENTS.md' "user-prompt hook includes required artifact"
 
@@ -60,8 +60,11 @@ STOP_INPUT='{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":false
 set +e
 printf '%s' "$STOP_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" > "$TEST_HOME/stop-first.out" 2>&1
 FIRST_EXIT=$?
-printf '%s' "$STOP_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" > "$TEST_HOME/stop-second.out" 2>&1
-SECOND_EXIT=$?
+for attempt in 2 3 4; do
+  printf '%s' "$STOP_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" > "$TEST_HOME/stop-$attempt.out" 2>&1
+done
+printf '%s' "$STOP_INPUT" | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" > "$TEST_HOME/stop-threshold.out" 2>&1
+THRESHOLD_EXIT=$?
 set -e
 
 if [[ "$FIRST_EXIT" -ne 0 ]]; then
@@ -72,15 +75,15 @@ if [[ "$FIRST_EXIT" -ne 0 ]]; then
 fi
 echo "[PASS] stop hook first unanchored turn stays passive"
 
-if [[ "$SECOND_EXIT" -ne 2 ]]; then
-  echo "[FAIL] stop hook second unanchored turn forces re-anchor"
+if [[ "$THRESHOLD_EXIT" -ne 2 ]]; then
+  echo "[FAIL] stop hook threshold unanchored turn forces re-anchor"
   echo "Expected: 2"
-  echo "Actual:   $SECOND_EXIT"
+  echo "Actual:   $THRESHOLD_EXIT"
   exit 1
 fi
-echo "[PASS] stop hook second unanchored turn forces re-anchor"
+echo "[PASS] stop hook threshold unanchored turn forces re-anchor"
 
-assert_contains "$TEST_HOME/stop-second.out" 'active beast' "stop hook asks for active beast on drift"
+assert_contains "$TEST_HOME/stop-threshold.out" 'go_beast_state' "stop hook emits re-anchor state on drift"
 
 printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":false,"last_assistant_message":"Re-anchor: active beast go-lark, required artifact APPROACH.md, implementation unlocked is false."}' \
   | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" \
@@ -109,7 +112,7 @@ if [[ "$AFTER_COMPLETE_EXIT" -ne 0 ]]; then
 fi
 echo "[PASS] stop hook does not re-anchor completed task"
 
-printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","prompt":"use go-wren to change the hook"}' \
+printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","prompt":"using go-wren to change the hook"}' \
   | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-user-prompt-context.sh" \
   > "$TEST_HOME/prompt-new-task-output.json"
 

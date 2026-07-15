@@ -134,13 +134,26 @@ Before claiming a contribution is ready:
 Useful repository commands:
 
 ```bash
-npm run sync:plugin-skills
-npm run test:plugin
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:bootstrap
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-mule
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-tern
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-marten
+npm install
+npm run verify
 ```
+
+The validation command contract is:
+
+- `npm run lint` — existing structural, synchronization, manifest, and
+  version-consistency checks.
+- `npm run test` — existing mandatory plugin and installation test suites.
+- `npm run verify` — runs `lint` and `test`, then fails if validation changed
+  the Git tree unexpectedly.
+- `npm run test:live` — runs agent-dependent tests separately and is never part
+  of `verify` or the required CI gate.
+
+CI runs only `npm run verify` on pull requests and pushes to `main`.
+
+The existing granular `package.json` scripts remain available for focused
+diagnosis, compatibility, and selective live-test execution. Use them only to
+isolate a specific suite; do not use them as a replacement for `verify` and do
+not add new validation entrypoints outside the consolidated command contract.
 
 ## Release and versioning
 

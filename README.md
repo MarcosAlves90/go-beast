@@ -305,11 +305,26 @@ so installed links follow the new version without a manual cleanup step.
 Structural and repo-local checks:
 
 ```bash
-npm run sync:plugin-skills
-npm run release:version:check
-npm run test:plugin
-npm run test:plugin:release-version
+npm install
+npm run verify
 ```
+
+The canonical validation commands are:
+
+```bash
+npm run lint       # structure, plugin sync, manifests, and version consistency
+npm run test       # mandatory automated plugin and installation tests
+npm run verify     # lint + test + unexpected Git-tree change detection
+npm run test:live  # optional agent-dependent tests; never required by verify
+```
+
+`verify` is the only validation command used by CI. It runs on pull requests
+and pushes to `main`; tags and release workflows are unchanged. The CI job does
+not add validation logic outside this command.
+
+See [docs/TESTING.md](docs/TESTING.md) for the validation contract and CI
+policy. Existing granular scripts remain available for focused diagnosis and
+compatibility, but they are not the canonical contribution or CI flow.
 
 Release flow:
 
@@ -329,16 +344,10 @@ immutable releases are enabled, GitHub then generates the actual release
 attestation for the published release.
 
 Live harness tests are opt-in because they require a working local harness
-environment:
+environment. Run them through the single live-test command:
 
 ```bash
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:go-mole
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:bootstrap
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:claude:hook-wire
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:hook-wire
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-mule
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-tern
-GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:codex:go-marten
+GO_BEAST_RUN_LIVE_AGENT_TESTS=1 npm run test:live
 ```
 
 These live tests are intentionally less brittle than exact-string snapshot
