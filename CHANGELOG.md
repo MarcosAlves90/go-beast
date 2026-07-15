@@ -9,6 +9,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Documentation:** reduced the root README to a landing page and moved
+  installation, pipeline, harness, and architecture details into modular
+  documentation under `docs/`.
+
 ### Added
 
 - **Validation commands:** added canonical `npm run lint`, `npm run test`,
