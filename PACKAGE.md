@@ -1,6 +1,6 @@
 # go-beast — Package Manifest
 
-```
+```text
 name:    go-beast
 version: 1.47.1
 date:    2026-07-02
@@ -22,7 +22,7 @@ Release checksum: `release-certificate.json.sha256`
 
 ## Contents
 
-```
+```text
 go-beast/
 ├── AGENTS.md              ← Agent context: conventions, eval usage, adding new beasts
 ├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
@@ -30,7 +30,7 @@ go-beast/
 ├── REQUIREMENTS.md        ← Task-scoped requirement artifacts when discovery outputs are checked into the repo
 ├── APPROACH.md            ← Task-scoped approach decisions when solution exploration outputs are checked into the repo
 ├── CONTRIBUTING.md        ← Canonical contributor workflow for issues, PRs, validation, and releases
-├── README.md              ← Pack index and pipeline map
+├── README.md              ← Landing page and documentation map
 ├── PACKAGE.md             ← This file — manifest and metadata
 ├── CHANGELOG.md           ← Version history
 ├── release-certificate.json ← Signed-style release attestation for the latest cut
@@ -41,7 +41,12 @@ go-beast/
 ├── skills/
 │   └── go-*/              ← Canonical skill directories
 ├── docs/
+│   ├── GETTING_STARTED.md      ← Installation and agent setup
+│   ├── HARNESS.md              ← Harness integrations and adapter boundaries
+│   ├── PIPELINE.md             ← Skill pipeline, catalog, and workflows
+│   ├── TESTING.md              ← Validation contract and CI policy
 │   └── architecture/
+│       ├── README.md           ← Architecture documentation index
 │       ├── ADR-001-plugin-adapter-bundle.md ← Plugin adapter architecture decision
 │       ├── ADR-002-canonical-skills-directory.md ← Canonical skills directory decision
 │       ├── ADR-003-harness-bootstrap-architecture.md ← Harness versus bootstrap architecture decision
@@ -98,7 +103,7 @@ go-beast/
 
 Each skill lists its prerequisites. The canonical execution order is:
 
-```
+```text
 go-hawk
   └─► go-lark (optional — invoke when problem space is ambiguous)
         └─► go-fox
@@ -116,7 +121,7 @@ go-hawk
 
 **Meta-skills** — invoked on demand, not bound to a phase:
 
-```
+```text
 go-mole    ← session briefing; invoke before any other beast on an unfamiliar project
 go-kite    ← architecture health audit; invoke before go-fox revisions on existing systems
 go-ant     ← performance; invoke only when a numeric baseline proves a bottleneck exists
