@@ -13,6 +13,8 @@
     "execution_constraints",
     "hook_integration",
     "federated_sources",
+    "reserved_aliases",
+    "skills",
     "derived_surfaces"
   ],
   "additionalProperties": false,
@@ -53,6 +55,20 @@
         "properties": { "domain": { "type": "string" }, "source": { "type": "string" } }
       },
       "minItems": 1
+    },
+    "reserved_aliases": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+    "skills": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["alias", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "alias": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "description": { "type": "string", "minLength": 1 }
+        }
+      }
     },
     "derived_surfaces": {
       "type": "array",

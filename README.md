@@ -40,6 +40,9 @@ Browse the [skill pipeline and catalog](docs/PIPELINE.md), or jump directly to
 the [installation guide](docs/GETTING_STARTED.md), [validation contract](docs/TESTING.md),
 [harness guide](docs/HARNESS.md), or [architecture index](docs/architecture/README.md).
 
+The pipeline catalog also lists one semantic alias for every skill. Aliases are
+documentation only; `go-*` names remain the official identifiers.
+
 ## Maintainer path
 
 ```bash
