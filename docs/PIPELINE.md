@@ -14,6 +14,43 @@ flowchart LR
 Brackets mark optional skills. `go-bear` can interrupt any phase, and
 `go-owl` can run at any phase.
 
+<!-- BEGIN GENERATED: semantic-skill-aliases -->
+## Semantic skill aliases
+
+Aliases are descriptive documentation only. The official identifiers remain the `go-*` names.
+
+| Official skill | Semantic alias | Purpose |
+|---|---|---|
+| [go-ant](../skills/go-ant/SKILL.md) | `performance` | Profile and optimize proven performance bottlenecks. |
+| [go-bear](../skills/go-bear/SKILL.md) | `security` | Review security posture and harden sensitive systems. |
+| [go-beaver](../skills/go-beaver/SKILL.md) | `scaffold` | Create a runnable project skeleton and setup. |
+| [go-bee](../skills/go-bee/SKILL.md) | `workflow` | Design multi-agent Workflow orchestration scripts. |
+| [go-chat](../skills/go-chat/SKILL.md) | `conversation` | Conduct structured technical discussion and decision support. |
+| [go-crane](../skills/go-crane/SKILL.md) | `observability` | Add logs, metrics, traces, health signals, and alerts. |
+| [go-eagle](../skills/go-eagle/SKILL.md) | `testing` | Design tests, CI gates, and coverage policy. |
+| [go-finch](../skills/go-finch/SKILL.md) | `skill-maintenance` | Make minimal evidence-based improvements to existing skills. |
+| [go-fox](../skills/go-fox/SKILL.md) | `architecture` | Turn approved requirements into architecture decisions and contracts. |
+| [go-hawk](../skills/go-hawk/SKILL.md) | `discover` | Discover requirements, scope, risks, and unknowns. |
+| [go-jay](../skills/go-jay/SKILL.md) | `context` | Author and synchronize AI agent context files. |
+| [go-kite](../skills/go-kite/SKILL.md) | `architecture-audit` | Audit architecture health and prioritize improvements. |
+| [go-lark](../skills/go-lark/SKILL.md) | `explore` | Compare solution approaches and select a direction. |
+| [go-lynx](../skills/go-lynx/SKILL.md) | `frontend` | Build accessible frontend interfaces and integrations. |
+| [go-marten](../skills/go-marten/SKILL.md) | `worktree` | Create and manage isolated Git worktrees safely. |
+| [go-mole](../skills/go-mole/SKILL.md) | `docs-scan` | Scan project documentation and produce a compact briefing. |
+| [go-mule](../skills/go-mule/SKILL.md) | `initialize` | Initialize go-beast and optional harness integrations explicitly. |
+| [go-otter](../skills/go-otter/SKILL.md) | `database` | Design schemas, migrations, indexes, and query strategy. |
+| [go-owl](../skills/go-owl/SKILL.md) | `documentation` | Audit and write accurate technical documentation. |
+| [go-raven](../skills/go-raven/SKILL.md) | `cicd` | Design CI/CD pipelines, environments, and release automation. |
+| [go-score](../skills/go-score/SKILL.md) | `scored-review` | Produce a dimensional code review with calibrated scores. |
+| [go-smith](../skills/go-smith/SKILL.md) | `skill-authoring` | Design and validate new go-beast skills. |
+| [go-snipe](../skills/go-snipe/SKILL.md) | `bdd` | Define behavioral specifications and acceptance scenarios. |
+| [go-swift](../skills/go-swift/SKILL.md) | `hook-authoring` | Design and wire lifecycle hooks for supported agents. |
+| [go-tern](../skills/go-tern/SKILL.md) | `review` | Review changes for correctness, risk, and merge readiness. |
+| [go-vole](../skills/go-vole/SKILL.md) | `obsidian` | Design and maintain Obsidian vault structures. |
+| [go-wolf](../skills/go-wolf/SKILL.md) | `backend` | Build backend APIs, business logic, and server validation. |
+| [go-wren](../skills/go-wren/SKILL.md) | `hook-maintenance` | Audit and minimally change existing lifecycle hooks. |
+<!-- END GENERATED: semantic-skill-aliases -->
+
 ## Pipeline skills
 
 | Skill | Phase | Produces |

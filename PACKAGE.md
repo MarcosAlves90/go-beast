@@ -46,7 +46,7 @@ go-beast/
 │   ├── RELEASES.md             ← Release-train preparation and publication flow
 │   ├── GETTING_STARTED.md      ← Installation and agent setup
 │   ├── HARNESS.md              ← Harness integrations and adapter boundaries
-│   ├── PIPELINE.md             ← Skill pipeline, catalog, and workflows
+│   ├── PIPELINE.md             ← Skill pipeline, semantic alias catalog, and workflows
 │   ├── TESTING.md              ← Validation contract and CI policy
 │   └── architecture/
 │       ├── README.md           ← Architecture documentation index
