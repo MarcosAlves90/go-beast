@@ -78,6 +78,10 @@ npm run release:version:check
 npm run release:version:publish
 ```
 
+Maintainer-facing transversal rules are defined in
+[`go-beast.manifest.yaml`](go-beast.manifest.yaml). Generated instruction and
+architecture surfaces are checked by `npm run verify`.
+
 ## License
 
 MIT.

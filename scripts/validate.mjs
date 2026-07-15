@@ -12,6 +12,7 @@ const repoRoot = process.cwd()
 const lintChecks = [
   ['plugin synchronization', ['node', ['scripts/sync-plugin-skills.mjs']]],
   ['release and version consistency', ['node', ['scripts/release-version.mjs', 'check']]],
+  ['transversal rules drift', ['node', ['scripts/transversal-rules.mjs', 'check']]],
 ]
 
 const testSuites = [

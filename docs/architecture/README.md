@@ -11,6 +11,7 @@ question you are answering.
 | How does the plugin adapter fit the pack? | [ADR-001](ADR-001-plugin-adapter-bundle.md) |
 | What is the harness/bootstrap decision? | [ADR-003](ADR-003-harness-bootstrap-architecture.md) |
 | How do instruction files layer? | [Agent instruction contracts](AGENT_INSTRUCTION_CONTRACTS.md) |
+| Where are transversal rules defined and generated? | [Transversal rules](TRANSVERSAL_RULES.md) |
 | What are the recurring maintainer protocols? | [Maintainer protocols](MAINTAINER_PROTOCOLS.md) |
 
 Task-specific discovery artifacts, when deliberately retained, live under
