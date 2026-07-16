@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.48.0] - 2026-07-15
+
 ### Changed
 
 - **Documentation:** reduced the root README to a landing page and moved
