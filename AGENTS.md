@@ -36,6 +36,13 @@ These rules are generated. Edit the manifest and run the generator; do not edit 
 - **release version:** `package.json`
 
 Hook contract: `hooks/manifest.json`; wiring: `scripts/hook-wire.mjs`; session sync: `hooks/sync-go-beast-skills.sh`.
+
+### Declarative orchestration
+- **verify:** `npm run verify` (required)
+- **ci:** `npm run verify` (required)
+- **discovery-output:** go-hawk discovery output
+- **approach-decision:** go-lark approach decision
+- **validation-output:** npm run verify output
 <!-- END GENERATED: transversal-rules -->
 
 ## Disposable go-beast outputs

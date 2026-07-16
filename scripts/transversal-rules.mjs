@@ -132,6 +132,82 @@ function assertKeys(value, keys, label) {
   for (const key of keys) if (!Object.hasOwn(value, key)) fail(`${label} is missing ${key}`)
 }
 
+function validateOrchestration(manifest, root) {
+  const orchestration = manifest.orchestration
+  assertType(orchestration, 'object', 'orchestration')
+  assertKeys(orchestration, ['artifacts', 'external_nodes', 'consumers'], 'orchestration')
+
+  const skillNames = new Set(Object.keys(manifest.skills))
+  const externalNodes = new Set(orchestration.external_nodes)
+  const nodes = new Set([...skillNames, ...externalNodes])
+  const artifactIds = new Set()
+  const artifactLabels = new Set()
+
+  for (const artifact of orchestration.artifacts) {
+    assertKeys(artifact, ['id', 'label', 'produced_by', 'consumed_by'], 'orchestration artifact')
+    if (!/^[a-z0-9-]+$/.test(artifact.id)) fail(`orchestration artifact id must match ^[a-z0-9-]+$: ${artifact.id}`)
+    if (artifactIds.has(artifact.id)) fail(`duplicate orchestration artifact: ${artifact.id}`)
+    if (artifactLabels.has(artifact.label)) fail(`duplicate orchestration artifact label: ${artifact.label}`)
+    artifactIds.add(artifact.id)
+    artifactLabels.add(artifact.label)
+    for (const node of [...artifact.produced_by, ...artifact.consumed_by]) {
+      if (!nodes.has(node)) fail(`orchestration artifact ${artifact.id} references unknown node: ${node}`)
+    }
+  }
+
+  const dependencyGraph = new Map([...skillNames].map(name => [name, []]))
+  for (const [name, entry] of Object.entries(manifest.skills)) {
+    const references = [...entry.depends_on, ...entry.conflicts_with]
+      .flatMap(value => value.match(/\bgo-[a-z0-9-]+\b/g) ?? [])
+    for (const reference of references) {
+      if (!nodes.has(reference)) fail(`skills.${name} references unknown node: ${reference}`)
+    }
+    dependencyGraph.set(name, [...entry.depends_on.flatMap(value => value.match(/\bgo-[a-z0-9-]+\b/g) ?? [])])
+  }
+
+  const visiting = new Set()
+  const visited = new Set()
+  function visit(name, trail = []) {
+    if (visiting.has(name)) fail(`dependency cycle detected: ${[...trail, name].join(' -> ')}`)
+    if (visited.has(name)) return
+    visiting.add(name)
+    for (const dependency of dependencyGraph.get(name) ?? []) visit(dependency, [...trail, name])
+    visiting.delete(name)
+    visited.add(name)
+  }
+  for (const name of skillNames) visit(name)
+
+  for (const phase of manifest.required_phases) {
+    if (![...artifactLabels].some(label => phase.artifact === label || phase.artifact.startsWith(`${label} `) || label.startsWith(`${phase.artifact} `))) {
+      fail(`required phase references an unregistered artifact: ${phase.artifact}`)
+    }
+  }
+
+  const consumerIds = new Set()
+  for (const consumer of orchestration.consumers) {
+    assertKeys(consumer, ['id', 'command', 'required', 'surfaces'], 'orchestration consumer')
+    if (consumerIds.has(consumer.id)) fail(`duplicate orchestration consumer: ${consumer.id}`)
+    consumerIds.add(consumer.id)
+    if (!nodes.has(consumer.id)) fail(`orchestration consumer is not a known node: ${consumer.id}`)
+    for (const surface of consumer.surfaces) {
+      const surfacePath = path.join(root, surface)
+      if (!fs.existsSync(surfacePath)) fail(`orchestration consumer ${consumer.id} references missing surface: ${surface}`)
+      const surfaceContent = fs.readFileSync(surfacePath, 'utf8')
+      const packageScript = surface === 'package.json' && consumer.command.match(/^npm run ([a-z:]+)$/)?.[1]
+      const commandPresent = packageScript
+        ? JSON.parse(surfaceContent).scripts?.[packageScript] !== undefined
+        : surfaceContent.includes(consumer.command)
+      if (!commandPresent) {
+        fail(`orchestration consumer ${consumer.id} command is missing from ${surface}`)
+      }
+    }
+  }
+  for (const requiredConsumer of ['verify', 'ci']) {
+    const consumer = orchestration.consumers.find(item => item.id === requiredConsumer)
+    if (!consumer?.required) fail(`required orchestration consumer is missing or optional: ${requiredConsumer}`)
+  }
+}
+
 function validateManifest(manifest, schema, root) {
   assertType(manifest, 'object', 'manifest')
   const required = schema.required
@@ -148,6 +224,7 @@ function validateManifest(manifest, schema, root) {
   }
   if (manifest.reserved_aliases.some(alias => typeof alias !== 'string' || !alias.trim())) fail('reserved_aliases must contain non-empty strings')
   assertType(manifest.skills, 'object', 'skills')
+  validateOrchestration(manifest, root)
   const canonicalSkills = fs.readdirSync(path.join(root, 'skills'))
     .filter(name => name.startsWith('go-') && fs.existsSync(path.join(root, 'skills', name, 'SKILL.md')))
   const manifestSkills = Object.keys(manifest.skills).sort()
@@ -213,6 +290,10 @@ function markerBlock(manifest, audience) {
     ...manifest.federated_sources.map(item => `- **${item.domain}:** \`${item.source}\``),
     '',
     `Hook contract: \`${manifest.hook_integration.contract}\`; wiring: \`${manifest.hook_integration.wiring}\`; session sync: \`${manifest.hook_integration.session_sync}\`.`,
+    '',
+    '### Declarative orchestration',
+    ...manifest.orchestration.consumers.map(item => `- **${item.id}:** \`${item.command}\` (${item.required ? 'required' : 'optional'})`),
+    ...manifest.orchestration.artifacts.map(item => `- **${item.id}:** ${item.label}`),
     END,
   ]
   return lines.join('\n')
@@ -307,7 +388,7 @@ function replaceCommentBlock(content, manifest, start, end, prefix, filePath) {
 }
 
 function renderIndex(manifest) {
-  return `${JSON.stringify({ schema_version: manifest.schema_version, manifest_version: manifest.manifest_version, manifest: manifestName, schema: schemaName, reserved_aliases: manifest.reserved_aliases, skills: manifest.skills, derived_surfaces: manifest.derived_surfaces, federated_sources: manifest.federated_sources }, null, 2)}\n`
+  return `${JSON.stringify({ schema_version: manifest.schema_version, manifest_version: manifest.manifest_version, manifest: manifestName, schema: schemaName, reserved_aliases: manifest.reserved_aliases, orchestration: manifest.orchestration, skills: manifest.skills, derived_surfaces: manifest.derived_surfaces, federated_sources: manifest.federated_sources }, null, 2)}\n`
 }
 
 function parseArgs() {

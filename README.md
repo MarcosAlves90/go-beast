@@ -85,6 +85,11 @@ Maintainer-facing transversal rules are defined in
 [`go-beast.manifest.yaml`](go-beast.manifest.yaml). Generated instruction and
 architecture surfaces are checked by `npm run verify`.
 
+The manifest is a declarative orchestration contract for shared structural
+facts. See [Declarative orchestration](docs/architecture/DECLARATIVE_ORCHESTRATION.md)
+for its ownership boundary; operational skill instructions remain in each
+`SKILL.md`.
+
 ## License
 
 MIT.

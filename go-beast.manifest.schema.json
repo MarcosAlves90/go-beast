@@ -12,6 +12,7 @@
     "expected_artifacts",
     "execution_constraints",
     "hook_integration",
+    "orchestration",
     "federated_sources",
     "reserved_aliases",
     "skills",
@@ -44,6 +45,44 @@
         "contract": { "type": "string" },
         "wiring": { "type": "string" },
         "session_sync": { "type": "string" }
+      }
+    },
+    "orchestration": {
+      "type": "object",
+      "required": ["artifacts", "external_nodes", "consumers"],
+      "additionalProperties": false,
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "produced_by", "consumed_by"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "label": { "type": "string", "minLength": 1 },
+              "produced_by": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+              "consumed_by": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "external_nodes": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9-]+$" } },
+        "consumers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "command", "required", "surfaces"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "command": { "type": "string", "minLength": 1 },
+              "required": { "type": "boolean" },
+              "surfaces": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 }
+            }
+          }
+        }
       }
     },
     "federated_sources": {
