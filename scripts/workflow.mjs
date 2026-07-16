@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { randomUUID } from 'node:crypto'
 import { parseYaml } from './transversal-rules.mjs'
 
 const ROOT = process.cwd()
@@ -166,6 +167,7 @@ function lockTimeoutMs() {
 
 function lockMetadata() {
   return {
+    lock_id: randomUUID(),
     pid: process.pid,
     hostname: process.env.HOSTNAME || os.hostname(),
     agent: process.env.GO_BEAST_AGENT || process.env.AGENT || 'unknown',
@@ -185,8 +187,9 @@ function readLock(lockFile) {
 function lockIsStale(lockFile, metadata) {
   const createdAt = Date.parse(metadata?.created_at ?? '')
   const age = Number.isFinite(createdAt) ? Date.now() - createdAt : Date.now() - fs.statSync(lockFile).mtimeMs
-  const sameHostDead = metadata?.hostname === lockMetadata().hostname && Number.isInteger(metadata?.pid) && !processIsAlive(metadata.pid)
-  return sameHostDead || age >= lockTimeoutMs()
+  const sameHost = metadata?.hostname === lockMetadata().hostname
+  if (sameHost && Number.isInteger(metadata?.pid)) return !processIsAlive(metadata.pid)
+  return age >= lockTimeoutMs()
 }
 
 function acquireLock(root, manifest) {
@@ -197,9 +200,13 @@ function acquireLock(root, manifest) {
     const descriptor = fs.openSync(filePath, 'wx')
     fs.writeFileSync(descriptor, `${JSON.stringify(metadata, null, 2)}\n`)
     fs.closeSync(descriptor)
+    if (process.env.GO_BEAST_WORKFLOW_TEST_REPLACE_LOCK === '1') {
+      fs.unlinkSync(filePath)
+      fs.writeFileSync(filePath, `${JSON.stringify({ ...lockMetadata(), agent: 'replacement-process' }, null, 2)}\n`, { flag: 'wx' })
+    }
     const holdMs = Number(process.env.GO_BEAST_WORKFLOW_TEST_HOLD_LOCK_MS ?? 0)
     if (holdMs > 0) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, holdMs)
-    return filePath
+    return { filePath, lockId: metadata.lock_id }
   } catch (error) {
     if (error.code !== 'EEXIST') throw error
     const current = readLock(filePath)
@@ -209,13 +216,17 @@ function acquireLock(root, manifest) {
   }
 }
 
-function releaseLock(filePath) {
+function releaseLock(filePath, lockId = null) {
+  if (lockId) {
+    const current = readLock(filePath)
+    if (!current || current.lock_id !== lockId) failCode('WORKFLOW_LOCK_OWNERSHIP', `lock ownership changed before release: ${filePath}`)
+  }
   try { fs.unlinkSync(filePath) } catch (error) { if (error.code !== 'ENOENT') throw error }
 }
 
 function withLock(root, manifest, operation) {
-  const filePath = acquireLock(root, manifest)
-  try { return operation() } finally { releaseLock(filePath) }
+  const lock = acquireLock(root, manifest)
+  try { return operation() } finally { releaseLock(lock.filePath, lock.lockId) }
 }
 
 function unlockStale(root, manifest) {
@@ -223,6 +234,9 @@ function unlockStale(root, manifest) {
   assert(fs.existsSync(filePath), `no lock exists for ${manifest.id}`)
   const metadata = readLock(filePath)
   if (!lockIsStale(filePath, metadata)) failCode('WORKFLOW_LOCK_NOT_STALE', `lock is still live or within timeout: ${filePath}`)
+  const lockId = metadata?.lock_id ?? null
+  const current = readLock(filePath)
+  if (lockId && current?.lock_id !== lockId) failCode('WORKFLOW_LOCK_CONFLICT', `lock changed while stale recovery was in progress: ${filePath}`)
   releaseLock(filePath)
   console.log(`Stale workflow lock removed: ${manifest.id}`)
 }

@@ -55,7 +55,12 @@ commands acquire `.go-beast/workflows/locks/<workflow-id>.lock`, reload the
 state, and save only when the expected revision is still current. A mismatch
 returns `WORKFLOW_CONFLICT` instead of overwriting another writer.
 
-Lock metadata records PID, hostname, agent, session ID, and creation time.
+Each lock has a unique `lock_id`; release validates that the file still belongs
+to the acquiring process before removing it. Lock metadata also records PID,
+hostname, agent, session ID, and creation time. On the same host, a live PID is
+never expired solely because the timeout elapsed; a dead PID is stale. For a
+different host, timeout is the fallback because process liveness cannot be
+verified.
 Live locks return `WORKFLOW_LOCK_CONFLICT`; stale locks are never stolen
 implicitly. Recover one explicitly with:
 
@@ -66,3 +71,8 @@ go-beast workflow unlock --file workflows/minimal-pipeline.json
 The default stale timeout is five minutes and can be adjusted with
 `GO_BEAST_WORKFLOW_LOCK_TIMEOUT_MS`. State replacement is atomic, and the
 concurrency regression test runs two processes against the same workflow.
+
+Only the CLI is supported as a state writer. The revision check is an
+application-level optimistic concurrency guard, not a filesystem CAS primitive
+against arbitrary external writers. Distributed coordination across machines
+is outside the scope of this engine.
