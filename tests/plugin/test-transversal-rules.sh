@@ -10,8 +10,10 @@ TEST_DIR="$(create_test_project)"
 trap 'cleanup_test_project "$TEST_DIR"' EXIT
 
 FIXTURE="$TEST_DIR/repo"
-mkdir -p "$FIXTURE/docs/architecture" "$FIXTURE/scripts" "$FIXTURE/hooks" "$FIXTURE/workflows"
+mkdir -p "$FIXTURE/docs/architecture" "$FIXTURE/scripts" "$FIXTURE/hooks" "$FIXTURE/workflows" "$FIXTURE/.github/workflows"
 cp "$REPO_ROOT/go-beast.manifest.yaml" "$REPO_ROOT/go-beast.manifest.schema.json" "$FIXTURE/"
+cp "$REPO_ROOT/package.json" "$FIXTURE/"
+cp "$REPO_ROOT/.github/workflows/verify.yml" "$FIXTURE/.github/workflows/"
 cp "$REPO_ROOT/scripts/transversal-rules.mjs" "$FIXTURE/scripts/"
 cp -R "$REPO_ROOT/skills" "$FIXTURE/"
 cp "$REPO_ROOT/AGENTS.global.md" "$REPO_ROOT/AGENTS.bootstrap.md" "$REPO_ROOT/AGENTS.md" "$FIXTURE/"
@@ -67,5 +69,37 @@ if node "$FIXTURE/scripts/transversal-rules.mjs" check --root "$FIXTURE" > "$TES
   exit 1
 fi
 assert_contains "$TEST_DIR/alias.out" 'duplicate skill alias' 'alias check rejects duplicate aliases'
+
+cp "$REPO_ROOT/go-beast.manifest.yaml" "$FIXTURE/go-beast.manifest.yaml"
+node -e "const fs=require('fs'); const p=process.argv[1]; fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('produced_by: [go-hawk]', 'produced_by: [go-missing]'))" "$FIXTURE/go-beast.manifest.yaml"
+if node "$FIXTURE/scripts/transversal-rules.mjs" check --root "$FIXTURE" > "$TEST_DIR/node.out" 2>&1; then
+  echo '[FAIL] orchestration check accepts an unknown node'
+  exit 1
+fi
+assert_contains "$TEST_DIR/node.out" 'references unknown node' 'orchestration check rejects unknown nodes'
+
+cp "$REPO_ROOT/go-beast.manifest.yaml" "$FIXTURE/go-beast.manifest.yaml"
+node -e "const fs=require('fs'); const p=process.argv[1]; fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('consumed_by: [go-lark, go-fox]', 'consumed_by: [go-lark, go-missing]'))" "$FIXTURE/go-beast.manifest.yaml"
+if node "$FIXTURE/scripts/transversal-rules.mjs" check --root "$FIXTURE" > "$TEST_DIR/artifact.out" 2>&1; then
+  echo '[FAIL] orchestration check accepts an unknown artifact consumer'
+  exit 1
+fi
+assert_contains "$TEST_DIR/artifact.out" 'references unknown node' 'orchestration check rejects invalid artifact references'
+
+cp "$REPO_ROOT/go-beast.manifest.yaml" "$FIXTURE/go-beast.manifest.yaml"
+node -e "const fs=require('fs'); const p=process.argv[1]; const text=fs.readFileSync(p, 'utf8'); fs.writeFileSync(p, text.replace(/(  go-fox:[\\s\\S]*?depends_on:) \\[go-hawk\\]/, '\$1 [go-fox]'))" "$FIXTURE/go-beast.manifest.yaml"
+if node "$FIXTURE/scripts/transversal-rules.mjs" check --root "$FIXTURE" > "$TEST_DIR/cycle.out" 2>&1; then
+  echo '[FAIL] orchestration check accepts a dependency cycle'
+  exit 1
+fi
+assert_contains "$TEST_DIR/cycle.out" 'dependency cycle detected' 'orchestration check rejects dependency cycles'
+
+cp "$REPO_ROOT/go-beast.manifest.yaml" "$FIXTURE/go-beast.manifest.yaml"
+node -e "const fs=require('fs'); const p=process.argv[1]; fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('artifact: go-lark approach decision', 'artifact: missing-artifact'))" "$FIXTURE/go-beast.manifest.yaml"
+if node "$FIXTURE/scripts/transversal-rules.mjs" check --root "$FIXTURE" > "$TEST_DIR/missing-artifact.out" 2>&1; then
+  echo '[FAIL] orchestration check accepts a missing artifact'
+  exit 1
+fi
+assert_contains "$TEST_DIR/missing-artifact.out" 'unregistered artifact' 'orchestration check rejects missing artifacts'
 
 echo '[PASS] transversal rules generation tests'

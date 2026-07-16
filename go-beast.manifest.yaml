@@ -29,6 +29,30 @@ hook_integration:
   contract: hooks/manifest.json
   wiring: scripts/hook-wire.mjs
   session_sync: hooks/sync-go-beast-skills.sh
+orchestration:
+  artifacts:
+    - id: discovery-output
+      label: go-hawk discovery output
+      produced_by: [go-hawk]
+      consumed_by: [go-lark, go-fox]
+    - id: approach-decision
+      label: go-lark approach decision
+      produced_by: [go-lark]
+      consumed_by: [go-fox]
+    - id: validation-output
+      label: npm run verify output
+      produced_by: [verify]
+      consumed_by: [ci, maintainer]
+  external_nodes: [verify, ci, maintainer, go-skill-eval]
+  consumers:
+    - id: verify
+      command: npm run verify
+      required: true
+      surfaces: [package.json]
+    - id: ci
+      command: npm run verify
+      required: true
+      surfaces: [.github/workflows/verify.yml]
 federated_sources:
   - domain: canonical skills
     source: skills/

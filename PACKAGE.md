@@ -44,6 +44,7 @@ go-beast/
 │   └── go-*/              ← Canonical skill directories
 ├── docs/
 │   ├── RELEASES.md             ← Release-train preparation and publication flow
+│   ├── architecture/DECLARATIVE_ORCHESTRATION.md ← Manifest orchestration contract
 │   ├── GETTING_STARTED.md      ← Installation and agent setup
 │   ├── HARNESS.md              ← Harness integrations and adapter boundaries
 │   ├── PIPELINE.md             ← Skill pipeline, semantic alias catalog, and workflows
