@@ -55,3 +55,17 @@ Manual content outside those blocks is preserved. The first implementation
 validates structure and synchronization; it does not promote skill-specific
 procedures into transversal policy or infer arbitrary semantic contradictions
 in prose across the repository.
+
+## Disposable task outputs
+
+The disposable boundary is agent-managed rather than a static manifest
+inventory. When a go-beast workflow creates an output only for internal
+orchestration, discovery, planning, evaluation, review, or session state, the
+agent records its exact repository-relative path in the target repository's
+`.git/info/exclude`. The procedure is included in the synced `AGENTS*` files,
+so it works even when the target repository has no go-beast manifest.
+
+Agents must not stage these outputs, modify `.gitignore`, delete files
+automatically, or exclude a path that is already tracked. A maintainer may
+explicitly make an output a real repository deliverable by leaving it
+unexcluded and staging it normally.

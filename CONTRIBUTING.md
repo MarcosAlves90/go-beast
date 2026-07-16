@@ -19,6 +19,12 @@ their own sources. See [the generated policy reference](docs/architecture/TRANSV
 [the generated skill catalog](docs/PIPELINE.md), and the marked contracts in
 each `skills/*/SKILL.md` for the current derived surfaces.
 
+Task-scoped go-beast outputs are disposable by default. Follow the procedure
+in the synced `AGENTS*` instructions to record each exact output path in the
+target repository's `.git/info/exclude`; this does not modify a repository
+file. Do not stage these outputs. If an output is intentionally part of a real
+delivery, leave it unexcluded and stage it normally with documented rationale.
+
 ## Before you start
 
 1. Read [README.md](README.md) for the pack overview and install model.
