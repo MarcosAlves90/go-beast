@@ -18,6 +18,47 @@ cp "$REPO_ROOT/workflows/minimal-pipeline.json" "$TEST_DIR/repo/workflows/"
 cd "$TEST_DIR/repo"
 node bin/go-beast.mjs workflow validate --all
 node bin/go-beast.mjs workflow start --file workflows/minimal-pipeline.json
+
+GO_BEAST_WORKFLOW_TEST_HOLD_LOCK_MS=500 node bin/go-beast.mjs workflow begin --file workflows/minimal-pipeline.json --phase discover > holder.out 2>&1 &
+HOLDER_PID=$!
+for attempt in $(seq 1 50); do
+  [ -f .go-beast/workflows/locks/minimal-pipeline.lock ] && break
+  sleep 0.01
+done
+if node bin/go-beast.mjs workflow begin --mode strict --file workflows/minimal-pipeline.json --phase discover > conflict.out 2>&1; then
+  echo '[FAIL] concurrent workflow writer was not rejected'
+  exit 1
+fi
+assert_contains conflict.out 'WORKFLOW_LOCK_CONFLICT' 'concurrent writer receives an identifiable conflict'
+wait "$HOLDER_PID"
+
+sleep 5 &
+LIVE_PID=$!
+LIVE_PID="$LIVE_PID" node -e "const fs=require('fs'); const os=require('os'); fs.writeFileSync('.go-beast/workflows/locks/minimal-pipeline.lock', JSON.stringify({lock_id:'live-old-lock',pid:Number(process.env.LIVE_PID),hostname:os.hostname(),agent:'test',session_id:'live',created_at:'2000-01-01T00:00:00.000Z'}))"
+if node bin/go-beast.mjs workflow begin --mode strict --file workflows/minimal-pipeline.json --phase discover > live-lock.out 2>&1; then
+  echo '[FAIL] old lock with a live process was treated as stale'
+  exit 1
+fi
+assert_contains live-lock.out 'WORKFLOW_LOCK_CONFLICT' 'live PID prevents timeout-only expiration'
+kill "$LIVE_PID"
+wait "$LIVE_PID" 2>/dev/null || true
+node bin/go-beast.mjs workflow unlock --file workflows/minimal-pipeline.json
+
+GO_BEAST_WORKFLOW_TEST_HOLD_LOCK_MS=5000 node bin/go-beast.mjs workflow begin --file workflows/minimal-pipeline.json --phase discover > killed-holder.out 2>&1 &
+KILLED_PID=$!
+for attempt in $(seq 1 50); do
+  [ -f .go-beast/workflows/locks/minimal-pipeline.lock ] && break
+  sleep 0.01
+done
+kill -KILL "$KILLED_PID"
+wait "$KILLED_PID" 2>/dev/null || true
+if node bin/go-beast.mjs workflow begin --mode strict --file workflows/minimal-pipeline.json --phase discover > killed-lock.out 2>&1; then
+  echo '[FAIL] SIGKILL lock was not detected as stale'
+  exit 1
+fi
+assert_contains killed-lock.out 'WORKFLOW_LOCK_STALE' 'SIGKILL leaves a recoverable stale lock'
+node bin/go-beast.mjs workflow unlock --file workflows/minimal-pipeline.json
+
 node bin/go-beast.mjs workflow begin --file workflows/minimal-pipeline.json --phase discover
 
 node -e "const fs=require('fs'); fs.mkdirSync('.go-beast/example', {recursive:true}); fs.writeFileSync('.go-beast/example/discovery.md', '# Discovery\\n')"
@@ -29,6 +70,7 @@ node bin/go-beast.mjs workflow complete --file workflows/minimal-pipeline.json -
 node bin/go-beast.mjs workflow begin --file workflows/minimal-pipeline.json --phase discover
 assert_contains .go-beast/workflows/minimal-pipeline.json '"explore": {' 'workflow state persists dependent phase'
 assert_contains .go-beast/workflows/minimal-pipeline.json '"status": "invalidated"' 'rerun invalidates dependent phase'
+assert_contains .go-beast/workflows/minimal-pipeline.json '"revision": [1-9]' 'workflow state revision advances on writes'
 
 rm .go-beast/example/discovery.md
 if node bin/go-beast.mjs workflow begin --mode strict --file workflows/minimal-pipeline.json --phase explore > strict.out 2>&1; then
@@ -38,4 +80,13 @@ fi
 assert_contains strict.out 'missing artifact' 'strict mode blocks missing artifact'
 
 GO_BEAST_WORKFLOW_MODE=off node bin/go-beast.mjs workflow begin --file workflows/minimal-pipeline.json --phase explore
+if GO_BEAST_WORKFLOW_TEST_REPLACE_LOCK=1 node bin/go-beast.mjs workflow begin --file workflows/minimal-pipeline.json --phase discover > ownership.out 2>&1; then
+  echo '[FAIL] lock replacement was removed by the original owner'
+  exit 1
+fi
+assert_contains ownership.out 'WORKFLOW_LOCK_OWNERSHIP' 'lock release validates ownership after replacement'
+rm -f .go-beast/workflows/locks/minimal-pipeline.lock
+node -e "const fs=require('fs'); fs.writeFileSync('.go-beast/workflows/locks/minimal-pipeline.lock', JSON.stringify({pid:999999,hostname:'unknown-host',agent:'test',session_id:'stale',created_at:'2000-01-01T00:00:00.000Z'}))"
+node bin/go-beast.mjs workflow unlock --file workflows/minimal-pipeline.json
+[ ! -e .go-beast/workflows/locks/minimal-pipeline.lock ]
 echo '[PASS] workflow engine coordinates, persists, resumes, and enforces modes'
