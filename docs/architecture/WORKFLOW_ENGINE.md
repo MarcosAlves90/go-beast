@@ -47,3 +47,22 @@ State is JSON under `.go-beast/workflows/` and is local disposable output. The
 directory is added to the repository's local Git exclude by setup; workflow
 manifests and schemas remain commit-worthy. `verify` validates manifests and
 schemas but does not execute workflows.
+
+## Concurrent updates
+
+Persisted state includes a monotonically increasing `revision`. Mutating
+commands acquire `.go-beast/workflows/locks/<workflow-id>.lock`, reload the
+state, and save only when the expected revision is still current. A mismatch
+returns `WORKFLOW_CONFLICT` instead of overwriting another writer.
+
+Lock metadata records PID, hostname, agent, session ID, and creation time.
+Live locks return `WORKFLOW_LOCK_CONFLICT`; stale locks are never stolen
+implicitly. Recover one explicitly with:
+
+```bash
+go-beast workflow unlock --file workflows/minimal-pipeline.json
+```
+
+The default stale timeout is five minutes and can be adjusted with
+`GO_BEAST_WORKFLOW_LOCK_TIMEOUT_MS`. State replacement is atomic, and the
+concurrency regression test runs two processes against the same workflow.

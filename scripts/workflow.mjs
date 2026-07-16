@@ -1,17 +1,25 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { parseYaml } from './transversal-rules.mjs'
 
 const ROOT = process.cwd()
 const STATE_DIR = path.join('.go-beast', 'workflows')
+const LOCK_DIR = path.join(STATE_DIR, 'locks')
+const DEFAULT_LOCK_TIMEOUT_MS = 5 * 60 * 1000
 const MODES = new Set(['off', 'warn', 'strict'])
 
 function fail(message, code = 1) {
   console.error(`Workflow validation failed: ${message}`)
   process.exit(code)
+}
+
+function failCode(code, message, exitCode = 1) {
+  console.error(`${code}: ${message}`)
+  process.exit(exitCode)
 }
 
 function parseArgs() {
@@ -146,12 +154,105 @@ function statePath(root, manifest) {
   return path.join(root, STATE_DIR, `${manifest.id}.json`)
 }
 
-function saveState(root, state) {
+function lockPath(root, manifest) {
+  return path.join(root, LOCK_DIR, `${manifest.id}.lock`)
+}
+
+function lockTimeoutMs() {
+  const value = Number(process.env.GO_BEAST_WORKFLOW_LOCK_TIMEOUT_MS ?? DEFAULT_LOCK_TIMEOUT_MS)
+  if (!Number.isFinite(value) || value < 0) fail('GO_BEAST_WORKFLOW_LOCK_TIMEOUT_MS must be a non-negative number', 2)
+  return value
+}
+
+function lockMetadata() {
+  return {
+    pid: process.pid,
+    hostname: process.env.HOSTNAME || os.hostname(),
+    agent: process.env.GO_BEAST_AGENT || process.env.AGENT || 'unknown',
+    session_id: process.env.GO_BEAST_SESSION_ID || process.env.CODEX_SESSION_ID || 'unknown',
+    created_at: new Date().toISOString(),
+  }
+}
+
+function processIsAlive(pid) {
+  try { process.kill(pid, 0); return true } catch (error) { return error.code === 'EPERM' }
+}
+
+function readLock(lockFile) {
+  try { return JSON.parse(fs.readFileSync(lockFile, 'utf8')) } catch { return null }
+}
+
+function lockIsStale(lockFile, metadata) {
+  const createdAt = Date.parse(metadata?.created_at ?? '')
+  const age = Number.isFinite(createdAt) ? Date.now() - createdAt : Date.now() - fs.statSync(lockFile).mtimeMs
+  const sameHostDead = metadata?.hostname === lockMetadata().hostname && Number.isInteger(metadata?.pid) && !processIsAlive(metadata.pid)
+  return sameHostDead || age >= lockTimeoutMs()
+}
+
+function acquireLock(root, manifest) {
+  const filePath = lockPath(root, manifest)
+  fs.mkdirSync(path.dirname(filePath), { recursive: true })
+  const metadata = lockMetadata()
+  try {
+    const descriptor = fs.openSync(filePath, 'wx')
+    fs.writeFileSync(descriptor, `${JSON.stringify(metadata, null, 2)}\n`)
+    fs.closeSync(descriptor)
+    const holdMs = Number(process.env.GO_BEAST_WORKFLOW_TEST_HOLD_LOCK_MS ?? 0)
+    if (holdMs > 0) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, holdMs)
+    return filePath
+  } catch (error) {
+    if (error.code !== 'EEXIST') throw error
+    const current = readLock(filePath)
+    const owner = current ? `pid ${current.pid}, host ${current.hostname}, session ${current.session_id}` : 'unknown owner'
+    if (current && lockIsStale(filePath, current)) failCode('WORKFLOW_LOCK_STALE', `lock is stale and must be removed explicitly: ${filePath} (${owner})`)
+    failCode('WORKFLOW_LOCK_CONFLICT', `workflow is locked by ${owner}`)
+  }
+}
+
+function releaseLock(filePath) {
+  try { fs.unlinkSync(filePath) } catch (error) { if (error.code !== 'ENOENT') throw error }
+}
+
+function withLock(root, manifest, operation) {
+  const filePath = acquireLock(root, manifest)
+  try { return operation() } finally { releaseLock(filePath) }
+}
+
+function unlockStale(root, manifest) {
+  const filePath = lockPath(root, manifest)
+  assert(fs.existsSync(filePath), `no lock exists for ${manifest.id}`)
+  const metadata = readLock(filePath)
+  if (!lockIsStale(filePath, metadata)) failCode('WORKFLOW_LOCK_NOT_STALE', `lock is still live or within timeout: ${filePath}`)
+  releaseLock(filePath)
+  console.log(`Stale workflow lock removed: ${manifest.id}`)
+}
+
+function saveNewState(root, state) {
   const filePath = statePath(root, state.manifest)
   fs.mkdirSync(path.dirname(filePath), { recursive: true })
   const temporary = `${filePath}.tmp-${process.pid}`
+  try {
+    fs.writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`)
+    fs.linkSync(temporary, filePath)
+  } catch (error) {
+    if (error.code === 'EEXIST') failCode('WORKFLOW_CONFLICT', `state was created concurrently: ${filePath}`)
+    throw error
+  } finally {
+    try { fs.unlinkSync(temporary) } catch (error) { if (error.code !== 'ENOENT') throw error }
+  }
+}
+
+function saveState(root, state, expectedRevision) {
+  const filePath = statePath(root, state.manifest)
+  const persisted = loadState(root, state.manifest)
+  if (persisted.revision !== expectedRevision) failCode('WORKFLOW_CONFLICT', `expected revision ${expectedRevision}, found ${persisted.revision}`)
+  state.revision = expectedRevision + 1
+  fs.mkdirSync(path.dirname(filePath), { recursive: true })
+  const temporary = `${filePath}.tmp-${process.pid}`
   fs.writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`)
-  fs.renameSync(temporary, filePath)
+  try { fs.renameSync(temporary, filePath) } finally {
+    try { fs.unlinkSync(temporary) } catch (error) { if (error.code !== 'ENOENT') throw error }
+  }
 }
 
 function loadState(root, manifest) {
@@ -159,6 +260,7 @@ function loadState(root, manifest) {
   assert(fs.existsSync(filePath), `no persisted state for ${manifest.id}; run workflow start first`)
   const state = JSON.parse(fs.readFileSync(filePath, 'utf8'))
   assert(state.workflow_id === manifest.id && state.manifest_version === manifest.version, 'persisted state does not match the manifest version')
+  if (!Number.isInteger(state.revision)) state.revision = 0
   return state
 }
 
@@ -166,6 +268,7 @@ function newState(manifest, mode) {
   const now = new Date().toISOString()
   return {
     schema_version: 1,
+    revision: 0,
     workflow_id: manifest.id,
     manifest_version: manifest.version,
     mode,
@@ -241,7 +344,7 @@ function printStatus(state, phases) {
 }
 
 function commandHelp() {
-  console.log('Usage: go-beast workflow <validate|start|status|resume|begin|complete> [--file PATH] [--mode off|warn|strict] [--phase ID]')
+  console.log('Usage: go-beast workflow <validate|start|status|resume|begin|complete|unlock> [--file PATH] [--mode off|warn|strict] [--phase ID]')
 }
 
 function main() {
@@ -266,47 +369,53 @@ function main() {
     console.log(`Workflow manifest valid: ${path.relative(ROOT, filePath)} (${manifest.phases.length} phases)`)
     return
   }
+  if (options.command === 'unlock') { unlockStale(ROOT, manifest); return }
   if (mode === 'off') { console.log(`Workflow engine disabled (mode: off): ${manifest.id}`); return }
   if (options.command === 'start') {
-    const file = statePath(ROOT, manifest)
-    if (fs.existsSync(file)) printStatus(loadState(ROOT, manifest), phases)
-    else { const state = newState(manifest, mode); saveState(ROOT, state); console.log(`Workflow started: ${manifest.id}`) }
+    withLock(ROOT, manifest, () => {
+      const file = statePath(ROOT, manifest)
+      if (fs.existsSync(file)) printStatus(loadState(ROOT, manifest), phases)
+      else { const state = newState(manifest, mode); saveNewState(ROOT, state); console.log(`Workflow started: ${manifest.id}`) }
+    })
     return
   }
-  const state = loadState(ROOT, manifest)
-  state.mode = mode
-  if (options.command === 'status' || options.command === 'resume') { printStatus(state, phases); return }
+  if (options.command === 'status' || options.command === 'resume') { printStatus(loadState(ROOT, manifest), phases); return }
   assert(['begin', 'complete'].includes(options.command), `unknown workflow command: ${options.command}`, 2)
   assert(options.phase && phases.has(options.phase), '--phase must identify a phase in the manifest', 2)
   const phase = phases.get(options.phase)
-  const record = state.phases[phase.id]
-  const warnings = []
-  if (options.command === 'begin') {
-    if (record.status === 'running') warnings.push(`phase is already running: ${phase.id}`)
-    if (record.status === 'completed') {
-      record.status = 'pending'
-      delete record.completed_at
-      warnings.push(...invalidateDependents(state, phases, phase.id).map(id => `dependent phase invalidated: ${id}`))
+  withLock(ROOT, manifest, () => {
+    const state = loadState(ROOT, manifest)
+    const expectedRevision = state.revision
+    state.mode = mode
+    const record = state.phases[phase.id]
+    const warnings = []
+    if (options.command === 'begin') {
+      if (record.status === 'running') warnings.push(`phase is already running: ${phase.id}`)
+      if (record.status === 'completed') {
+        record.status = 'pending'
+        delete record.completed_at
+        warnings.push(...invalidateDependents(state, phases, phase.id).map(id => `dependent phase invalidated: ${id}`))
+      }
+      warnings.push(...unlockedProblems(ROOT, phase, state, phases))
+      if (violation(mode, warnings)) { process.exitCode = 1; return }
+      record.status = 'running'
+      record.started_at = new Date().toISOString()
+      state.history.push({ event: 'begin', phase: phase.id, at: record.started_at })
+      state.updated_at = record.started_at
+      saveState(ROOT, state, expectedRevision)
+      console.log(`Phase unlocked: ${phase.id} (skill: ${phase.skill})`)
+      return
     }
-    warnings.push(...unlockedProblems(ROOT, phase, state, phases))
-    if (violation(mode, warnings)) return process.exitCode = 1
-    record.status = 'running'
-    record.started_at = new Date().toISOString()
-    state.history.push({ event: 'begin', phase: phase.id, at: record.started_at })
-    state.updated_at = record.started_at
-    saveState(ROOT, state)
-    console.log(`Phase unlocked: ${phase.id} (skill: ${phase.skill})`)
-    return
-  }
-  assert(record.status === 'running', `phase is not running: ${phase.id}`)
-  warnings.push(...artifactProblems(ROOT, phase.produces))
-  if (violation(mode, warnings)) return process.exitCode = 1
-  record.status = 'completed'
-  record.completed_at = new Date().toISOString()
-  state.history.push({ event: 'complete', phase: phase.id, at: record.completed_at })
-  state.updated_at = record.completed_at
-  saveState(ROOT, state)
-  console.log(`Phase completed: ${phase.id}`)
+    assert(record.status === 'running', `phase is not running: ${phase.id}`)
+    warnings.push(...artifactProblems(ROOT, phase.produces))
+    if (violation(mode, warnings)) { process.exitCode = 1; return }
+    record.status = 'completed'
+    record.completed_at = new Date().toISOString()
+    state.history.push({ event: 'complete', phase: phase.id, at: record.completed_at })
+    state.updated_at = record.completed_at
+    saveState(ROOT, state, expectedRevision)
+    console.log(`Phase completed: ${phase.id}`)
+  })
 }
 
 try { main() } catch (error) { if (error.code === 'ENOENT') fail(error.message); else fail(error.message) }
