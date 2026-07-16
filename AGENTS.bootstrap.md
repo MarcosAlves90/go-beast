@@ -36,6 +36,39 @@ These rules are generated. Edit the manifest and run the generator; do not edit 
 Hook contract: `hooks/manifest.json`; wiring: `scripts/hook-wire.mjs`; session sync: `hooks/sync-go-beast-skills.sh`.
 <!-- END GENERATED: transversal-rules -->
 
+## Disposable go-beast outputs
+
+When a go-beast workflow creates an output only for its own discovery,
+planning, evaluation, review, orchestration, or session state, treat that
+output as disposable unless the user explicitly makes it part of the delivery.
+This rule is agent-managed and does not depend on a manifest in the target
+repository.
+
+Before staging a task output, identify its exact repository-relative path and
+run this procedure from the target repository:
+
+```bash
+repo_root="$(git rev-parse --show-toplevel)"
+relative_path="<exact path created by this task>"
+case "$relative_path" in
+  /*|../*|*/../*) echo "Refusing path outside repository: $relative_path" >&2; exit 1 ;;
+esac
+tracked_path="$(git -C "$repo_root" ls-files -- "$relative_path")"
+if [ -n "$tracked_path" ]; then
+  echo "Refusing to exclude tracked path: $relative_path" >&2
+  exit 1
+fi
+exclude_file="$(cd "$repo_root" && git rev-parse --git-path info/exclude)"
+mkdir -p "$(dirname "$exclude_file")"
+pattern="/${relative_path#/}"
+grep -Fqx -- "$pattern" "$exclude_file" 2>/dev/null || printf '\n# go-beast disposable output\n%s\n' "$pattern" >> "$exclude_file"
+```
+
+Use one exact path per output; use a trailing `/` only for a task-owned
+directory. Never add these entries to `.gitignore`, never delete files
+automatically, and never exclude a tracked path. If the output is an approved
+repository deliverable, do not exclude it and stage it normally.
+
 ## Scope
 
 This file is an optional stricter behavioral overlay for coding agents that use
