@@ -3,6 +3,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 const START = '<!-- BEGIN GENERATED: transversal-rules -->'
 const END = '<!-- END GENERATED: transversal-rules -->'
@@ -449,4 +450,8 @@ function main() {
   console.log(`Transversal rules ${mode} passed.`)
 }
 
-try { main() } catch (error) { console.error(error.message); process.exit(1) }
+export { parseYaml }
+
+if (process.argv[1] && path.basename(process.argv[1]) === path.basename(fileURLToPath(import.meta.url))) {
+  try { main() } catch (error) { console.error(error.message); process.exit(1) }
+}

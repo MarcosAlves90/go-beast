@@ -1,0 +1,49 @@
+# Optional workflow engine
+
+The workflow engine is an optional state-machine coordinator for declarative
+pipelines. It does not execute skills. An external agent or runner performs the
+skill work and reports phase completion through the CLI.
+
+## Manifest contract
+
+Workflow manifests live in `workflows/` and use JSON or the supported YAML
+subset. Each phase declares:
+
+- `skill`: the skill an external runner should execute;
+- `depends_on`: completed phases required before the phase can start;
+- `preconditions`: paths or environment variables that must exist;
+- `requires`: input artifact contracts;
+- `produces`: output artifact contracts;
+- `transitions`: the only valid next phases.
+
+The schema is versioned in `go-beast.workflow.schema.json`. The example
+`workflows/minimal-pipeline.json` is intentionally small and does not replace
+the existing evaluation workflows.
+
+## CLI
+
+After package installation, use:
+
+```bash
+go-beast workflow validate --file workflows/minimal-pipeline.json
+go-beast workflow start --file workflows/minimal-pipeline.json
+go-beast workflow status --file workflows/minimal-pipeline.json
+go-beast workflow begin --file workflows/minimal-pipeline.json --phase discover
+go-beast workflow complete --file workflows/minimal-pipeline.json --phase discover
+```
+
+`npm run workflow -- <command>` is available in a checkout. `resume` reads the
+persisted state and reports the current phase statuses; running `begin` again
+for a completed phase reopens it and invalidates its dependent phases.
+
+## Modes and state
+
+The mode precedence is CLI `--mode`, `GO_BEAST_WORKFLOW_MODE`, manifest
+`mode`, then `warn`. In `off`, coordination is disabled. In `warn`, invalid
+runtime conditions are reported and the operation continues. In `strict`, the
+operation is blocked.
+
+State is JSON under `.go-beast/workflows/` and is local disposable output. The
+directory is added to the repository's local Git exclude by setup; workflow
+manifests and schemas remain commit-worthy. `verify` validates manifests and
+schemas but does not execute workflows.

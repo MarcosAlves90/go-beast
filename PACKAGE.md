@@ -33,6 +33,7 @@ go-beast/
 ├── CHANGELOG.md           ← Version history
 ├── go-beast.manifest.yaml ← Canonical transversal rules manifest
 ├── go-beast.manifest.schema.json ← Structural contract for the manifest
+├── go-beast.workflow.schema.json ← Structural contract for workflow manifests
 ├── release-certificate.json ← Signed-style release attestation for the latest cut
 ├── package.json           ← Package metadata and maintenance scripts
 ├── .github/
@@ -45,6 +46,7 @@ go-beast/
 ├── docs/
 │   ├── RELEASES.md             ← Release-train preparation and publication flow
 │   ├── architecture/DECLARATIVE_ORCHESTRATION.md ← Manifest orchestration contract
+│   ├── architecture/WORKFLOW_ENGINE.md ← Optional workflow engine contract and CLI
 │   ├── GETTING_STARTED.md      ← Installation and agent setup
 │   ├── HARNESS.md              ← Harness integrations and adapter boundaries
 │   ├── PIPELINE.md             ← Skill pipeline, semantic alias catalog, and workflows
@@ -68,6 +70,7 @@ go-beast/
 │       ├── README.md       ← Adapter scope and maintenance notes
 │       └── skills/         ← Symlinks to canonical `skills/go-*` directories
 ├── workflows/
+│   ├── minimal-pipeline.json    ← Minimal declarative workflow engine example
 │   ├── go-skill-eval.js       ← Skill eval pipeline: all go-* skills, structural checklist + LLM-as-judge (A/B/C/D)
 │   ├── go-hook-eval.js        ← Hook eval pipeline across all go-beast hooks
 │   ├── go-workflow-eval.js    ← Workflow eval pipeline for Workflow scripts
@@ -79,7 +82,8 @@ go-beast/
 │   ├── prepare-release.mjs     ← Generates release PR version and changelog surfaces
 │   ├── release-version.mjs    ← Canonical release/versioning contract: check and cut releases from package.json
 │   ├── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
-│   └── transversal-rules.mjs  ← Generates and checks transversal rule surfaces
+│   ├── transversal-rules.mjs  ← Generates and checks transversal rule surfaces
+│   └── workflow.mjs           ← Optional workflow state-machine coordinator
 ├── tests/
 │   ├── helpers.sh             ← Shared shell assertions for integration tests
 │   ├── claude-code/           ← Claude Code real-session integration tests

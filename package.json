@@ -4,11 +4,15 @@
   "private": true,
   "type": "module",
   "description": "Agent-agnostic go-* skill pack with hooks, workflows, and plugin adapter bundles for coding agents.",
+  "bin": {
+    "go-beast": "bin/go-beast.mjs"
+  },
   "scripts": {
     "lint": "node scripts/validate.mjs lint",
     "test": "node scripts/validate.mjs test",
     "test:live": "node scripts/validate.mjs test:live",
     "verify": "node scripts/validate.mjs verify",
+    "workflow": "node bin/go-beast.mjs workflow",
     "rules:generate": "node scripts/transversal-rules.mjs generate",
     "rules:check": "node scripts/transversal-rules.mjs check",
     "release:version:check": "node scripts/release-version.mjs check",

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "minimal-pipeline",
+  "version": 1,
+  "mode": "warn",
+  "phases": [
+    {
+      "id": "discover",
+      "skill": "go-hawk",
+      "depends_on": [],
+      "preconditions": [],
+      "requires": [],
+      "produces": [
+        { "path": ".go-beast/example/discovery.md", "type": "file", "non_empty": true, "sections": ["# Discovery"] }
+      ],
+      "transitions": ["explore"]
+    },
+    {
+      "id": "explore",
+      "skill": "go-lark",
+      "depends_on": ["discover"],
+      "preconditions": [],
+      "requires": [
+        { "path": ".go-beast/example/discovery.md", "type": "file", "non_empty": true, "sections": ["# Discovery"] }
+      ],
+      "produces": [
+        { "path": ".go-beast/example/approach.md", "type": "file", "non_empty": true, "sections": ["# Approach"] }
+      ],
+      "transitions": []
+    }
+  ]
+}

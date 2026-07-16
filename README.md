@@ -90,6 +90,9 @@ facts. See [Declarative orchestration](docs/architecture/DECLARATIVE_ORCHESTRATI
 for its ownership boundary; operational skill instructions remain in each
 `SKILL.md`.
 
+An optional state-machine engine coordinates versioned pipeline manifests
+without executing skills directly. See [Workflow engine](docs/architecture/WORKFLOW_ENGINE.md).
+
 ## License
 
 MIT.
