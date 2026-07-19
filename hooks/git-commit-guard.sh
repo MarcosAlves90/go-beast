@@ -25,8 +25,9 @@ fi
 has_commit=false
 has_add=false
 
-echo "$command" | grep -qE 'git[[:space:]]+commit' && has_commit=true
-echo "$command" | grep -qE 'git[[:space:]]+add'    && has_add=true
+git_command_prefix='git([[:space:]]+(-C[[:space:]]+[^[:space:]]+|--git-dir(=|[[:space:]]+)[^[:space:]]+|--work-tree(=|[[:space:]]+)[^[:space:]]+|--no-pager|--paginate|--no-replace-objects))*'
+echo "$command" | grep -qE "(^|[;&|[:space:](])${git_command_prefix}[[:space:]]+commit([[:space:]]|$)" && has_commit=true
+echo "$command" | grep -qE "(^|[;&|[:space:](])${git_command_prefix}[[:space:]]+add([[:space:]]|$)"    && has_add=true
 
 [[ "$has_commit" == "false" && "$has_add" == "false" ]] && exit 0
 
@@ -139,9 +140,11 @@ fi
 # ── Verifica git add ─────────────────────────────────────────────────────────
 if [[ "$has_add" == "true" ]]; then
   is_broad=false
-  echo "$command" | grep -qE 'git[[:space:]]+add[[:space:]]+(-A|--all|-u)' && is_broad=true
-  echo "$command" | grep -qE 'git[[:space:]]+add[[:space:]]+\.$'            && is_broad=true
-  echo "$command" | grep -qE 'git[[:space:]]+add[[:space:]]+\.[[:space:]]'  && is_broad=true
+  add_tail="${command#* add }"
+  echo "$add_tail" | grep -qE '(^|[[:space:]])(-A|--all|-u|--interactive|-i|--patch|-p|--pathspec-file-nul)([[:space:]]|$)' && is_broad=true
+  echo "$add_tail" | grep -qE '(^|[[:space:]])--pathspec-from-file([=[:space:]]|$)' && is_broad=true
+  echo "$add_tail" | grep -qE '(^|[[:space:]])(--[[:space:]]+)?(\./?|\.)([[:space:]]|$|[;&|])' && is_broad=true
+  echo "$add_tail" | grep -qE '(^|[[:space:]])(:/|:\(top\))([[:space:]]|$|[;&|])' && is_broad=true
 
   if [[ "$is_broad" == "true" ]]; then
     to_stage=$(git -C "$repo_root" status --short 2>/dev/null | awk '{print $NF}' || true)

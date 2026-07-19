@@ -63,6 +63,24 @@ fi
 assert_contains "$TEST_DIR/absolute.out" 'disposable go-beast artifact' "absolute forced add identifies disposable artifact"
 
 printf '{}\n' > "$TEST_DIR/repo/.go-beast/workflows/state.json"
+for command_name in \
+  'git add -- .' \
+  'git add ./' \
+  'git add -i' \
+  'git add -p' \
+  'git add --pathspec-from-file=paths.txt' \
+  "git -C $TEST_DIR/repo add ."; do
+  set +e
+  run_guard "$command_name" "$TEST_DIR/edge-${RANDOM}.out"
+  EDGE_EXIT=$?
+  set -e
+  if [[ "$EDGE_EXIT" -ne 1 ]]; then
+    echo "[FAIL] edge-case add is blocked: $command_name"
+    exit 1
+  fi
+done
+echo "[PASS] alternative add forms are blocked"
+
 set +e
 run_guard 'git add .' "$TEST_DIR/broad.out"
 BROAD_EXIT=$?
