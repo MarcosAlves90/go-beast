@@ -11,6 +11,20 @@ documented boundaries between:
 - optional harness adapters
 - maintainer-facing instruction and protocol layers
 
+Pull request titles must follow the Conventional Commits format used by the
+release automation:
+
+```text
+type(scope): summary
+type(scope)!: summary
+```
+
+The scope is optional, and `!` marks a breaking change. Examples include
+`fix(install): restore archive lookup` and `feat!: remove the legacy adapter`.
+Issue titles keep the repository-specific `[area] summary` format; this rule
+applies only to pull request titles. The `Validate pull request title` CI job
+must pass before a pull request is merged.
+
 Transversal maintainer rules are defined in `go-beast.manifest.yaml`. Generate
 the committed instruction and architecture surfaces with `npm run rules:generate`
 and verify that they are synchronized with `npm run rules:check`. Do not edit
@@ -49,7 +63,7 @@ Use [.github/ISSUE_TEMPLATE.md](.github/ISSUE_TEMPLATE.md).
 
 Requirements:
 
-- Use a short imperative title in the form `[area] summary`.
+- Use a short imperative issue title in the form `[area] summary`.
 - State the concrete problem, why it matters, desired outcome, constraints, and
   acceptance criteria.
 - List related issues, PRs, ADRs, docs, or code paths explicitly.
@@ -61,7 +75,9 @@ Use [.github/pull_request_template.md](.github/pull_request_template.md).
 
 Requirements:
 
-- Use a short imperative PR title in the form `[area] summary`.
+- Use a short imperative Conventional Commit PR title in the form
+  `type(scope): summary`; the scope is optional and `!` marks a breaking
+  change.
 - Keep the PR scoped to one problem.
 - Add a GitHub closing keyword such as `Closes #123` when the PR resolves an
   issue.

@@ -3,6 +3,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { parseConventionalCommit } from './conventional-commit.mjs'
 
 const REPO = path.resolve(import.meta.dirname, '..')
 const CHANGELOG_PATH = path.join(REPO, 'CHANGELOG.md')
@@ -104,15 +105,14 @@ function commitsSince(tag) {
     .map(record => {
       const [sha, subject, body = ''] = record.split('\x1f')
       if (/^Merge /.test(subject)) return null
-      const match = /^(?<type>[a-z]+)(?:\((?<scope>[^)]+)\))?(?<breaking>!)?:\s+(?<description>.+)$/.exec(subject)
-      if (!match) fail(`Commit ${sha.slice(0, 8)} is not a Conventional Commit: ${subject}`)
+      const parsed = parseConventionalCommit(subject)
+      if (!parsed) fail(`Commit ${sha.slice(0, 8)} is not a Conventional Commit: ${subject}`)
       return {
         sha,
         subject,
         body,
-        type: match.groups.type,
-        scope: match.groups.scope || '',
-        breaking: Boolean(match.groups.breaking) || /BREAKING(?: CHANGE|-CHANGE):/i.test(body),
+        ...parsed,
+        breaking: parsed.breaking || /BREAKING(?: CHANGE|-CHANGE):/i.test(body),
       }
     })
     .filter(Boolean)
