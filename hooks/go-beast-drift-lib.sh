@@ -114,7 +114,7 @@ gb_extract_beast() {
   # ("Active beast:", "beast:", "<beast>", "using go-X", "invoking go-X").
   # Avoids extracting from negations ("don't use go-hawk") or incidental
   # mentions ("go-hawk would be premature here").
-  printf '%s\n' "$text" | grep -Eoi '(active beast|<beast>|using|invoking|running|invoke)[[:space:]:]+(go-[a-z]+)' \
+  printf '%s\n' "$text" | grep -Eoi '(active beast|beast|<beast>|using|invoking|running|invoke)[[:space:]:]+(go-[a-z]+)' \
     | grep -Eo 'go-[a-z]+' | head -n 1 || true
 }
 
@@ -143,6 +143,12 @@ gb_message_is_anchored() {
   # where drift persisted because casual mentions satisfied the check.
   if printf '%s\n' "$text" | grep -Eqi \
     'active beast[[:space:]]*:[[:space:]]*go-[a-z]+|<beast>[[:space:]]*go-[a-z]+|beast ativo[[:space:]]*:[[:space:]]*go-[a-z]+'; then
+    return 0
+  fi
+
+  if printf '%s\n' "$text" | grep -Eqi '(^|[[:space:]])beast[[:space:]]*:[[:space:]]*go-[a-z]+' \
+    && printf '%s\n' "$text" | grep -Eqi '(^|[[:space:]])artifact[[:space:]]*:[[:space:]]*`?(\.go-beast/)?(REQUIREMENTS\.md|APPROACH\.md|STACK\.md|ADR\.md|DIAGRAM\.md|CONTRACTS\.md|CHANGELOG\.md|AGENTS\.md|SECURITY_REVIEW|TEST_PLAN)`?([[:space:]]|$)' \
+    && printf '%s\n' "$text" | grep -Eqi 'implementation[[:space:]]+gate[[:space:]]*:[[:space:]]*(allowed|blocked|permitido|bloqueado)([[:space:][:punct:]]|$)'; then
     return 0
   fi
 

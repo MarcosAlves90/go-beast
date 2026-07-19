@@ -120,4 +120,57 @@ assert_contains "$STATE_FILE" '"task_state": "active"' "user-prompt hook reopens
 assert_contains "$STATE_FILE" '"active_beast": "go-wren"' "user-prompt hook records the new active beast"
 assert_contains "$TEST_HOME/prompt-new-task-output.json" 'go-wren' "user-prompt hook emits new active beast context"
 
+CANONICAL_FRAME='Beast: go-chat
+Artifact: CHANGELOG.md — presente
+Implementation gate: permitido; drift reancorado.'
+for attempt in 1 2 3 4 5; do
+  canonical_input="$(jq -n --arg message "$CANONICAL_FRAME" '{session_id:"sess-1",cwd:"/tmp/project",stop_hook_active:false,last_assistant_message:$message}')"
+  printf '%s' "$canonical_input" \
+    | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" \
+      bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" \
+    > "$TEST_HOME/stop-canonical-$attempt.out" 2>&1
+done
+assert_contains "$STATE_FILE" '"unanchored_stop_count": 0' "canonical state frame resets drift counter"
+echo "[PASS] canonical state frame does not trigger repeated re-anchor"
+
+EMPTY_FRAME_CASES=(
+  $'Beast: go-chat\nArtifact:\nImplementation gate: allowed'
+  $'Beast: go-chat\nArtifact: CHANGELOG.md\nImplementation gate:'
+)
+for index in "${!EMPTY_FRAME_CASES[@]}"; do
+  empty_frame_input="$(jq -n --arg session "sess-empty-$index" --arg message "${EMPTY_FRAME_CASES[$index]}" '{session_id:$session,cwd:"/tmp/project",stop_hook_active:false,last_assistant_message:$message}')"
+  set +e
+  printf '%s' "$empty_frame_input" \
+    | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" \
+      bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" \
+    > "$TEST_HOME/stop-empty-$index.out" 2>&1
+  empty_frame_exit=$?
+  set -e
+  if [[ "$empty_frame_exit" -ne 0 ]]; then
+    echo "[FAIL] empty canonical field changed the first-stop exit contract"
+    exit 1
+  fi
+done
+echo "[PASS] empty canonical fields do not count as anchored"
+
+INVALID_SEMANTIC_CASES=(
+  $'Beast: go-chat\nArtifact: UNKNOWN.md\nImplementation gate: allowed'
+  $'Beast: go-chat\nArtifact: CHANGELOG.md\nImplementation gate: maybe'
+)
+for index in "${!INVALID_SEMANTIC_CASES[@]}"; do
+  semantic_input="$(jq -n --arg session "sess-semantic-$index" --arg message "${INVALID_SEMANTIC_CASES[$index]}" '{session_id:$session,cwd:"/tmp/project",stop_hook_active:false,last_assistant_message:$message}')"
+  set +e
+  printf '%s' "$semantic_input" \
+    | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" \
+      bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" \
+    > "$TEST_HOME/stop-semantic-$index.out" 2>&1
+  semantic_exit=$?
+  set -e
+  if [[ "$semantic_exit" -ne 0 ]]; then
+    echo "[FAIL] invalid semantic frame changed the first-stop exit contract"
+    exit 1
+  fi
+done
+echo "[PASS] invalid semantic fields do not count as anchored"
+
 echo "STATUS: PASSED"
