@@ -133,6 +133,32 @@ function assertKeys(value, keys, label) {
   for (const key of keys) if (!Object.hasOwn(value, key)) fail(`${label} is missing ${key}`)
 }
 
+function normalizeText(content) {
+  return content.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n')
+}
+
+function validateSkillDocument(root, name) {
+  const filePath = path.join(root, 'skills', name, 'SKILL.md')
+  if (!fs.existsSync(filePath)) fail(`skills.${name} is missing canonical document: skills/${name}/SKILL.md`)
+  const content = normalizeText(fs.readFileSync(filePath, 'utf8'))
+  const frontmatter = content.match(/^---\n([\s\S]*?)\n---\n/)
+  if (!frontmatter) fail(`skills.${name} is missing YAML frontmatter`)
+  const fields = new Map()
+  for (const line of frontmatter[1].split('\n')) {
+    const match = line.match(/^([a-z_]+):[ ](.+)$/)
+    if (match) fields.set(match[1], match[2].trim())
+  }
+  for (const field of ['name', 'version', 'description', 'when_to_use']) {
+    if (!fields.has(field) || !fields.get(field)) fail(`skills.${name} frontmatter is missing ${field}`)
+  }
+  if (fields.get('name') !== name) fail(`skills.${name} frontmatter name must be ${name}`)
+  if (!/^\d+\.\d+\.\d+$/.test(fields.get('version'))) fail(`skills.${name} frontmatter version must be semantic versioning`)
+  for (const heading of ['## Rules', '## Output']) {
+    if (!content.includes(`\n${heading}\n`)) fail(`skills.${name} is missing required heading: ${heading}`)
+  }
+  if (!/^### \d+\. .+$/m.test(content)) fail(`skills.${name} is missing numbered workflow headings`)
+}
+
 function validateOrchestration(manifest, root) {
   const orchestration = manifest.orchestration
   assertType(orchestration, 'object', 'orchestration')
@@ -247,6 +273,7 @@ function validateManifest(manifest, schema, root) {
     if (reserved.has(normalized)) fail(`reserved skill alias: ${entry.alias}`)
     if (officialNames.has(normalized) || normalized.startsWith('go-')) fail(`skill alias cannot be a go-* identifier: ${entry.alias}`)
     aliases.add(normalized)
+    validateSkillDocument(root, name)
   }
   assertType(manifest.hook_integration, 'object', 'hook_integration')
   assertKeys(manifest.hook_integration, ['contract', 'wiring', 'session_sync'], 'hook_integration')
@@ -424,7 +451,7 @@ function main() {
     if (relative === 'skills/*/SKILL.md') {
       for (const name of Object.keys(manifest.skills).sort()) {
         const skillPath = path.join(root, 'skills', name, 'SKILL.md')
-        const current = fs.readFileSync(skillPath, 'utf8')
+        const current = normalizeText(fs.readFileSync(skillPath, 'utf8'))
         const desired = replaceSkillBlock(current, name, manifest.skills[name], skillPath)
         if (mode === 'check' && current !== desired) fail(`${path.relative(root, skillPath)} is out of date; run npm run rules:generate`)
         if (mode === 'generate' && current !== desired) fs.writeFileSync(skillPath, desired)
@@ -432,7 +459,8 @@ function main() {
       continue
     }
     const filePath = path.join(root, relative)
-    const current = fs.readFileSync(filePath, 'utf8')
+    if (!fs.existsSync(filePath)) fail(`${relative} is missing; expected generated surface with marker ${surfaces.get(relative).marker}`)
+    const current = normalizeText(fs.readFileSync(filePath, 'utf8'))
     let desired = generated
     if (relative === 'docs/PIPELINE.md') {
       desired = replaceAliasBlock(current, manifest, filePath)
