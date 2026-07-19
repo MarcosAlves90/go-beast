@@ -32,6 +32,12 @@ go-beast workflow begin --file workflows/minimal-pipeline.json --phase discover
 go-beast workflow complete --file workflows/minimal-pipeline.json --phase discover
 ```
 
+The CLI resolves package resources, such as `go-beast.workflow.schema.json`,
+from the installed package location. Workflow manifests, state, locks, and
+artifacts are resolved from the project root: pass `--root <path>` for an
+explicit root, or omit it to discover the nearest ancestor containing a
+`workflows/` directory and then fall back to the current directory.
+
 `npm run workflow -- <command>` is available in a checkout. `resume` reads the
 persisted state and reports the current phase statuses; running `begin` again
 for a completed phase reopens it and invalidates its dependent phases.

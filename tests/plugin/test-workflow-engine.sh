@@ -9,9 +9,27 @@ source "$REPO_ROOT/tests/helpers.sh"
 TEST_DIR="$(create_test_project)"
 trap 'cleanup_test_project "$TEST_DIR"' EXIT
 
+mkdir -p "$TEST_DIR/installed/bin" "$TEST_DIR/installed/scripts" "$TEST_DIR/project/workflows" "$TEST_DIR/project/subdir" "$TEST_DIR/caller"
+cp "$REPO_ROOT/bin/go-beast.mjs" "$TEST_DIR/installed/bin/"
+cp "$REPO_ROOT/scripts/workflow.mjs" "$REPO_ROOT/scripts/workflow-roots.mjs" "$REPO_ROOT/scripts/transversal-rules.mjs" "$TEST_DIR/installed/scripts/"
+cp "$REPO_ROOT/go-beast.workflow.schema.json" "$TEST_DIR/installed/"
+cp "$REPO_ROOT/workflows/minimal-pipeline.json" "$TEST_DIR/project/workflows/"
+
+(
+  cd "$TEST_DIR/project/subdir"
+  node "$TEST_DIR/installed/bin/go-beast.mjs" workflow validate --file workflows/minimal-pipeline.json
+  node "$TEST_DIR/installed/bin/go-beast.mjs" workflow start --file workflows/minimal-pipeline.json
+)
+[ -f "$TEST_DIR/project/.go-beast/workflows/minimal-pipeline.json" ]
+
+(
+  cd "$TEST_DIR/caller"
+  node "$TEST_DIR/installed/bin/go-beast.mjs" workflow validate --root "$TEST_DIR/project" --file workflows/minimal-pipeline.json
+)
+
 mkdir -p "$TEST_DIR/repo/bin" "$TEST_DIR/repo/scripts" "$TEST_DIR/repo/workflows"
 cp "$REPO_ROOT/bin/go-beast.mjs" "$TEST_DIR/repo/bin/"
-cp "$REPO_ROOT/scripts/workflow.mjs" "$REPO_ROOT/scripts/transversal-rules.mjs" "$TEST_DIR/repo/scripts/"
+cp "$REPO_ROOT/scripts/workflow.mjs" "$REPO_ROOT/scripts/workflow-roots.mjs" "$REPO_ROOT/scripts/transversal-rules.mjs" "$TEST_DIR/repo/scripts/"
 cp "$REPO_ROOT/go-beast.workflow.schema.json" "$TEST_DIR/repo/"
 cp "$REPO_ROOT/workflows/minimal-pipeline.json" "$TEST_DIR/repo/workflows/"
 
