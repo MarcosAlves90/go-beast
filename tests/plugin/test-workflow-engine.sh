@@ -90,6 +90,36 @@ assert_contains .go-beast/workflows/minimal-pipeline.json '"explore": {' 'workfl
 assert_contains .go-beast/workflows/minimal-pipeline.json '"status": "invalidated"' 'rerun invalidates dependent phase'
 assert_contains .go-beast/workflows/minimal-pipeline.json '"revision": [1-9]' 'workflow state revision advances on writes'
 
+mkdir -p workflows/diamond .go-beast/diamond
+cat > workflows/diamond/manifest.json <<'EOF'
+{
+  "schema_version": 1,
+  "id": "diamond",
+  "version": 1,
+  "mode": "strict",
+  "phases": [
+    { "id": "root", "skill": "go-hawk", "depends_on": [], "preconditions": [], "requires": [], "produces": [], "transitions": ["left", "right"] },
+    { "id": "left", "skill": "go-lark", "depends_on": ["root"], "preconditions": [], "requires": [], "produces": [], "transitions": ["join"] },
+    { "id": "right", "skill": "go-fox", "depends_on": ["root"], "preconditions": [], "requires": [], "produces": [], "transitions": ["join"] },
+    { "id": "join", "skill": "go-eagle", "depends_on": ["left", "right"], "preconditions": [], "requires": [], "produces": [], "transitions": [] }
+  ]
+}
+EOF
+node bin/go-beast.mjs workflow start --file workflows/diamond/manifest.json
+for phase in root left right join; do
+  node bin/go-beast.mjs workflow begin --file workflows/diamond/manifest.json --phase "$phase"
+  node bin/go-beast.mjs workflow complete --file workflows/diamond/manifest.json --phase "$phase"
+done
+node bin/go-beast.mjs workflow begin --mode warn --file workflows/diamond/manifest.json --phase root > diamond-invalidation.out 2>&1
+assert_contains diamond-invalidation.out 'dependent phase invalidated: left' 'diamond invalidates the left branch'
+assert_contains diamond-invalidation.out 'dependent phase invalidated: right' 'diamond invalidates the right branch'
+assert_contains diamond-invalidation.out 'dependent phase invalidated: join' 'diamond invalidates the converging phase'
+if [ "$(grep -c 'dependent phase invalidated: join' diamond-invalidation.out)" -ne 1 ]; then
+  echo '[FAIL] diamond converging phase was invalidated more than once'
+  exit 1
+fi
+node -e "const s=require('./.go-beast/workflows/diamond.json'); if (s.phases.left.status !== 'invalidated' || s.phases.right.status !== 'invalidated' || s.phases.join.status !== 'invalidated') process.exit(1)"
+
 rm .go-beast/example/discovery.md
 if node bin/go-beast.mjs workflow begin --mode strict --file workflows/minimal-pipeline.json --phase explore > strict.out 2>&1; then
   echo '[FAIL] strict workflow mode allows missing required artifact'
