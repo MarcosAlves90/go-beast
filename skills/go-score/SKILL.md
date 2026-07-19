@@ -62,7 +62,7 @@ Before reading any code:
 
 - [ ] What is being reviewed: commit range, branch diff, named files, or PR?
 - [ ] What is the stated intent of the change (PR description, commit message, linked issue)?
-- [ ] Is there a requirements artifact (REQUIREMENTS.md, issue, ticket) that defines expected behavior?
+- [ ] Is there a requirements artifact (`.go-beast/REQUIREMENTS.md`, issue, ticket) that defines expected behavior?
 
 If the stated intent is absent, note it as a **scope gap** and proceed with what is observable from the code. A scope gap reduces review confidence and must be disclosed in SCORE_REPORT.md.
 

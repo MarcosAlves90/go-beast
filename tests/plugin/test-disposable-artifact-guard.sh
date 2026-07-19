@@ -41,6 +41,27 @@ fi
 assert_contains "$TEST_DIR/explicit.out" 'disposable go-beast artifact' "explicit add identifies disposable artifact"
 
 mkdir -p "$TEST_DIR/repo/.go-beast/workflows"
+printf 'requirements\n' > "$TEST_DIR/repo/.go-beast/REQUIREMENTS.md"
+set +e
+run_guard 'git add .go-beast/REQUIREMENTS.md' "$TEST_DIR/canonical.out"
+CANONICAL_EXIT=$?
+set -e
+if [[ "$CANONICAL_EXIT" -ne 1 ]]; then
+  echo "[FAIL] canonical disposable artifact add is blocked"
+  exit 1
+fi
+assert_contains "$TEST_DIR/canonical.out" 'disposable go-beast artifact' "canonical add identifies disposable artifact"
+
+set +e
+run_guard "git add -f $TEST_DIR/repo/.go-beast/REQUIREMENTS.md" "$TEST_DIR/absolute.out"
+ABSOLUTE_EXIT=$?
+set -e
+if [[ "$ABSOLUTE_EXIT" -ne 1 ]]; then
+  echo "[FAIL] absolute forced add of disposable artifact is blocked"
+  exit 1
+fi
+assert_contains "$TEST_DIR/absolute.out" 'disposable go-beast artifact' "absolute forced add identifies disposable artifact"
+
 printf '{}\n' > "$TEST_DIR/repo/.go-beast/workflows/state.json"
 set +e
 run_guard 'git add .' "$TEST_DIR/broad.out"

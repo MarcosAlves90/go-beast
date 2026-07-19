@@ -120,7 +120,7 @@ gb_extract_beast() {
 
 gb_extract_artifact() {
   local text="${1:-}"
-  printf '%s\n' "$text" | grep -Eo 'REQUIREMENTS\.md|APPROACH\.md|STACK\.md|ADR\.md|DIAGRAM\.md|CONTRACTS\.md|CHANGELOG\.md|AGENTS\.md|SECURITY_REVIEW|TEST_PLAN' | head -n 1 || true
+  printf '%s\n' "$text" | grep -Eo '(\.go-beast/)?(REQUIREMENTS\.md|APPROACH\.md)|STACK\.md|ADR\.md|DIAGRAM\.md|CONTRACTS\.md|CHANGELOG\.md|AGENTS\.md|SECURITY_REVIEW|TEST_PLAN' | head -n 1 || true
 }
 
 gb_extract_task_state() {

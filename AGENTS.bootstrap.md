@@ -51,6 +51,10 @@ output as disposable unless the user explicitly makes it part of the delivery.
 This rule is agent-managed and does not depend on a manifest in the target
 repository.
 
+The canonical repository-local boundary for these outputs is `.go-beast/`.
+Discovery and solution artifacts belong at `.go-beast/REQUIREMENTS.md` and
+`.go-beast/APPROACH.md`; workflow state belongs under `.go-beast/workflows/`.
+
 Before staging a task output, identify its exact repository-relative path and
 run this procedure from the target repository:
 

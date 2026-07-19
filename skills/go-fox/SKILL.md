@@ -2,7 +2,7 @@
 name: go-fox
 version: 1.1.0
 description: Translates approved requirements into an architecture decision record (ADR), technology stack selection, Mermaid component diagram, and interface contracts.
-when_to_use: Use after go-hawk has produced an approved REQUIREMENTS.md — or when the architecture of an existing system needs to be revised or formally documented.
+when_to_use: Use after go-hawk has produced an approved `.go-beast/REQUIREMENTS.md` — or when the architecture of an existing system needs to be revised or formally documented.
 ---
 
 # go-fox — Architecture & Design
@@ -29,7 +29,7 @@ go-fox is the strategist of the go-beast pack. It converts approved requirements
 ## Quick start
 
 ```
-Prerequisites: REQUIREMENTS.md from go-hawk
+Prerequisites: `.go-beast/REQUIREMENTS.md` from go-hawk
 → invoke go-fox
 → stack selection → ADR → component diagram → interface contracts
 ```
@@ -38,7 +38,7 @@ Prerequisites: REQUIREMENTS.md from go-hawk
 
 ### 1. Read requirements
 
-Load `REQUIREMENTS.md`. Identify:
+Load `.go-beast/REQUIREMENTS.md`. Identify:
 - Scale and availability targets → drives infra choices
 - Compliance scope → drives security posture
 - Integration points → drives API design

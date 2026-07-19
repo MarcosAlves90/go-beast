@@ -40,7 +40,7 @@ Prerequisites: CONTRACTS.md from go-fox, functional requirements from go-hawk
 
 ### 1. Extract acceptance criteria from contracts and requirements
 
-Read `docs/architecture/task-artifacts/CONTRACTS.md` and `REQUIREMENTS.md`. For every functional requirement and
+Read `docs/architecture/task-artifacts/CONTRACTS.md` and `.go-beast/REQUIREMENTS.md`. For every functional requirement and
 every interface boundary, extract one or more testable acceptance criteria:
 
 - [ ] Each criterion must be falsifiable: there must be a concrete condition that would make it fail.
@@ -55,7 +55,7 @@ Do not write scenarios until criteria are listed and reviewed.
 For each acceptance criterion, write one or more scenarios in Given/When/Then format:
 
 ```gherkin
-Feature: <feature name from REQUIREMENTS.md>
+Feature: <feature name from .go-beast/REQUIREMENTS.md>
 
   Scenario: <concrete behavior being specified>
     Given <precondition — system state or user context>
@@ -118,7 +118,7 @@ Produce `SPEC.md` at the project root:
 
 ### 5. Verify coverage before handing off
 
-- [ ] Every P0 functional requirement from `REQUIREMENTS.md` has at least one scenario.
+- [ ] Every P0 functional requirement from `.go-beast/REQUIREMENTS.md` has at least one scenario.
 - [ ] Every endpoint in `CONTRACTS.md` has at least one happy-path and one failure scenario.
 - [ ] Every scenario has a corresponding stub in the test skeleton.
 - [ ] No open questions remain unresolved in `SPEC.md`.
@@ -130,7 +130,7 @@ deferred design debt.
 
 - Do not write implementation code. go-snipe specifies behavior; go-wolf and go-lynx implement it.
 - Do not write full test implementations — stubs only. go-eagle owns the full test strategy.
-- Do not invent requirements. Every scenario must trace to a criterion in `REQUIREMENTS.md` or
+- Do not invent requirements. Every scenario must trace to a criterion in `.go-beast/REQUIREMENTS.md` or
   `CONTRACTS.md`.
 - go-wolf and go-lynx must not begin implementation until `SPEC.md` exists with no open questions.
 - An acceptance criterion with no falsifiable failure scenario is not a criterion — rewrite it.

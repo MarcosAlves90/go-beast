@@ -55,8 +55,8 @@ Aliases are descriptive documentation only. The official identifiers remain the 
 
 | Skill | Phase | Produces |
 |---|---|---|
-| [go-hawk](../skills/go-hawk/SKILL.md) | Discovery | `REQUIREMENTS.md` |
-| [go-lark](../skills/go-lark/SKILL.md) | Solution exploration | `APPROACH.md` |
+| [go-hawk](../skills/go-hawk/SKILL.md) | Discovery | `.go-beast/REQUIREMENTS.md` |
+| [go-lark](../skills/go-lark/SKILL.md) | Solution exploration | `.go-beast/APPROACH.md` |
 | [go-fox](../skills/go-fox/SKILL.md) | Architecture | ADR, stack, diagram, contracts |
 | [go-otter](../skills/go-otter/SKILL.md) | Database | ER diagram, migrations, indexes |
 | [go-beaver](../skills/go-beaver/SKILL.md) | Scaffolding | Working repo skeleton and setup |

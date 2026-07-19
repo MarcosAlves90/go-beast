@@ -112,12 +112,12 @@ ARCHIVE_PATH_2="$ARCHIVE_DIR/go-beast-release-archive-v2.tar.gz"
 tar -xzf "$ARCHIVE_PATH" -C "$SECOND_WORKDIR"
 SECOND_REPO="$SECOND_WORKDIR/$(basename "$REPO_ROOT")"
 
-perl -0pi -e 's/^description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project\./description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification./m' \
+perl -0pi -e 's/^description: Conducts structured discovery interviews, produces a versioned `\.go-beast\/REQUIREMENTS\.md`, identifies unknowns and risks, and generates a go-beast handoff plan for a software project\./description: Conducts structured discovery interviews, produces a versioned .go-beast\/REQUIREMENTS.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification./m' \
   "$SECOND_REPO/skills/go-hawk/SKILL.md"
 
 assert_contains \
   "$SECOND_REPO/skills/go-hawk/SKILL.md" \
-  '^description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification\.$' \
+  '^description: Conducts structured discovery interviews, produces a versioned \.go-beast/REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification\.$' \
   "archive bootstrap test fixture updates selected release content"
 
 tar -czf "$ARCHIVE_PATH_2" \
@@ -152,7 +152,7 @@ assert_symlink_target \
 
 assert_contains \
   "$TEST_HOME/.claude/skills/go-hawk/SKILL.md" \
-  '^description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification\.$' \
+  '^description: Conducts structured discovery interviews, produces a versioned \.go-beast/REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification\.$' \
   "archive bootstrap updates installed content after rerun"
 
 echo "STATUS: PASSED"

@@ -30,6 +30,8 @@ echo "$command" | grep -qE 'git[[:space:]]+add'    && has_add=true
 
 [[ "$has_commit" == "false" && "$has_add" == "false" ]] && exit 0
 
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+
 # ── Classify a path as dangerous ─────────────────────────────────────────────
 is_dangerous() {
   local f="$1"
@@ -84,7 +86,28 @@ is_disposable_go_beast_artifact() {
 
 is_committed_path() {
   local f="$1"
-  git cat-file -e "HEAD:$f" >/dev/null 2>&1
+  git -C "$repo_root" cat-file -e "HEAD:$f" >/dev/null 2>&1
+}
+
+normalize_git_path() {
+  local f="$1"
+  local absolute
+  f="${f#./}"
+
+  if [[ -n "$repo_root" && "$f" == /* && "$f" == "$repo_root/"* ]]; then
+    printf '%s\n' "${f#"$repo_root"/}"
+    return
+  fi
+
+  if [[ -n "$repo_root" && "$f" != /* && -e "$f" ]]; then
+    absolute="$(cd "$(dirname "$f")" && pwd -P)/$(basename "$f")"
+    if [[ "$absolute" == "$repo_root/"* ]]; then
+      printf '%s\n' "${absolute#"$repo_root"/}"
+      return
+    fi
+  fi
+
+  printf '%s\n' "$f"
 }
 
 VIOLATIONS=""
@@ -92,7 +115,7 @@ VIOLATIONS=""
 collect_violations() {
   while IFS= read -r file; do
     [[ -z "$file" ]] && continue
-    normalized="${file#./}"
+    normalized="$(normalize_git_path "$file")"
     if is_disposable_go_beast_artifact "$normalized" && ! is_committed_path "$normalized"; then
       VIOLATIONS="${VIOLATIONS}  - ${file} (disposable go-beast artifact)\n"
     elif is_dangerous "$file"; then
@@ -103,12 +126,12 @@ collect_violations() {
 
 # ── Verifica git commit ──────────────────────────────────────────────────────
 if [[ "$has_commit" == "true" ]]; then
-  staged=$(git diff --cached --name-only 2>/dev/null || true)
+  staged=$(git -C "$repo_root" diff --cached --name-only 2>/dev/null || true)
   [[ -n "$staged" ]] && collect_violations <<< "$staged"
 
   # git commit -am also includes modified tracked files
   if echo "$command" | grep -qE 'git[[:space:]]+commit[[:space:]].*-[a-zA-Z]*a'; then
-    modified=$(git diff --name-only 2>/dev/null || true)
+    modified=$(git -C "$repo_root" diff --name-only 2>/dev/null || true)
     [[ -n "$modified" ]] && collect_violations <<< "$modified"
   fi
 fi
@@ -121,7 +144,7 @@ if [[ "$has_add" == "true" ]]; then
   echo "$command" | grep -qE 'git[[:space:]]+add[[:space:]]+\.[[:space:]]'  && is_broad=true
 
   if [[ "$is_broad" == "true" ]]; then
-    to_stage=$(git status --short 2>/dev/null | awk '{print $NF}' || true)
+    to_stage=$(git -C "$repo_root" status --short 2>/dev/null | awk '{print $NF}' || true)
     [[ -n "$to_stage" ]] && collect_violations <<< "$to_stage"
   else
     paths=$(echo "$command" \

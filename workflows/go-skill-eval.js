@@ -23,12 +23,12 @@ const GO_BEAST_VERSION = args?.version ?? (await agent(`Run: node -e "process.st
 
 const SKILLS = {
   'go-hawk': {
-    description: 'Conducts structured discovery interviews, produces a versioned REQUIREMENTS.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project.',
+    description: 'Conducts structured discovery interviews, produces a versioned .go-beast/REQUIREMENTS.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project.',
     checklist: ['Problem statement', 'Users and roles', 'Functional requirements', 'Out of scope', 'Risks', 'handoff'],
   },
   'go-lark': {
-    description: 'Explores the solution space for approved requirements — generates 3–5 distinct approaches, evaluates each against the project constraints, selects one with explicit rationale, and produces APPROACH.md as a decision record.',
-    checklist: ['APPROACH.md', 'approaches considered', 'evaluation', 'selected approach', 'trade-offs', 'deferred decisions'],
+    description: 'Explores the solution space for approved requirements — generates 3–5 distinct approaches, evaluates each against the project constraints, selects one with explicit rationale, and produces .go-beast/APPROACH.md as a decision record.',
+    checklist: ['.go-beast/APPROACH.md', 'approaches considered', 'evaluation', 'selected approach', 'trade-offs', 'deferred decisions'],
   },
   'go-fox': {
     description: 'Translates approved requirements into an architecture decision record (ADR), technology stack selection, Mermaid component diagram, and interface contracts.',
@@ -512,7 +512,7 @@ Do not make the decision for the developer. Do not ask more than one clarifying 
 2. WORKTREE STATE block describing the expected clean state after creation
 3. CLEANUP RULES block with explicit safe/forbidden cleanup conditions
 4. provenance handling for worktrees created by the skill vs pre-existing ones`,
-    'go-snipe': `EVAL CONTEXT: You ARE the go-snipe skill executing its workflow. The provided project has approved CONTRACTS.md and REQUIREMENTS.md. Produce go-snipe's complete output:
+    'go-snipe': `EVAL CONTEXT: You ARE the go-snipe skill executing its workflow. The provided project has approved CONTRACTS.md and .go-beast/REQUIREMENTS.md. Produce go-snipe's complete output:
 1. List all acceptance criteria extracted from the requirements and contracts (numbered, one per functional requirement or API endpoint)
 2. Write BDD scenarios in Given/When/Then format covering at least one happy path and one unhappy path per criterion
 3. Produce an acceptance test skeleton (stub functions with the scenario title as the test description and a single failing assertion)

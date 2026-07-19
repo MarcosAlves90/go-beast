@@ -1,8 +1,8 @@
 ---
 name: go-lark
 version: 1.0.0
-description: Explores the solution space for approved requirements — generates 3–5 distinct approaches, evaluates each against the project's constraints, selects one with explicit rationale, and produces APPROACH.md as a decision record. Prevents go-fox from committing to an architecture before alternatives have been considered.
-when_to_use: Use when REQUIREMENTS.md exists and the problem space is ambiguous enough that multiple valid solutions exist. Invoke after go-hawk (requirements approved) and before go-fox (architecture). Skip when requirements already constrain the solution to a single approach.
+description: Explores the solution space for approved requirements — generates 3–5 distinct approaches, evaluates each against the project's constraints, selects one with explicit rationale, and produces `.go-beast/APPROACH.md` as a decision record. Prevents go-fox from committing to an architecture before alternatives have been considered.
+when_to_use: Use when `.go-beast/REQUIREMENTS.md` exists and the problem space is ambiguous enough that multiple valid solutions exist. Invoke after go-hawk (requirements approved) and before go-fox (architecture). Skip when requirements already constrain the solution to a single approach.
 ---
 
 # go-lark — Solution Space Exploration
@@ -29,18 +29,18 @@ go-lark sings before the sun rises. It explores freely before any commitment is 
 ## Quick start
 
 ```
-Prerequisites: REQUIREMENTS.md approved by go-hawk
+Prerequisites: `.go-beast/REQUIREMENTS.md` approved by go-hawk
 
 User: "We need to build a notification system."
 → invoke go-lark
-→ generate approaches → evaluate trade-offs → select → APPROACH.md → hand off to go-fox
+→ generate approaches → evaluate trade-offs → select → `.go-beast/APPROACH.md` → hand off to go-fox
 ```
 
 ## Workflow
 
 ### 1. Read the requirements
 
-Read `REQUIREMENTS.md` in full. Extract:
+Read `.go-beast/REQUIREMENTS.md` in full. Extract:
 
 - [ ] Core functional requirements — what must the system do?
 - [ ] Hard constraints — what is ruled out? (budget, stack, timeline, compliance)
@@ -90,13 +90,15 @@ Choose one approach. State the selection explicitly with a rationale:
 
 If two approaches are too close to call without more information, state the specific unknown that would resolve the tie, and ask the user before proceeding.
 
-### 5. Produce APPROACH.md
+### 5. Produce `.go-beast/APPROACH.md`
 
-Write `APPROACH.md` at the project root with:
+Create `.go-beast/` if needed, then write:
+
+Write `.go-beast/APPROACH.md` with:
 
 ```
 ## Requirements summary
-<3–5 bullet points from REQUIREMENTS.md>
+<3–5 bullet points from .go-beast/REQUIREMENTS.md>
 
 ## Approaches considered
 <one subsection per approach: name, description, trade-offs>
@@ -111,19 +113,19 @@ Write `APPROACH.md` at the project root with:
 <what go-fox will decide>
 ```
 
-`APPROACH.md` is the handoff artifact to go-fox. go-fox reads it to understand which direction was selected and why before designing the architecture.
+`.go-beast/APPROACH.md` is the handoff artifact to go-fox. go-fox reads it to understand which direction was selected and why before designing the architecture.
 
 ## Rules
 
 - Do not generate fewer than 3 approaches. One option is not a choice; two is a false dilemma.
 - Do not select an approach without a scoring evaluation. Gut-feel selection defeats the purpose.
 - Do not design the architecture. go-lark explores directions — go-fox commits to one.
-- If all approaches violate a hard constraint from REQUIREMENTS.md, stop. Surface the conflict to the user before proceeding.
+- If all approaches violate a hard constraint from `.go-beast/REQUIREMENTS.md`, stop. Surface the conflict to the user before proceeding.
 - Do not skip this skill because the answer "seems obvious." Obvious choices become technical debt when the constraint that made them obvious changes.
 
 ## Output
 
-- `APPROACH.md` — approaches considered, evaluation table, selected approach with rationale, deferred decisions
+- `.go-beast/APPROACH.md` — approaches considered, evaluation table, selected approach with rationale, deferred decisions
 
 ## Position in the pack
 

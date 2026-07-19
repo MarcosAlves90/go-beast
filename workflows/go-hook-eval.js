@@ -624,7 +624,7 @@ const TESTS = [
     name: 'first unanchored bootstrap stop stays passive (exit 0)',
     setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
 cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
 STATEEOF`,
     input: stopInputWithMessage('Continuing with the task now.'),
     expectExit: 0,
@@ -634,7 +634,7 @@ STATEEOF`,
     name: 'second unanchored bootstrap stop forces re-anchor (exit 2)',
     setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
 cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
 STATEEOF`,
     input: stopInputWithMessage('Continuing with the task now.'),
     expectExit: 2,
@@ -645,9 +645,9 @@ STATEEOF`,
     name: 'anchored bootstrap stop resets drift counter',
     setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
 cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
 STATEEOF`,
-    input: stopInputWithMessage('Re-anchor: active beast go-lark, required artifact APPROACH.md, implementation unlocked is false.'),
+input: stopInputWithMessage('Re-anchor: active beast go-lark, required artifact .go-beast/APPROACH.md, implementation unlocked is false.'),
     expectExit: 0,
   },
   {
@@ -655,7 +655,7 @@ STATEEOF`,
     name: 'completed bootstrap task does not force re-anchor',
     setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
 cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-lark","required_artifact":"APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-lark","required_artifact":".go-beast/APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
 STATEEOF`,
     input: stopInputWithMessage('Continuing with a normal summary.'),
     expectExit: 0,
@@ -665,7 +665,7 @@ STATEEOF`,
     name: 'codex harness variant: second unanchored stop forces re-anchor',
     setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
 cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":1,"last_reanchor_reason":"missing-state-frame","updated_at":"2026-06-19T00:00:00Z"}
 STATEEOF`,
     input: stopInputWithMessage('Continuing with the task now.'),
     expectExit: 2,
@@ -679,7 +679,7 @@ STATEEOF`,
     name: 'user prompt naming beast reopens completed task (claude-code)',
     setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
 cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-lark","required_artifact":"APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-lark","required_artifact":".go-beast/APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
 STATEEOF`,
     input: json({
       session_id: 'hook-eval-session',
@@ -695,7 +695,7 @@ STATEEOF`,
     name: 'user prompt naming beast reopens completed task (codex harness)',
     setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
 cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-lark","required_artifact":"APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-lark","required_artifact":".go-beast/APPROACH.md","implementation_unlocked":true,"task_state":"complete","task_id":"task-1","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
 STATEEOF`,
     input: json({
       session_id: 'hook-eval-session',
@@ -712,7 +712,7 @@ STATEEOF`,
     name: 'no beast in prompt still emits re-anchor context',
     setup: `mkdir -p ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
 cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
-{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"claude-code","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-06-19T00:00:00Z"}
 STATEEOF`,
     input: json({
       session_id: 'hook-eval-session',
