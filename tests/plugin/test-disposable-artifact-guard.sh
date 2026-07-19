@@ -81,6 +81,39 @@ for command_name in \
 done
 echo "[PASS] alternative add forms are blocked"
 
+SPACED_REPO="$TEST_DIR/repo with spaces"
+mkdir -p "$SPACED_REPO/.go-beast"
+git -C "$SPACED_REPO" init -q
+git -C "$SPACED_REPO" config user.email test@example.com
+git -C "$SPACED_REPO" config user.name Test
+printf 'base\n' > "$SPACED_REPO/base.txt"
+git -C "$SPACED_REPO" add base.txt
+git -C "$SPACED_REPO" commit -qm init
+printf 'state\n' > "$SPACED_REPO/.go-beast/state.json"
+SPACED_COMMAND="git -C \"$SPACED_REPO\" add ."
+set +e
+printf '%s' "{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":$(node -p 'JSON.stringify(process.argv[1])' "$SPACED_COMMAND")}}" \
+  | (cd "$SPACED_REPO" && bash "$HOOK") >"$TEST_DIR/spaced.out" 2>&1
+SPACED_EXIT=$?
+set -e
+if [[ "$SPACED_EXIT" -ne 1 ]]; then
+  echo "[FAIL] quoted git -C path with spaces is blocked"
+  exit 1
+fi
+echo "[PASS] quoted git -C path with spaces is blocked"
+
+SINGLE_QUOTED_COMMAND="git -C '$SPACED_REPO' add ."
+set +e
+printf '%s' "{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":$(node -p 'JSON.stringify(process.argv[1])' "$SINGLE_QUOTED_COMMAND")}}" \
+  | (cd "$SPACED_REPO" && bash "$HOOK") >"$TEST_DIR/single-quoted.out" 2>&1
+SINGLE_QUOTED_EXIT=$?
+set -e
+if [[ "$SINGLE_QUOTED_EXIT" -ne 1 ]]; then
+  echo "[FAIL] single-quoted git -C path with spaces is blocked"
+  exit 1
+fi
+echo "[PASS] single-quoted git -C path with spaces is blocked"
+
 set +e
 run_guard 'git add .' "$TEST_DIR/broad.out"
 BROAD_EXIT=$?

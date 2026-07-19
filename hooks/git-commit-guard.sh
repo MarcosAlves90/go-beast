@@ -25,9 +25,14 @@ fi
 has_commit=false
 has_add=false
 
-git_command_prefix='git([[:space:]]+(-C[[:space:]]+[^[:space:]]+|--git-dir(=|[[:space:]]+)[^[:space:]]+|--work-tree(=|[[:space:]]+)[^[:space:]]+|--no-pager|--paginate|--no-replace-objects))*'
-echo "$command" | grep -qE "(^|[;&|[:space:](])${git_command_prefix}[[:space:]]+commit([[:space:]]|$)" && has_commit=true
-echo "$command" | grep -qE "(^|[;&|[:space:](])${git_command_prefix}[[:space:]]+add([[:space:]]|$)"    && has_add=true
+git_command_prefix='git([[:space:]]+(-C[[:space:]]+("[^"]*"|[^[:space:]]+)|--git-dir(=|[[:space:]]+)("[^"]*"|[^[:space:]]+)|--work-tree(=|[[:space:]]+)("[^"]*"|[^[:space:]]+)|--no-pager|--paginate|--no-replace-objects))*'
+git_command_prefix_single="git([[:space:]]+(-C[[:space:]]+'[^']*'|--git-dir(=|[[:space:]]+)'[^']*'|--work-tree(=|[[:space:]]+)'[^']*'|--no-pager|--paginate|--no-replace-objects))*"
+if echo "$command" | grep -qE "(^|[;&|[:space:](])(${git_command_prefix}|${git_command_prefix_single})[[:space:]]+commit([[:space:]]|$)"; then
+  has_commit=true
+fi
+if echo "$command" | grep -qE "(^|[;&|[:space:](])(${git_command_prefix}|${git_command_prefix_single})[[:space:]]+add([[:space:]]|$)"; then
+  has_add=true
+fi
 
 [[ "$has_commit" == "false" && "$has_add" == "false" ]] && exit 0
 
