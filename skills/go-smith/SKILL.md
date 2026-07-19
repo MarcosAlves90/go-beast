@@ -157,7 +157,7 @@ List every artifact the beast produces. Each must be:
 
 ### 7. Register in the pack sequence
 
-Update `REQUIREMENTS.md` or project handoff plan to include the new beast where it fits. A beast with no position in the chain is a beast nobody calls.
+Update `.go-beast/REQUIREMENTS.md` or the project handoff plan to include the new beast where it fits. A beast with no position in the chain is a beast nobody calls.
 
 Canonical sequence (for reference):
 ```

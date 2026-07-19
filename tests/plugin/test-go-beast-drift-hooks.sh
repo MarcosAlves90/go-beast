@@ -36,7 +36,7 @@ cat > "$STATE_FILE" <<'JSON'
   "harness": "codex",
   "mode": "bootstrap",
   "active_beast": "go-hawk",
-  "required_artifact": "REQUIREMENTS.md",
+  "required_artifact": ".go-beast/REQUIREMENTS.md",
   "implementation_unlocked": false,
   "task_state": "active",
   "task_id": "task-1",
@@ -53,7 +53,7 @@ printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","prompt":"siga"}' \
 
 assert_contains "$PROMPT_OUTPUT" 'go_beast_state' "user-prompt hook emits re-anchor context"
 assert_contains "$PROMPT_OUTPUT" 'go-hawk' "user-prompt hook includes active beast"
-assert_contains "$PROMPT_OUTPUT" 'REQUIREMENTS.md' "user-prompt hook includes required artifact"
+assert_contains "$PROMPT_OUTPUT" '.go-beast/REQUIREMENTS.md' "user-prompt hook includes required artifact"
 
 STOP_INPUT='{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":false,"last_assistant_message":"Continuing with the task now."}'
 
@@ -85,15 +85,15 @@ echo "[PASS] stop hook threshold unanchored turn forces re-anchor"
 
 assert_contains "$TEST_HOME/stop-threshold.out" 'go_beast_state' "stop hook emits re-anchor state on drift"
 
-printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":false,"last_assistant_message":"Re-anchor: active beast go-lark, required artifact APPROACH.md, implementation unlocked is false."}' \
+printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":false,"last_assistant_message":"Re-anchor: active beast go-lark, required artifact .go-beast/APPROACH.md, implementation unlocked is false."}' \
   | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" \
   > "$TEST_HOME/stop-anchored.out" 2>&1
 
 assert_contains "$STATE_FILE" '"active_beast": "go-lark"' "stop hook refreshes active beast from anchored reply"
-assert_contains "$STATE_FILE" '"required_artifact": "APPROACH.md"' "stop hook refreshes required artifact from anchored reply"
+assert_contains "$STATE_FILE" '"required_artifact": ".go-beast/APPROACH.md"' "stop hook refreshes required artifact from anchored reply"
 assert_contains "$STATE_FILE" '"unanchored_stop_count": 0' "stop hook resets drift counter after anchored reply"
 
-printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":false,"last_assistant_message":"Re-anchor: active beast go-lark, required artifact APPROACH.md, implementation unlocked is true. Task state: complete."}' \
+printf '%s' '{"session_id":"sess-1","cwd":"/tmp/project","stop_hook_active":false,"last_assistant_message":"Re-anchor: active beast go-lark, required artifact .go-beast/APPROACH.md, implementation unlocked is true. Task state: complete."}' \
   | GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE="codex" bash "$REPO_ROOT/hooks/go-beast-stop-reanchor.sh" \
   > "$TEST_HOME/stop-complete.out" 2>&1
 

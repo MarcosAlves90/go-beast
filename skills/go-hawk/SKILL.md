@@ -1,7 +1,7 @@
 ---
 name: go-hawk
 version: 1.1.0
-description: Conducts structured discovery interviews, produces a versioned REQUIREMENTS.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project.
+description: Conducts structured discovery interviews, produces a versioned `.go-beast/REQUIREMENTS.md`, identifies unknowns and risks, and generates a go-beast handoff plan for a software project.
 when_to_use: Use when starting a new project, feature, or epic — or whenever the problem is underspecified and scope must be established before any implementation begins. Invoke before go-fox.
 ---
 
@@ -50,7 +50,7 @@ Ask the following in order. Do not skip. Do not answer on the user's behalf.
 
 ### 2. Produce the requirements document
 
-Write a `REQUIREMENTS.md` in the project root:
+Create `.go-beast/` if needed, then write `.go-beast/REQUIREMENTS.md`:
 
 ```md
 # Requirements — <Project Name>
@@ -95,5 +95,5 @@ Adjust based on actual requirements. Always call go-bear early if auth, PII, or 
 
 ## Output
 
-- `REQUIREMENTS.md` — versioned, dated, signed off
+- `.go-beast/REQUIREMENTS.md` — versioned, dated, signed off
 - Handoff plan — ordered go-beast sequence

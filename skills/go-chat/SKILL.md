@@ -169,7 +169,7 @@ After each 4–6 exchanges in a sustained conversation, assess whether a formal 
 | Signal | Escalation |
 |---|---|
 | 3+ constraints or requirements established informally | "This conversation has produced several requirements that aren't scoped yet. Should we run go-hawk?" |
-| 3+ genuinely different approaches identified | "We've identified [N] approaches with real tradeoffs. A formal comparison in APPROACH.md via go-lark would serve this better than continuing here." |
+| 3+ genuinely different approaches identified | "We've identified [N] approaches with real tradeoffs. A formal comparison in `.go-beast/APPROACH.md` via go-lark would serve this better than continuing here." |
 | Single approach selected, details need designing | "This is ready for go-fox — the approach is clear and the interface contracts need to be written." |
 | Code change ready for review before commitment | "Should I hand this off to go-tern before you merge?" |
 | Decision involves absent stakeholders or unknown compliance requirements | "This involves [X] which I can't assess — that needs a human decision before proceeding." |

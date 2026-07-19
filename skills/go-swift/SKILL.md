@@ -230,7 +230,7 @@ For blocker hooks, test both the blocked path (non-zero exit, correct message) a
 
 If this hook is part of a go-beast project workflow, add it to the project's handoff plan:
 
-- Document the event, script name, target agent, and purpose in the project's `REQUIREMENTS.md`, `CLAUDE.md`, or `AGENTS.md`.
+- Document the event, script name, target agent, and purpose in `.go-beast/REQUIREMENTS.md`, `CLAUDE.md`, or `AGENTS.md`.
 - If the hook syncs from a shared repo (like go-beast), confirm the sync script (e.g., `sync-go-beast-skills.sh`) includes the new hook directory or file.
 - Note whether this is a **global** hook (developer machine default) or **project-local** hook (checked into `.claude/` or `.codex/`).
 
