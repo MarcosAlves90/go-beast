@@ -9,6 +9,24 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.48.1] - 2026-07-19
+
+### Changed
+
+- **ci:** enforce conventional pull request titles (#65)
+- **tests:** expand workflow edge-case coverage (#63)
+- **chore:** remove the obsolete issue template
+- **chore:** update issue templates
+
+### Fixed
+
+- **workflow:** prevent concurrent state loss (#53)
+- **workflow:** separate package and project roots (#62)
+- **hooks:** protect disposable go-beast artifacts (#64)
+- **hooks:** harden anti-drift frame matching (#66)
+- **workflow:** deduplicate dependent invalidation (#67)
+- **contracts:** validate structured skill surfaces (#68)
+
 ## [1.48.0] - 2026-07-15
 
 ### Changed
