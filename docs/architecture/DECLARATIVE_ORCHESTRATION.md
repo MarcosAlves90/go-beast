@@ -29,7 +29,12 @@ and CI runs that same command.
 
 The validator rejects unknown references, duplicate artifacts or consumers,
 dependency cycles, unregistered required-phase artifacts, missing consumer
-commands, missing required `verify`/CI consumers, and stale generated surfaces.
+commands, missing required `verify`/CI consumers, malformed canonical skill
+documents, missing generated surfaces, and stale generated surfaces. Canonical
+skill documents must have matching identity in their frontmatter, a semantic
+version, numbered workflow headings, and the required `Rules` and `Output`
+sections. These checks validate structural contracts; they do not attempt to
+judge free-form instructional prose.
 
 Run `npm run rules:generate` after changing the manifest, review the generated
 diff, and run `npm run verify`. Generated blocks must not be edited manually.

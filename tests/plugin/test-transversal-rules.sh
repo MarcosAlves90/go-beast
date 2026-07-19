@@ -54,6 +54,43 @@ fi
 assert_contains "$TEST_DIR/skill-marker.out" 'exactly one skill contract marker pair' 'marker check rejects missing skill contract markers'
 cp "$REPO_ROOT/skills/go-hawk/SKILL.md" "$FIXTURE/skills/go-hawk/SKILL.md"
 
+node -e "const fs=require('fs'); const p=process.argv[1]; fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('## Rules', '## Contract Rules'))" "$FIXTURE/skills/go-chat/SKILL.md"
+if node "$FIXTURE/scripts/transversal-rules.mjs" check --root "$FIXTURE" > "$TEST_DIR/skill-heading.out" 2>&1; then
+  echo '[FAIL] contract check accepts a skill without the Rules heading'
+  exit 1
+fi
+assert_contains "$TEST_DIR/skill-heading.out" 'missing required heading: ## Rules' 'contract check rejects missing skill headings'
+cp "$REPO_ROOT/skills/go-chat/SKILL.md" "$FIXTURE/skills/go-chat/SKILL.md"
+
+node -e "const fs=require('fs'); const p=process.argv[1]; fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('name: go-chat', 'name: go-other'))" "$FIXTURE/skills/go-chat/SKILL.md"
+if node "$FIXTURE/scripts/transversal-rules.mjs" check --root "$FIXTURE" > "$TEST_DIR/skill-frontmatter.out" 2>&1; then
+  echo '[FAIL] contract check accepts a mismatched skill frontmatter name'
+  exit 1
+fi
+assert_contains "$TEST_DIR/skill-frontmatter.out" 'frontmatter name must be go-chat' 'contract check rejects mismatched skill identity'
+cp "$REPO_ROOT/skills/go-chat/SKILL.md" "$FIXTURE/skills/go-chat/SKILL.md"
+
+node - "$FIXTURE/skills/go-chat/SKILL.md" <<'NODE'
+const fs = require('node:fs')
+const file = process.argv[2]
+const content = fs.readFileSync(file, 'utf8').replace(/\n/g, '\r\n')
+fs.writeFileSync(file, `\ufeff${content}`)
+NODE
+if ! node "$FIXTURE/scripts/transversal-rules.mjs" check --root "$FIXTURE" > "$TEST_DIR/line-endings.out" 2>&1; then
+  echo '[FAIL] contract check rejects BOM-prefixed CRLF skill documents'
+  exit 1
+fi
+assert_contains "$TEST_DIR/line-endings.out" 'Transversal rules check passed' 'contract check accepts BOM and CRLF skill documents'
+cp "$REPO_ROOT/skills/go-chat/SKILL.md" "$FIXTURE/skills/go-chat/SKILL.md"
+
+rm "$FIXTURE/docs/PIPELINE.md"
+if node "$FIXTURE/scripts/transversal-rules.mjs" check --root "$FIXTURE" > "$TEST_DIR/missing-surface.out" 2>&1; then
+  echo '[FAIL] contract check accepts a missing derived surface'
+  exit 1
+fi
+assert_contains "$TEST_DIR/missing-surface.out" 'docs/PIPELINE.md is missing' 'contract check rejects missing derived surfaces'
+cp "$REPO_ROOT/docs/PIPELINE.md" "$FIXTURE/docs/PIPELINE.md"
+
 node -e "const fs=require('fs'); const p=process.argv[1]; fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('schema_version: 2', 'schema_version: 1'))" "$FIXTURE/go-beast.manifest.yaml"
 node -e "const fs=require('fs'); const p=process.argv[1]; fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('schema_version: 1', 'schema_version: 2'))" "$FIXTURE/go-beast.manifest.yaml"
 if node "$FIXTURE/scripts/transversal-rules.mjs" check --root "$FIXTURE" > "$TEST_DIR/schema.out" 2>&1; then
