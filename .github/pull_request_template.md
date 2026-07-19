@@ -1,4 +1,4 @@
-<!-- Keep one problem per PR. Use a short imperative title in the form [area] summary. Commits must follow Conventional Commits: type(scope): summary. -->
+<!-- Keep one problem per PR. Use a Conventional Commit title: type(scope): summary. The scope is optional; use type(scope)!: summary for breaking changes. Issue titles use [area] summary. -->
 
 ## Closing
 - Use a GitHub closing keyword when applicable: `Closes #<issue>`, `Fixes #<issue>`, or `Resolves #<issue>`.

@@ -12,6 +12,7 @@ trap 'cleanup_test_project "$TEST_DIR"' EXIT
 FIXTURE="$TEST_DIR/repo"
 git clone -q "$REPO_ROOT" "$FIXTURE"
 cp "$REPO_ROOT/scripts/prepare-release.mjs" "$FIXTURE/scripts/prepare-release.mjs"
+cp "$REPO_ROOT/scripts/conventional-commit.mjs" "$FIXTURE/scripts/conventional-commit.mjs"
 git -C "$FIXTURE" config user.name "Release Test"
 git -C "$FIXTURE" config user.email "release-test@example.com"
 git -C "$FIXTURE" -c tag.gpgSign=false tag v1.47.2
