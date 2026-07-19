@@ -68,12 +68,34 @@ is_dangerous() {
   return 1
 }
 
+# Task-scoped go-beast outputs are disposable by default. The local
+# .git/info/exclude entry is still useful for normal Git behavior, but the
+# hook must also protect the staging boundary when that entry is missing or a
+# command uses a broad/forced add. Intentionally tracked files remain allowed.
+is_disposable_go_beast_artifact() {
+  local f="$1"
+  f="${f#./}"
+
+  [[ "$f" == "REQUIREMENTS.md" || "$f" == "APPROACH.md" ]] && return 0
+  [[ "$f" == ".go-beast" || "$f" == ".go-beast/" || "$f" == .go-beast/* || "$f" == */.go-beast || "$f" == */.go-beast/* ]] && return 0
+
+  return 1
+}
+
+is_committed_path() {
+  local f="$1"
+  git cat-file -e "HEAD:$f" >/dev/null 2>&1
+}
+
 VIOLATIONS=""
 
 collect_violations() {
   while IFS= read -r file; do
     [[ -z "$file" ]] && continue
-    if is_dangerous "$file"; then
+    normalized="${file#./}"
+    if is_disposable_go_beast_artifact "$normalized" && ! is_committed_path "$normalized"; then
+      VIOLATIONS="${VIOLATIONS}  - ${file} (disposable go-beast artifact)\n"
+    elif is_dangerous "$file"; then
       VIOLATIONS="${VIOLATIONS}  - ${file}\n"
     fi
   done
@@ -116,7 +138,8 @@ if [[ -n "$VIOLATIONS" ]]; then
   echo "git-commit-guard: blocked — sensitive or artifact files detected" >&2
   echo "Blocked: sensitive files or build artifacts detected for commit/staging:"
   printf '%b' "$VIOLATIONS"
-  echo "Add them to .gitignore and remove from staging with: git reset HEAD <file>"
+  echo "For disposable go-beast artifacts, leave them untracked and record the exact path in .git/info/exclude."
+  echo "Remove from staging with: git reset HEAD <file>"
   exit 1
 fi
 
