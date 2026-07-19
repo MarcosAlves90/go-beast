@@ -6,8 +6,8 @@ import path from 'node:path'
 import process from 'node:process'
 import { randomUUID } from 'node:crypto'
 import { parseYaml } from './transversal-rules.mjs'
+import { resolveWorkflowRoots } from './workflow-roots.mjs'
 
-const ROOT = process.cwd()
 const STATE_DIR = path.join('.go-beast', 'workflows')
 const LOCK_DIR = path.join(STATE_DIR, 'locks')
 const DEFAULT_LOCK_TIMEOUT_MS = 5 * 60 * 1000
@@ -26,11 +26,11 @@ function failCode(code, message, exitCode = 1) {
 function parseArgs() {
   const args = process.argv.slice(2)
   const command = args.shift() ?? 'help'
-  const options = { command, file: null, mode: null, phase: null, all: false }
+  const options = { command, file: null, mode: null, phase: null, root: null, all: false }
   while (args.length) {
     const arg = args.shift()
     if (arg === '--all') options.all = true
-    else if (['--file', '--mode', '--phase'].includes(arg)) {
+    else if (['--file', '--mode', '--phase', '--root'].includes(arg)) {
       const value = args.shift()
       if (!value) fail(`${arg} requires a value`, 2)
       options[arg.slice(2)] = value
@@ -62,21 +62,21 @@ function manifestFiles(root) {
   return fs.readdirSync(directory).filter(name => /\.(json|ya?ml)$/.test(name)).sort().map(name => path.join(directory, name))
 }
 
-function loadManifest(root, file) {
-  const candidates = file ? [path.resolve(root, file)] : manifestFiles(root)
-  assert(candidates.length === 1, file ? `manifest not found: ${file}` : 'use --file when workflows/ contains multiple manifests')
+function loadManifest(projectRoot, file) {
+  const candidates = file ? [path.resolve(projectRoot, file)] : manifestFiles(projectRoot)
+  assert(candidates.length === 1, file ? `manifest not found under project root ${projectRoot}: ${candidates[0]}` : `use --file when workflows/ contains multiple manifests under project root ${projectRoot}`)
   const filePath = candidates[0]
-  assert(fs.existsSync(filePath), `manifest not found: ${filePath}`)
+  assert(fs.existsSync(filePath), `manifest not found under project root ${projectRoot}: ${filePath}`)
   let manifest
-  try { manifest = loadDocument(filePath) } catch (error) { fail(`${path.relative(root, filePath)} is not valid JSON/YAML: ${error.message}`) }
+  try { manifest = loadDocument(filePath) } catch (error) { fail(`${path.relative(projectRoot, filePath)} is not valid JSON/YAML: ${error.message}`) }
   return { manifest, filePath }
 }
 
-function validateWorkflowSchema(root) {
-  const schemaPath = path.join(root, 'go-beast.workflow.schema.json')
-  assert(fs.existsSync(schemaPath), 'workflow schema is missing: go-beast.workflow.schema.json')
+function validateWorkflowSchema(packageRoot) {
+  const schemaPath = path.join(packageRoot, 'go-beast.workflow.schema.json')
+  assert(fs.existsSync(schemaPath), `workflow schema is missing from package root ${packageRoot}: ${schemaPath}`)
   let schema
-  try { schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8')) } catch (error) { fail(`workflow schema is not valid JSON: ${error.message}`) }
+  try { schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8')) } catch (error) { fail(`workflow schema is not valid JSON at package root ${packageRoot}: ${error.message}`) }
   assert(schema.type === 'object' && schema.title && schema.$defs?.artifact, 'workflow schema has an invalid structural contract')
   for (const key of ['schema_version', 'id', 'version', 'phases']) assert(schema.required?.includes(key), `workflow schema is missing required field: ${key}`)
 }
@@ -358,47 +358,48 @@ function printStatus(state, phases) {
 }
 
 function commandHelp() {
-  console.log('Usage: go-beast workflow <validate|start|status|resume|begin|complete|unlock> [--file PATH] [--mode off|warn|strict] [--phase ID]')
+  console.log('Usage: go-beast workflow <validate|start|status|resume|begin|complete|unlock> [--root PATH] [--file PATH] [--mode off|warn|strict] [--phase ID]')
 }
 
 function main() {
   const options = parseArgs()
   if (options.command === 'help') return commandHelp()
+  const { packageRoot, projectRoot } = resolveWorkflowRoots({ explicitRoot: options.root })
   if (options.command === 'validate' && options.all) {
-    const files = manifestFiles(ROOT)
+    const files = manifestFiles(projectRoot)
     assert(files.length > 0, 'no workflow manifests found')
     for (const filePath of files) {
       const manifest = loadDocument(filePath)
-      validateWorkflowSchema(ROOT)
-      validateManifest(manifest, ROOT)
-      console.log(`Workflow manifest valid: ${path.relative(ROOT, filePath)} (${manifest.phases.length} phases)`)
+      validateWorkflowSchema(packageRoot)
+      validateManifest(manifest, projectRoot)
+      console.log(`Workflow manifest valid: ${path.relative(projectRoot, filePath)} (${manifest.phases.length} phases)`)
     }
     return
   }
-  const { manifest, filePath } = loadManifest(ROOT, options.file)
-  validateWorkflowSchema(ROOT)
-  const phases = validateManifest(manifest, ROOT)
+  const { manifest, filePath } = loadManifest(projectRoot, options.file)
+  validateWorkflowSchema(packageRoot)
+  const phases = validateManifest(manifest, projectRoot)
   const mode = resolveMode(manifest, options.mode)
   if (options.command === 'validate') {
-    console.log(`Workflow manifest valid: ${path.relative(ROOT, filePath)} (${manifest.phases.length} phases)`)
+    console.log(`Workflow manifest valid: ${path.relative(projectRoot, filePath)} (${manifest.phases.length} phases)`)
     return
   }
-  if (options.command === 'unlock') { unlockStale(ROOT, manifest); return }
+  if (options.command === 'unlock') { unlockStale(projectRoot, manifest); return }
   if (mode === 'off') { console.log(`Workflow engine disabled (mode: off): ${manifest.id}`); return }
   if (options.command === 'start') {
-    withLock(ROOT, manifest, () => {
-      const file = statePath(ROOT, manifest)
-      if (fs.existsSync(file)) printStatus(loadState(ROOT, manifest), phases)
-      else { const state = newState(manifest, mode); saveNewState(ROOT, state); console.log(`Workflow started: ${manifest.id}`) }
+    withLock(projectRoot, manifest, () => {
+      const file = statePath(projectRoot, manifest)
+      if (fs.existsSync(file)) printStatus(loadState(projectRoot, manifest), phases)
+      else { const state = newState(manifest, mode); saveNewState(projectRoot, state); console.log(`Workflow started: ${manifest.id}`) }
     })
     return
   }
-  if (options.command === 'status' || options.command === 'resume') { printStatus(loadState(ROOT, manifest), phases); return }
+  if (options.command === 'status' || options.command === 'resume') { printStatus(loadState(projectRoot, manifest), phases); return }
   assert(['begin', 'complete'].includes(options.command), `unknown workflow command: ${options.command}`, 2)
   assert(options.phase && phases.has(options.phase), '--phase must identify a phase in the manifest', 2)
   const phase = phases.get(options.phase)
-  withLock(ROOT, manifest, () => {
-    const state = loadState(ROOT, manifest)
+  withLock(projectRoot, manifest, () => {
+    const state = loadState(projectRoot, manifest)
     const expectedRevision = state.revision
     state.mode = mode
     const record = state.phases[phase.id]
@@ -410,24 +411,24 @@ function main() {
         delete record.completed_at
         warnings.push(...invalidateDependents(state, phases, phase.id).map(id => `dependent phase invalidated: ${id}`))
       }
-      warnings.push(...unlockedProblems(ROOT, phase, state, phases))
+      warnings.push(...unlockedProblems(projectRoot, phase, state, phases))
       if (violation(mode, warnings)) { process.exitCode = 1; return }
       record.status = 'running'
       record.started_at = new Date().toISOString()
       state.history.push({ event: 'begin', phase: phase.id, at: record.started_at })
       state.updated_at = record.started_at
-      saveState(ROOT, state, expectedRevision)
+      saveState(projectRoot, state, expectedRevision)
       console.log(`Phase unlocked: ${phase.id} (skill: ${phase.skill})`)
       return
     }
     assert(record.status === 'running', `phase is not running: ${phase.id}`)
-    warnings.push(...artifactProblems(ROOT, phase.produces))
+    warnings.push(...artifactProblems(projectRoot, phase.produces))
     if (violation(mode, warnings)) { process.exitCode = 1; return }
     record.status = 'completed'
     record.completed_at = new Date().toISOString()
     state.history.push({ event: 'complete', phase: phase.id, at: record.completed_at })
     state.updated_at = record.completed_at
-    saveState(ROOT, state, expectedRevision)
+    saveState(projectRoot, state, expectedRevision)
     console.log(`Phase completed: ${phase.id}`)
   })
 }
