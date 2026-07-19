@@ -333,10 +333,12 @@ function preconditionProblems(root, preconditions) {
   })
 }
 
-function invalidateDependents(state, phases, phaseId) {
+function invalidateDependents(state, phases, phaseId, visited = new Set()) {
   const invalidated = []
   for (const phase of phases.values()) {
     if (phase.id === phaseId || !phase.depends_on.includes(phaseId)) continue
+    if (visited.has(phase.id)) continue
+    visited.add(phase.id)
     const record = state.phases[phase.id]
     if (record.status === 'completed' || record.status === 'running') {
       record.status = 'invalidated'
@@ -344,9 +346,9 @@ function invalidateDependents(state, phases, phaseId) {
       delete record.completed_at
       invalidated.push(phase.id)
     }
-    invalidated.push(...invalidateDependents(state, phases, phase.id))
+    invalidated.push(...invalidateDependents(state, phases, phase.id, visited))
   }
-  return [...new Set(invalidated)]
+  return invalidated
 }
 
 function unlockedProblems(root, phase, state, phases) {
