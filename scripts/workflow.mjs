@@ -40,8 +40,8 @@ function parseArgs() {
   return options
 }
 
-function assert(condition, message) {
-  if (!condition) fail(message)
+function assert(condition, message, code = 1) {
+  if (!condition) fail(message, code)
 }
 
 function assertKeys(value, expected, label) {
@@ -273,7 +273,14 @@ function loadState(root, manifest) {
   const filePath = statePath(root, manifest)
   assert(fs.existsSync(filePath), `no persisted state for ${manifest.id}; run workflow start first`)
   const state = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+  assert(state && typeof state === 'object' && !Array.isArray(state), 'persisted state is not a JSON object')
+  assert(state.schema_version === 1, `persisted state schema version is incompatible: ${state.schema_version ?? 'missing'}`)
   assert(state.workflow_id === manifest.id && state.manifest_version === manifest.version, 'persisted state does not match the manifest version')
+  assert(state.phases && typeof state.phases === 'object' && !Array.isArray(state.phases), 'persisted state is incomplete: phases are missing')
+  for (const phase of manifest.phases) {
+    assert(state.phases[phase.id] && typeof state.phases[phase.id] === 'object', `persisted state is incomplete: phase ${phase.id} is missing`)
+    assert(typeof state.phases[phase.id].status === 'string', `persisted state is incomplete: phase ${phase.id} status is missing`)
+  }
   if (!Number.isInteger(state.revision)) state.revision = 0
   return state
 }
