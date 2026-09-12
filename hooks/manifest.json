@@ -20,6 +20,13 @@
       "statusMessage": "Checking go-beast drift"
     },
     {
+      "name": "go-beast-implementation-gate.sh",
+      "targets": ["claude-code", "codex", "copilot"],
+      "event": "PreToolUse",
+      "matcher": "Edit|Write|MultiEdit|Bash",
+      "statusMessage": "Enforcing implementation gate"
+    },
+    {
       "name": "code-dedup-check.sh",
       "targets": ["claude-code", "codex", "copilot"],
       "event": "PreToolUse",

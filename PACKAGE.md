@@ -2,8 +2,8 @@
 
 ```text
 name:    go-beast
-version: 1.48.1
-date:    2026-07-19
+version: 1.52.0
+date:    2026-09-11
 author:  MarcosAlves90
 type:    skill-pack
 scope:   full-stack software development lifecycle
@@ -56,6 +56,9 @@ go-beast/
 │       ├── ADR-001-plugin-adapter-bundle.md ← Plugin adapter architecture decision
 │       ├── ADR-002-canonical-skills-directory.md ← Canonical skills directory decision
 │       ├── ADR-003-harness-bootstrap-architecture.md ← Harness versus bootstrap architecture decision
+│       ├── ADR-004-delivery-controller.md ← Strict delivery controller architecture decision
+│       ├── ADR-005-behavioral-conformance.md ← Harness-neutral conformance architecture decision
+│       ├── ADR-006-runtime-policy-gate.md ← Shared runtime policy gate architecture decision
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Maintainer guide for global, bootstrap, and repo-local instruction layering
 │       ├── TRANSVERSAL_RULES.md ← Generated transversal rules reference
 │       ├── transversal-rules-index.json ← Generated validator-facing manifest index
@@ -81,6 +84,8 @@ go-beast/
 │   ├── install.mjs            ← Cross-platform installer (Node.js 18+, no deps)
 │   ├── prepare-release.mjs     ← Generates release PR version and changelog surfaces
 │   ├── release-version.mjs    ← Canonical release/versioning contract: check and cut releases from package.json
+│   ├── delivery.mjs            ← Strict delivery route planner and workflow-engine adapter
+│   ├── conformance.mjs         ← Harness adapters and delivery trace conformance checker
 │   ├── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
 │   ├── transversal-rules.mjs  ← Generates and checks transversal rule surfaces
 │   └── workflow.mjs           ← Optional workflow state-machine coordinator
@@ -90,12 +95,13 @@ go-beast/
 │   ├── codex/                 ← Codex real-session integration tests
 │   └── plugin/                ← Plugin bundle and shell integration checks, including release preparation
 └── hooks/
-    ├── manifest.json             ← Shared hook manifest for Claude Code and Codex
+    ├── manifest.json             ← Shared hook manifest for Claude Code, Codex, and Copilot CLI
     ├── sync-go-beast-skills.sh    ← SessionStart: syncs skills/workflows/hooks/global instructions
     ├── go-beast-drift-lib.sh      ← Shared anti-drift state helpers for go-beast lifecycle hooks
     ├── go-beast-session-state.sh  ← SessionStart: initializes shared anti-drift session state
     ├── go-beast-user-prompt-context.sh ← UserPromptSubmit: re-injects go-beast workflow context
     ├── go-beast-stop-reanchor.sh  ← Stop: continues bootstrap turns when go-beast framing drifts
+    ├── go-beast-implementation-gate.sh ← PreToolUse(Edit/Write/MultiEdit/Bash): blocks implementation before required artifacts
     ├── git-commit-guard.sh        ← PreToolUse(Bash): blocks commits of sensitive files/build artifacts
     ├── code-dedup-check.sh        ← PreToolUse(Edit/Write): warns on duplicate function/class names
     ├── code-verify-flag.sh        ← PostToolUse(Edit/Write): flags project for post-session verification

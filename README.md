@@ -9,7 +9,7 @@ Each `go-<animal>` skill owns one phase, states its prerequisites, and produces
 concrete artifacts for the next phase. Skills are plain Markdown and work with
 Claude Code, Codex, Copilot, Cursor, Gemini, and other agents.
 
-**Version 1.48.1** · [Changelog](CHANGELOG.md)
+**Version 1.52.0** · [Changelog](CHANGELOG.md)
 
 ## Start here
 
@@ -92,6 +92,36 @@ for its ownership boundary; operational skill instructions remain in each
 
 An optional state-machine engine coordinates versioned pipeline manifests
 without executing skills directly. See [Workflow engine](docs/architecture/WORKFLOW_ENGINE.md).
+
+For a stricter Superpowers-style delivery loop, use the delivery controller.
+It plans and starts disposable, artifact-gated routes with explicit approvals,
+RED/GREEN checkpoints, specification review, quality review, and a finish gate:
+
+```bash
+go-beast delivery plan --kind feature --surface agnostic --format text
+go-beast delivery start --kind feature --surface backend --id delivery-login
+```
+
+The controller coordinates skills through the existing workflow engine; it
+does not execute implementation work or claim completion on the agent's behalf.
+
+Adapters can normalize a harness-specific event trace and then validate the
+harness-neutral result:
+
+```bash
+go-beast conformance normalize --trace .go-beast/codex-events.json --format json \
+  > .go-beast/trace.json
+go-beast conformance verify --trace .go-beast/trace.json --format json
+```
+
+Conformance reports missing evidence and ordering violations. A passing report
+only describes the declared trace; normalization does not prove hidden agent
+intent and verification does not replace tests, security review, or human
+judgment.
+
+Lifecycle adapters share one runtime policy for active-beast applicability,
+required artifacts, approvals, implementation unlock, and completion evidence.
+See [ADR-006](docs/architecture/ADR-006-runtime-policy-gate.md).
 
 ## License
 

@@ -1,6 +1,6 @@
 {
   "name": "go-beast",
-  "version": "1.48.1",
+  "version": "1.52.0",
   "private": true,
   "type": "module",
   "description": "Agent-agnostic go-* skill pack with hooks, workflows, and plugin adapter bundles for coding agents.",
@@ -13,6 +13,9 @@
     "test:live": "node scripts/validate.mjs test:live",
     "verify": "node scripts/validate.mjs verify",
     "workflow": "node bin/go-beast.mjs workflow",
+    "delivery": "node bin/go-beast.mjs delivery",
+    "conformance": "node bin/go-beast.mjs conformance",
+    "conformance:verify": "node bin/go-beast.mjs conformance verify",
     "rules:generate": "node scripts/transversal-rules.mjs generate",
     "rules:check": "node scripts/transversal-rules.mjs check",
     "release:version:check": "node scripts/release-version.mjs check",

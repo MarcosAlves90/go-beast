@@ -1,6 +1,6 @@
 export const meta = {
   name: 'go-hook-eval',
-  description: 'Tests go-beast hooks: authoritative shell suites, targeted cases, harness variants, channel separation, adversarial verify',
+  description: 'Tests go-beast hooks: authoritative shell suites, runtime gates, targeted cases, harness variants, channel separation, adversarial verify',
   phases: [
     { title: 'Shell Suite', detail: 'Run authoritative bash test suites (git-strip-coauthored, drift hooks)' },
     { title: 'Hook Tests', detail: 'Targeted cases with deterministic bash harness' },
@@ -61,6 +61,24 @@ function bashInput(command) {
 
 function editInput(filePath, newString = 'function myFunc() {}') {
   return json({ tool_name: 'Edit', tool_input: { file_path: filePath, new_string: newString, old_string: '' } })
+}
+
+function implementationEditInput(filePath) {
+  return json({
+    tool_name: 'Edit',
+    tool_input: { file_path: filePath, new_string: 'implementation', old_string: '' },
+    session_id: 'hook-eval-session',
+    cwd: '/tmp/hook-eval-project',
+  })
+}
+
+function implementationBashInput(command) {
+  return json({
+    tool_name: 'Bash',
+    tool_input: { command },
+    session_id: 'hook-eval-session',
+    cwd: '/tmp/hook-eval-project',
+  })
 }
 
 function writeInput(filePath, content = 'function myFunc() {}') {
@@ -595,6 +613,108 @@ const TESTS = [
     input: stopInput(false),
     expectExit: 1,
     expectOutput: 'check',
+  },
+
+  // ── go-beast-implementation-gate ─────────────────────────────────────────
+  {
+    hook: 'go-beast-implementation-gate.sh',
+    name: 'locked bootstrap blocks implementation edit',
+    setup: `mkdir -p /tmp/hook-eval-project/src ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"hook-eval-session","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-09-11T00:00:00Z"}
+STATEEOF`,
+    input: implementationEditInput('/tmp/hook-eval-project/src/new-file.mjs'),
+    expectExit: 2,
+    expectOutput: 'REQUIREMENTS.md',
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'codex' },
+    cwd: '/tmp/hook-eval-project',
+  },
+  {
+    hook: 'go-beast-implementation-gate.sh',
+    name: 'locked bootstrap allows exact required artifact',
+    setup: `mkdir -p /tmp/hook-eval-project/.go-beast ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"hook-eval-session","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-09-11T00:00:00Z"}
+STATEEOF`,
+    input: implementationEditInput('/tmp/hook-eval-project/.go-beast/REQUIREMENTS.md'),
+    expectExit: 0,
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'codex' },
+    cwd: '/tmp/hook-eval-project',
+  },
+  {
+    hook: 'go-beast-implementation-gate.sh',
+    name: 'unlocked bootstrap allows implementation edit',
+    setup: `mkdir -p /tmp/hook-eval-project/src ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":true,"task_state":"active","task_id":"hook-eval-session","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-09-11T00:00:00Z"}
+STATEEOF`,
+    input: implementationEditInput('/tmp/hook-eval-project/src/new-file.mjs'),
+    expectExit: 0,
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'codex' },
+    cwd: '/tmp/hook-eval-project',
+  },
+  {
+    hook: 'go-beast-implementation-gate.sh',
+    name: 'copilot receives structured block decision',
+    setup: `mkdir -p /tmp/hook-eval-project/src ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"copilot","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"hook-eval-session","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-09-11T00:00:00Z"}
+STATEEOF`,
+    input: implementationEditInput('/tmp/hook-eval-project/src/new-file.mjs'),
+    expectExit: 2,
+    expectOutput: '"decision":"block"',
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'copilot' },
+    cwd: '/tmp/hook-eval-project',
+  },
+  {
+    hook: 'go-beast-implementation-gate.sh',
+    name: 'locked bootstrap blocks mutating Bash command',
+    setup: `mkdir -p /tmp/hook-eval-project/src ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"hook-eval-session","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-09-11T00:00:00Z"}
+STATEEOF`,
+    input: implementationBashInput('git apply /tmp/change.patch'),
+    expectExit: 2,
+    expectOutput: 'Bash',
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'codex' },
+    cwd: '/tmp/hook-eval-project',
+  },
+  {
+    hook: 'go-beast-implementation-gate.sh',
+    name: 'locked bootstrap allows read-only Bash inspection',
+    setup: `mkdir -p /tmp/hook-eval-project/src ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"hook-eval-session","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-09-11T00:00:00Z"}
+STATEEOF`,
+    input: implementationBashInput('git status --short'),
+    expectExit: 0,
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'codex' },
+    cwd: '/tmp/hook-eval-project',
+  },
+  {
+    hook: 'go-beast-implementation-gate.sh',
+    name: 'locked bootstrap allows exact required artifact Bash write',
+    setup: `mkdir -p /tmp/hook-eval-project/.go-beast ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"hook-eval-session","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-09-11T00:00:00Z"}
+STATEEOF`,
+    input: implementationBashInput("printf 'requirements' > '/tmp/hook-eval-project/.go-beast/REQUIREMENTS.md'"),
+    expectExit: 0,
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'codex' },
+    cwd: '/tmp/hook-eval-project',
+  },
+  {
+    hook: 'go-beast-implementation-gate.sh',
+    name: 'locked bootstrap blocks Git staging',
+    setup: `mkdir -p /tmp/hook-eval-project/.go-beast ${EVAL_HOME}/.go-beast/anti-drift && touch ${EVAL_HOME}/.go-beast/bootstrap.enabled
+cat > ${EVAL_HOME}/.go-beast/anti-drift/hook-eval-session.json <<'STATEEOF'
+{"version":1,"session_id":"hook-eval-session","cwd":"/tmp/hook-eval-project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":".go-beast/REQUIREMENTS.md","implementation_unlocked":false,"task_state":"active","task_id":"hook-eval-session","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-09-11T00:00:00Z"}
+STATEEOF`,
+    input: implementationBashInput('git add .go-beast/REQUIREMENTS.md'),
+    expectExit: 2,
+    expectOutput: 'Bash',
+    envVars: { GO_BEAST_HARNESS_OVERRIDE: 'codex' },
+    cwd: '/tmp/hook-eval-project',
   },
 
   // ── go-beast-session-state (claude-code harness) ─────────────────────────

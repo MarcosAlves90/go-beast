@@ -9,6 +9,44 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.52.0] - 2026-09-11
+
+### Added
+
+- **conformance adapter:** normalizes Claude Code, Codex, and Copilot event
+  traces into a canonical protocol trace and adds a fail-closed `verify` alias.
+
+## [1.51.0] - 2026-09-11
+
+### Added
+
+- **runtime policy gate:** centralizes active-beast applicability, required
+  artifacts, approvals, implementation unlock, and completion evidence across
+  lifecycle adapters.
+
+## [1.50.0] - 2026-09-11
+
+### Added
+
+- **hooks/go-beast-implementation-gate.sh:** blocks mutating Bash commands during
+  locked bootstrap while preserving read-only inspection and the exact required
+  discovery or solution artifact.
+- **delivery controller:** adds a strict-by-default route planner and adapter
+  over the existing workflow engine, with approval, RED/GREEN, review, and
+  finish checkpoints.
+- **behavioral conformance:** adds a harness-neutral trace checker that
+  reports missing protocol evidence and ordering violations without claiming
+  to prove hidden agent intent.
+
+## [1.49.0] - 2026-09-11
+
+### Added
+
+- **hooks/go-beast-implementation-gate.sh:** blocks implementation edits during
+  bootstrap until the active discovery or solution artifact unlocks the task,
+  while preserving writes to the exact required artifact across Claude Code,
+  Codex, and Copilot.
+
 ## [1.48.1] - 2026-07-19
 
 ### Changed

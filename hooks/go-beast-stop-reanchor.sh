@@ -55,18 +55,32 @@ if gb_message_is_anchored "$last_message"; then
   detected_beast="$(gb_extract_beast "$last_message")"
   detected_artifact="$(gb_extract_artifact "$last_message")"
   detected_task_state="$(gb_extract_task_state "$last_message")"
+  detected_approval_state="$(gb_extract_approval_state "$last_message")"
+  detected_completion_evidence="$(gb_extract_completion_evidence "$last_message")"
   [[ -n "$detected_beast" ]] && active_beast="$detected_beast"
   [[ -n "$detected_artifact" ]] && required_artifact="$detected_artifact"
+  [[ -z "$required_artifact" ]] && required_artifact="$(gb_runtime_required_artifact "" "$active_beast")"
   [[ -n "$detected_task_state" ]] && task_state="$detected_task_state"
 
   state="$(printf '%s' "$state" | jq \
     --arg beast "$active_beast" \
     --arg artifact "$required_artifact" \
     --arg task_state "$task_state" \
+    --arg applicability "$(gb_runtime_applicability "$active_beast")" \
+    --arg approval_state "$detected_approval_state" \
+    --arg completion_evidence "$detected_completion_evidence" \
     --arg now "$(gb_now_utc)" \
     '.active_beast = $beast
+    | .applicability = $applicability
     | .required_artifact = $artifact
     | .task_state = $task_state
+    | .approval_state = (if $approval_state != "" then $approval_state else (.approval_state // "pending") end)
+    | .completion_evidence = (
+        if $completion_evidence != ""
+        then ((.completion_evidence // []) + [$completion_evidence] | map(select(type == "string" and length > 0)) | unique)
+        else ((.completion_evidence // []) | if type == "array" then . else [] end)
+        end
+      )
     | .unanchored_stop_count = 0
     | .last_reanchor_reason = ""
     | .updated_at = $now')"
@@ -102,15 +116,34 @@ fi
 # its next output against stated reality. Asking for compliance invites
 # "yes I will" sycophancy without behavioral change. (Anthropic hooks docs;
 # Constitutional AI study on intrinsic self-correction limits.)
+runtime_policy="$(gb_runtime_policy_json "$state" "$cwd")"
+active_beast="$(printf '%s' "$runtime_policy" | jq -r '.active_beast')"
+applicability="$(printf '%s' "$runtime_policy" | jq -r '.applicability')"
+required_artifact="$(printf '%s' "$runtime_policy" | jq -r '.required_artifact')"
+approval_state="$(printf '%s' "$runtime_policy" | jq -r '.approval_state')"
+completion_count="$(printf '%s' "$runtime_policy" | jq -r '.completion_evidence | length')"
+required_artifact_present="$(printf '%s' "$runtime_policy" | jq -r '.required_artifact_present')"
 artifact_el=""
-[[ -n "$required_artifact" ]] && artifact_el="
+if [[ -n "$required_artifact" ]]; then
+  if [[ "$required_artifact_present" == "true" ]]; then
+    artifact_el="
+  <required_artifact>${required_artifact} present</required_artifact>
+  <implementation>blocked — approval ${approval_state}</implementation>
+  <evidence>artifact:present;completion:${completion_count}</evidence>"
+  else
+    artifact_el="
   <required_artifact>${required_artifact}</required_artifact>
-  <implementation>blocked — ${required_artifact} missing</implementation>"
+  <implementation>blocked — ${required_artifact} missing</implementation>
+  <evidence>artifact:missing;completion:${completion_count}</evidence>"
+  fi
+fi
 
 msg="go-beast drift detected — workflow frame absent from last response.
 
 <go_beast_state>
   <beast>${active_beast}</beast>
+  <applicability>${applicability}</applicability>
+  <approval>${approval_state}</approval>
   <task>${task_state}</task>${artifact_el}
   <drift>state frame missing — next response must open with beast, artifact, and implementation gate</drift>
 </go_beast_state>"

@@ -35,19 +35,25 @@ mode="$(gb_detect_mode)"
 state="$(gb_load_state_json "$session_id" "$cwd" "$harness" "$mode")"
 
 active_beast="$(printf '%s' "$state" | jq -r '.active_beast // empty')"
-required_artifact="$(printf '%s' "$state" | jq -r '.required_artifact // empty')"
-implementation_unlocked="$(printf '%s' "$state" | jq -r '.implementation_unlocked // false')"
-task_state="$(printf '%s' "$state" | jq -r '.task_state // "active"')"
 
 prompt_beast="$(gb_extract_beast "$prompt")"
 if [[ -n "$prompt_beast" ]]; then
   active_beast="$prompt_beast"
+  required_artifact="$(gb_runtime_required_artifact "" "$active_beast")"
+  applicability="$(gb_runtime_applicability "$active_beast")"
   task_state="active"
   state="$(printf '%s' "$state" | jq \
     --arg beast "$active_beast" \
+    --arg artifact "$required_artifact" \
+    --arg applicability "$applicability" \
     --arg task_id "${session_id}:$(date +%s)" \
     --arg now "$(gb_now_utc)" \
     '.active_beast = $beast
+    | .applicability = $applicability
+    | .required_artifact = $artifact
+    | .approval_state = "pending"
+    | .completion_evidence = []
+    | .implementation_unlocked = false
     | .task_state = "active"
     | .task_id = $task_id
     | .unanchored_stop_count = 0
@@ -59,11 +65,23 @@ elif [[ -z "$active_beast" ]]; then
   active_beast="go-chat"
   state="$(printf '%s' "$state" | jq \
     --arg beast "$active_beast" \
+    --arg applicability "conversation" \
     --arg now "$(gb_now_utc)" \
     '.active_beast = $beast
+    | .applicability = $applicability
     | .updated_at = $now')"
   gb_save_state_json "$session_id" "$state"
 fi
+
+runtime_policy="$(gb_runtime_policy_json "$state" "$cwd")"
+active_beast="$(printf '%s' "$runtime_policy" | jq -r '.active_beast')"
+applicability="$(printf '%s' "$runtime_policy" | jq -r '.applicability')"
+required_artifact="$(printf '%s' "$runtime_policy" | jq -r '.required_artifact')"
+approval_state="$(printf '%s' "$runtime_policy" | jq -r '.approval_state')"
+implementation_unlocked="$(printf '%s' "$runtime_policy" | jq -r '.implementation_unlocked')"
+task_state="$(printf '%s' "$runtime_policy" | jq -r '.task_state')"
+required_artifact_present="$(printf '%s' "$runtime_policy" | jq -r '.required_artifact_present')"
+completion_count="$(printf '%s' "$runtime_policy" | jq -r '.completion_evidence | length')"
 
 # Build compact XML state block — declarative facts, not imperatives.
 # Research basis: XML tags produce 20-40% better Claude compliance than prose;
@@ -74,15 +92,23 @@ impl_gate="allowed"
 artifact_line=""
 bootstrap_line=""
 
-if [[ -n "$required_artifact" ]]; then
-  if [[ "$implementation_unlocked" == "true" ]]; then
+if [[ "$task_state" == "complete" ]]; then
+  impl_gate="complete"
+  artifact_line="  <completion>task marked complete</completion>"
+elif [[ -n "$required_artifact" ]]; then
+  if [[ "$implementation_unlocked" == "true" && "$approval_state" == "approved" ]]; then
     impl_gate="allowed"
     artifact_line="  <unlocked_by>${required_artifact}</unlocked_by>"
+  elif [[ "$required_artifact_present" == "true" ]]; then
+    impl_gate="blocked — approval ${approval_state}"
+    artifact_line="  <required_artifact>${required_artifact} present</required_artifact>"
   else
     impl_gate="blocked — ${required_artifact} missing"
     artifact_line="  <required_artifact>${required_artifact}</required_artifact>"
   fi
 fi
+
+evidence_line="  <evidence>artifact:${required_artifact_present};completion:${completion_count}</evidence>"
 
 if [[ "$mode" == "bootstrap" ]]; then
   bootstrap_line="  <bootstrap>active — go-mole/go-hawk/go-lark gate before implementation</bootstrap>"
@@ -90,9 +116,12 @@ fi
 
 context="<go_beast_state>
   <beast>${active_beast}</beast>
+  <applicability>${applicability}</applicability>
   <task>${task_state}</task>
+  <approval>${approval_state}</approval>
   <implementation>${impl_gate}</implementation>${artifact_line:+
-${artifact_line}}${bootstrap_line:+
+${artifact_line}}${evidence_line:+
+${evidence_line}}${bootstrap_line:+
 ${bootstrap_line}}
 </go_beast_state>"
 
