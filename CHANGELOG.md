@@ -9,6 +9,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.52.1] - 2026-09-12
+
 ### Added
 
 - **security policy:** add repository-specific security boundaries, private
