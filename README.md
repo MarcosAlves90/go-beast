@@ -62,6 +62,7 @@ issues, pull requests, versioning, and the canonical validation flow.
 | Run mandatory or live validation | [Testing](docs/TESTING.md) |
 | Configure supported agent surfaces | [Harness guide](docs/HARNESS.md) |
 | Read architecture decisions and protocols | [Architecture](docs/architecture/README.md) |
+| Report or understand security issues | [Security policy](SECURITY.md) |
 | Contribute, release, or open a PR | [Contributing](CONTRIBUTING.md) |
 
 ## Principles

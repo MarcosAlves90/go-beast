@@ -9,6 +9,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **security policy:** add repository-specific security boundaries, private
+  disclosure guidance, response targets, release compromise handling, and
+  supply-chain context.
+
 ## [1.52.0] - 2026-09-11
 
 ### Added

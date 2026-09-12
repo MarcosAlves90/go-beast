@@ -28,6 +28,7 @@ go-beast/
 ├── AGENTS.global.md       ← Global agent instructions — synced to each agent's config on install
 ├── AGENTS.bootstrap.md    ← Optional stricter bootstrap instructions for discovery-first sessions
 ├── CONTRIBUTING.md        ← Canonical contributor workflow for issues, PRs, validation, and releases
+├── SECURITY.md             ← Repository security boundary, reporting, and response policy
 ├── README.md              ← Landing page and documentation map
 ├── PACKAGE.md             ← This file — manifest and metadata
 ├── CHANGELOG.md           ← Version history
