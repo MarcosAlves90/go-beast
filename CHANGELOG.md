@@ -9,6 +9,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.53.0] - 2026-09-12
+
+### Added
+
+- **per-agent integration profiles:** manage individual skills and hooks by
+  agent, preserve custom hook entries, report dependencies, and apply named
+  presets through portable profiles.
+
 ## [1.52.1] - 2026-09-12
 
 ### Added

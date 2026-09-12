@@ -11,12 +11,14 @@
       "name": "go-beast-user-prompt-context.sh",
       "targets": ["claude-code", "codex", "copilot"],
       "event": "UserPromptSubmit",
+      "dependsOn": ["go-beast-session-state.sh"],
       "statusMessage": "Re-anchoring go-beast context"
     },
     {
       "name": "go-beast-stop-reanchor.sh",
       "targets": ["claude-code", "codex", "copilot"],
       "event": "Stop",
+      "dependsOn": ["go-beast-session-state.sh"],
       "statusMessage": "Checking go-beast drift"
     },
     {
@@ -24,6 +26,7 @@
       "targets": ["claude-code", "codex", "copilot"],
       "event": "PreToolUse",
       "matcher": "Edit|Write|MultiEdit|Bash",
+      "dependsOn": ["go-beast-session-state.sh"],
       "statusMessage": "Enforcing implementation gate"
     },
     {
@@ -44,6 +47,7 @@
       "name": "code-verify-run.sh",
       "targets": ["claude-code", "codex", "copilot"],
       "event": "Stop",
+      "dependsOn": ["code-verify-flag.sh"],
       "statusMessage": "Running verification"
     },
     {
@@ -57,6 +61,7 @@
       "name": "docs-update-remind.sh",
       "targets": ["claude-code", "codex", "copilot"],
       "event": "Stop",
+      "dependsOn": ["docs-update-flag.sh"],
       "statusMessage": "Reminding about documentation"
     },
     {
@@ -77,6 +82,7 @@
       "name": "git-commit-remind.sh",
       "targets": ["claude-code", "codex", "copilot"],
       "event": "Stop",
+      "dependsOn": ["git-commit-remind-flag.sh"],
       "statusMessage": "Reminding about commit and push"
     },
     {
@@ -96,6 +102,7 @@
       "name": "version-bump-remind.sh",
       "targets": ["claude-code", "codex", "copilot"],
       "event": "Stop",
+      "dependsOn": ["docs-update-flag.sh"],
       "statusMessage": "Reminding about version bumps"
     }
   ]

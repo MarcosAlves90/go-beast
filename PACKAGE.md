@@ -2,7 +2,7 @@
 
 ```text
 name:    go-beast
-version: 1.52.1
+version: 1.53.0
 date:    2026-09-12
 author:  MarcosAlves90
 type:    skill-pack
@@ -82,6 +82,7 @@ go-beast/
 ├── scripts/
 │   ├── eval-output.mjs   ← Shared JSON output helper for eval workflows
 │   ├── hook-wire.mjs          ← Shared hook manifest wiring helper for config and symlinks
+│   ├── integration-profile.mjs ← Per-agent profile resolver, diagnostics, portability, and presets
 │   ├── install.mjs            ← Cross-platform installer (Node.js 18+, no deps)
 │   ├── prepare-release.mjs     ← Generates release PR version and changelog surfaces
 │   ├── release-version.mjs    ← Canonical release/versioning contract: check and cut releases from package.json
@@ -94,7 +95,7 @@ go-beast/
 │   ├── helpers.sh             ← Shared shell assertions for integration tests
 │   ├── claude-code/           ← Claude Code real-session integration tests
 │   ├── codex/                 ← Codex real-session integration tests
-│   └── plugin/                ← Plugin bundle and shell integration checks, including release preparation
+│   └── plugin/                ← Plugin bundle, integration profile, and shell checks
 └── hooks/
     ├── manifest.json             ← Shared hook manifest for Claude Code, Codex, and Copilot CLI
     ├── sync-go-beast-skills.sh    ← SessionStart: syncs skills/workflows/hooks/global instructions

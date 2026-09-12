@@ -37,7 +37,8 @@ cat > "$TEST_HOME/.copilot/hooks/go-beast.json" <<'JSON'
       {
         "type": "command",
         "bash": "bash ~/.copilot/hooks/code-dedup-check.sh",
-        "matcher": "Edit|Write|MultiEdit"
+        "matcher": "Edit|Write|MultiEdit",
+        "custom": "keep-me"
       }
     ]
   }
@@ -78,6 +79,11 @@ assert_contains \
   "$TEST_HOME/.copilot/hooks/go-beast.json" \
   '"bash":' \
   "copilot hook config uses bash field"
+
+assert_contains \
+  "$TEST_HOME/.copilot/hooks/go-beast.json" \
+  '"custom": "keep-me"' \
+  "copilot rewire preserves custom same-command config"
 
 assert_contains \
   "$TEST_HOME/.copilot/hooks/go-beast.json" \

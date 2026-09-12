@@ -51,6 +51,11 @@ function loadHookManifest(repoRoot = REPO) {
     targets: Array.isArray(item.targets) ? item.targets : [],
     event: item.event,
     matcher: item.matcher ?? '',
+    dependsOn: Array.isArray(item.dependsOn)
+      ? item.dependsOn
+      : Array.isArray(item.depends_on)
+        ? item.depends_on
+        : [],
     statusMessage: item.statusMessage ?? '',
   }))
 }
@@ -98,42 +103,105 @@ function readJson(filePath) {
 }
 
 function writeJson(filePath, value) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true })
-  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`)
+  const directory = path.dirname(filePath)
+  fs.mkdirSync(directory, { recursive: true })
+  const tempDirectory = fs.mkdtempSync(path.join(directory, `.${path.basename(filePath)}-`))
+  const tempPath = path.join(tempDirectory, path.basename(filePath))
+  try {
+    fs.writeFileSync(tempPath, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 })
+    fs.renameSync(tempPath, filePath)
+  } finally {
+    try { fs.rmSync(tempDirectory, { recursive: true, force: true }) } catch {}
+  }
+}
+
+function sameRecord(actual, expected, ignoredKeys = []) {
+  if (!actual || typeof actual !== 'object' || !expected || typeof expected !== 'object') return false
+  const ignored = new Set(ignoredKeys)
+  const keys = new Set([...Object.keys(actual), ...Object.keys(expected)])
+  for (const key of keys) {
+    if (ignored.has(key)) continue
+    if (actual[key] !== expected[key]) return false
+  }
+  return true
+}
+
+function hookConfigKey(event, matcher, command) {
+  return `${event}::${matcher ?? ''}::${command}`
+}
+
+function specConfigKey(agentName, spec) {
+  const event = AGENTS[agentName]?.format === 'copilot'
+    ? copilotEventName(spec.event)
+    : spec.event
+  return hookConfigKey(event, spec.matcher, commandFor(agentName, spec.name))
+}
+
+function canonicalSpecForEntry(entry, event, agentName, managedByKey) {
+  const isCopilot = AGENTS[agentName]?.format === 'copilot'
+  if (isCopilot) {
+    if (!entry || entry.type !== 'command' || !entry.bash) return null
+    const key = hookConfigKey(event, entry.matcher, entry.bash)
+    const spec = managedByKey.get(key)
+    if (!spec || !sameRecord(entry, buildEntry(spec, entry.bash, agentName))) return null
+    return { key, spec }
+  }
+
+  const matcher = entry?.matcher ?? ''
+  const hooks = Array.isArray(entry?.hooks) ? entry.hooks : []
+  if (hooks.length !== 1) return null
+  const hook = hooks[0]
+  if (!hook || hook.type !== 'command' || !hook.command) return null
+  const key = hookConfigKey(event, matcher, hook.command)
+  const spec = managedByKey.get(key)
+  if (!spec) return null
+  const expected = buildEntry(spec, hook.command, agentName)
+  if (!sameRecord(entry, expected, ['hooks']) || !sameRecord(hook, expected.hooks[0])) return null
+  return { key, spec }
 }
 
 // Claude / Codex format: entries are { matcher?, hooks: [...] } wrappers.
 // Copilot format: entries are flat { type, bash, matcher? } objects.
-function existingHookKeys(config, agentName) {
+function existingHookKeys(config, agentName, managed = []) {
   const agent = AGENTS[agentName]
   const keys = new Set()
+  const managedByKey = new Map(managed.map(spec => [specConfigKey(agentName, spec), spec]))
   const buckets = config?.hooks && typeof config.hooks === 'object' ? config.hooks : {}
   for (const [event, entries] of Object.entries(buckets)) {
     if (!Array.isArray(entries)) continue
     if (agent?.format === 'copilot') {
       for (const entry of entries) {
-        if (!entry || entry.type !== 'command' || !entry.bash) continue
-        keys.add(`${event}::${entry.matcher ?? ''}::${entry.bash}`)
+        const canonical = canonicalSpecForEntry(entry, event, agentName, managedByKey)
+        if (canonical) keys.add(canonical.key)
       }
     } else {
       for (const entry of entries) {
-        const matcher = entry?.matcher ?? ''
-        const hooks = Array.isArray(entry?.hooks) ? entry.hooks : []
-        for (const hook of hooks) {
-          if (!hook || hook.type !== 'command' || !hook.command) continue
-          keys.add(`${event}::${matcher}::${hook.command}`)
-        }
+        const canonical = canonicalSpecForEntry(entry, event, agentName, managedByKey)
+        if (canonical) keys.add(canonical.key)
       }
     }
   }
   return keys
 }
 
-function refreshManagedConfigEntries(config, agentName, selected) {
+function planHookConfig({ config, agentName, selected, managed = selected }) {
+  const existing = existingHookKeys(config, agentName, managed)
+  const selectedKeys = new Set(selected.map(spec => specConfigKey(agentName, spec)))
+  const add = selected
+    .filter(spec => !existing.has(specConfigKey(agentName, spec)))
+    .map(spec => commandFor(agentName, spec.name))
+  const remove = managed
+    .filter(spec => existing.has(specConfigKey(agentName, spec)) && !selectedKeys.has(specConfigKey(agentName, spec)))
+    .map(spec => commandFor(agentName, spec.name))
+  return { add, remove }
+}
+
+function refreshManagedConfigEntries(config, agentName, selected, managed = selected) {
   const agent = AGENTS[agentName]
   if (!config.hooks || typeof config.hooks !== 'object') config.hooks = {}
 
-  const managedCommands = new Set(selected.map(spec => commandFor(agentName, spec.name)))
+  const selectedKeys = new Set(selected.map(spec => specConfigKey(agentName, spec)))
+  const managedByKey = new Map(managed.map(spec => [specConfigKey(agentName, spec), spec]))
   let removed = 0
 
   for (const [event, entries] of Object.entries(config.hooks)) {
@@ -141,8 +209,8 @@ function refreshManagedConfigEntries(config, agentName, selected) {
 
     if (agent?.format === 'copilot') {
       const nextEntries = entries.filter(entry => {
-        if (!entry || entry.type !== 'command' || !entry.bash) return true
-        if (!managedCommands.has(entry.bash)) return true
+        const canonical = canonicalSpecForEntry(entry, event, agentName, managedByKey)
+        if (!canonical || selectedKeys.has(canonical.key)) return true
         removed++
         return false
       })
@@ -150,17 +218,12 @@ function refreshManagedConfigEntries(config, agentName, selected) {
     } else {
       const nextEntries = []
       for (const entry of entries) {
-        const hooks = Array.isArray(entry?.hooks) ? entry.hooks : []
-        const keptHooks = hooks.filter(hook => {
-          if (!hook || hook.type !== 'command' || !hook.command) return true
-          if (!managedCommands.has(hook.command)) return true
+        const canonical = canonicalSpecForEntry(entry, event, agentName, managedByKey)
+        if (canonical && !selectedKeys.has(canonical.key)) {
           removed++
-          return false
-        })
-
-        if (hooks.length > 0 && keptHooks.length === 0) continue
-        if (keptHooks.length !== hooks.length) nextEntries.push({ ...entry, hooks: keptHooks })
-        else nextEntries.push(entry)
+          continue
+        }
+        nextEntries.push(entry)
       }
       config.hooks[event] = nextEntries
     }
@@ -184,15 +247,16 @@ function wireAgentConfig({ repoRoot = REPO, home = HOME, agentName, hookNames = 
   if (!config.hooks || typeof config.hooks !== 'object') config.hooks = {}
   if (isCopilot && config.version == null) config.version = 1
 
-  const replaced = refreshManagedConfigEntries(config, agentName, selected)
-  const existing = existingHookKeys(config, agentName)
+  const managed = hooksForAgent(manifest, agentName)
+  const replaced = refreshManagedConfigEntries(config, agentName, selected, managed)
+  const existing = existingHookKeys(config, agentName, managed)
   let added = 0
 
   for (const spec of selected) {
     const command = commandFor(agentName, spec.name)
     // Copilot uses camelCase event names; Claude Code / Codex use PascalCase.
     const eventKey = isCopilot ? copilotEventName(spec.event) : spec.event
-    const key = `${eventKey}::${spec.matcher ?? ''}::${command}`
+    const key = hookConfigKey(eventKey, spec.matcher, command)
     if (existing.has(key)) continue
 
     const bucket = config.hooks[eventKey] ?? (config.hooks[eventKey] = [])
@@ -212,6 +276,16 @@ function isManagedHookTarget(targetPath, hookName) {
   if (path.basename(hookDir) !== 'hooks') return false
 
   return fs.existsSync(path.join(hookDir, 'manifest.json'))
+}
+
+function isCurrentHookLink(targetPath, repoRoot, hookName) {
+  try {
+    if (!fs.lstatSync(targetPath).isSymbolicLink()) return false
+    const current = path.resolve(path.dirname(targetPath), fs.readlinkSync(targetPath))
+    return path.normalize(current) === path.normalize(path.join(repoRoot, 'hooks', hookName))
+  } catch {
+    return false
+  }
 }
 
 function ensureSymlink(src, dst) {
@@ -269,11 +343,23 @@ function syncAgentHooks({ repoRoot = REPO, home = HOME, agentName, hookNames = n
 
   const manifest = loadHookManifest(repoRoot)
   const selected = hooksForAgent(manifest, agentName, hookNames)
+  const selectedNames = new Set(selected.map(spec => spec.name))
   const hookDir = agent.hookDir(home)
   fs.mkdirSync(hookDir, { recursive: true })
   cleanStale(hookDir, repoRoot)
 
   const results = []
+  for (const spec of hooksForAgent(manifest, agentName)) {
+    if (selectedNames.has(spec.name)) continue
+    const dst = path.join(hookDir, spec.name)
+    if (!isCurrentHookLink(dst, repoRoot, spec.name)) continue
+    try {
+      fs.unlinkSync(dst)
+      results.push({ name: spec.name, status: 'removed' })
+    } catch (error) {
+      results.push({ name: spec.name, status: 'err', note: error.message })
+    }
+  }
   for (const spec of selected) {
     const src = path.join(repoRoot, 'hooks', spec.name)
     if (!fs.existsSync(src)) {
@@ -343,6 +429,7 @@ export {
   hooksForAgent,
   isManagedHookTarget,
   loadHookManifest,
+  planHookConfig,
   refreshManagedConfigEntries,
   syncAgent,
   syncAgentHooks,

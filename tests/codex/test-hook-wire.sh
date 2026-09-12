@@ -82,6 +82,11 @@ assert_contains \
 
 assert_contains \
   "$TEST_HOME/.codex/hooks.json" \
+  "OLD MESSAGE" \
+  "codex live rewire preserves custom same-command config"
+
+assert_contains \
+  "$TEST_HOME/.codex/hooks.json" \
   "Re-anchoring go-beast context" \
   "codex live rewire wires UserPromptSubmit anti-drift hook"
 

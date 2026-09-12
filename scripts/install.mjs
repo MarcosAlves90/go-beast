@@ -8,6 +8,7 @@ import path from 'path'
 import os   from 'os'
 import readline from 'readline'
 import { hooksForAgent, loadHookManifest, syncAgentHooks, wireAgentConfig } from './hook-wire.mjs'
+import { configureAgent } from './integration-profile.mjs'
 
 const DEFAULT_REPO = path.resolve(import.meta.dirname, '..')
 const REPO   = path.resolve(process.env.GO_BEAST_INSTALL_ROOT || DEFAULT_REPO)
@@ -405,6 +406,23 @@ async function main() {
         if (r.ico === icon.warn || r.ico === icon.err) counts.warn++
       }
     }
+  }
+
+  // Persist the selection so future SessionStart reconciliation does not
+  // resurrect assets the user intentionally left disabled.
+  for (const agent of selAgents) {
+    const selectedAgentHooks = agent.hooks
+      ? hooksForAgent(HOOK_MANIFEST, agent.name, selHooks).map(hook => hook.name)
+      : undefined
+    configureAgent({
+      repoRoot: REPO,
+      home: HOME,
+      agentName: agent.name,
+      skillNames: selSkills,
+      skillsMode: installAll ? 'all' : 'selected',
+      hookNames: selectedAgentHooks,
+      hooksMode: installAll ? 'all' : 'selected',
+    })
   }
 
   if (cc && selWorkflows.length) {

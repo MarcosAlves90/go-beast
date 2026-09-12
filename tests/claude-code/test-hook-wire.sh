@@ -82,6 +82,11 @@ assert_contains \
 
 assert_contains \
   "$TEST_HOME/.claude/settings.json" \
+  "OLD MESSAGE" \
+  "claude live rewire preserves custom same-command config"
+
+assert_contains \
+  "$TEST_HOME/.claude/settings.json" \
   "Checking go-beast drift" \
   "claude live rewire wires Stop anti-drift hook"
 

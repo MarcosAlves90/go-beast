@@ -9,7 +9,7 @@ Each `go-<animal>` skill owns one phase, states its prerequisites, and produces
 concrete artifacts for the next phase. Skills are plain Markdown and work with
 Claude Code, Codex, Copilot, Cursor, Gemini, and other agents.
 
-**Version 1.52.1** · [Changelog](CHANGELOG.md)
+**Version 1.53.0** · [Changelog](CHANGELOG.md)
 
 ## Start here
 
@@ -27,6 +27,26 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/m
 Use `--bootstrap` with either installer to enable the stricter discovery-first
 agent contract. See [Getting started](docs/GETTING_STARTED.md) for archive
 selection, updates, uninstall, and agent-specific setup.
+
+After installation, integrations can be managed independently per agent:
+
+```bash
+go-beast integration status --agent codex
+go-beast integration disable --agent codex --kind skill --name go-bear
+go-beast integration enable --agent codex --kind hook --name docs-update-remind.sh
+go-beast integration sync --agent codex
+go-beast integration export --agent codex --output ./codex-profile.json
+go-beast integration import --agent codex --input ./codex-profile.json --dry-run
+go-beast integration preset save minimal --agent codex
+go-beast integration preset apply minimal --agent codex
+```
+
+Selections are persisted in `~/.go-beast/config.json`. Session-start sync
+honors that profile, while unmanaged files and custom hook entries are left
+untouched. Status reports desired state, installation ownership, dependency
+gaps, conflicts, and blocked assets. Profiles can be exported/imported between
+machines, and named presets capture an agent's skill and hook policy. Use
+`--dry-run` to inspect a change before applying it.
 
 ## What is included
 
