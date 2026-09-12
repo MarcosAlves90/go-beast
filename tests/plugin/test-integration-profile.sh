@@ -68,8 +68,8 @@ if (stopHooks.some(entry => entry.command === 'bash ~/.codex/hooks/docs-update-r
 NODE
 
 dry_run=$(run_integration enable --agent codex --kind skill --name go-bear --dry-run --format json)
-printf '%s' "$dry_run" | rg -q 'go-bear'
-printf '%s' "$dry_run" | rg -q 'create'
+printf '%s' "$dry_run" | grep -Fq 'go-bear'
+printf '%s' "$dry_run" | grep -Fq 'create'
 test ! -e "$TEST_HOME/.codex/skills/go-bear"
 
 run_integration enable --agent codex --kind skill --name go-bear --format json >/tmp/go-beast-integration-enable-skill.json
@@ -96,4 +96,3 @@ NODE
 
 test -L "$REPO_ROOT/plugins/go-beast/skills/go-bear"
 echo "Integration profile tests passed"
-

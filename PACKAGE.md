@@ -2,7 +2,7 @@
 
 ```text
 name:    go-beast
-version: 1.53.0
+version: 1.53.1
 date:    2026-09-12
 author:  MarcosAlves90
 type:    skill-pack

@@ -120,7 +120,7 @@ fs.writeFileSync(process.argv[3], JSON.stringify(source, null, 2) + '\n')
 NODE
 before_import=$(node -e "process.stdout.write(require('fs').readFileSync(process.argv[1], 'utf8'))" "$TEST_HOME/.go-beast/config.json")
 dry_import=$(run_integration import --agent codex --input "$TEST_HOME/import.json" --dry-run --format json)
-printf '%s' "$dry_import" | rg -q 'go-bear'
+printf '%s' "$dry_import" | grep -Fq 'go-bear'
 after_dry_import=$(node -e "process.stdout.write(require('fs').readFileSync(process.argv[1], 'utf8'))" "$TEST_HOME/.go-beast/config.json")
 test "$before_import" = "$after_dry_import"
 

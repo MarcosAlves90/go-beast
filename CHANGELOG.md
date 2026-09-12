@@ -9,6 +9,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.53.1] - 2026-09-12
+
+### Fixed
+
+- **CI portability:** replace optional `rg` dependencies in integration profile
+  tests with POSIX `grep` and add a regression test for runners without
+  ripgrep.
+
 ## [1.53.0] - 2026-09-12
 
 ### Added
