@@ -46,43 +46,37 @@ active_beast="$(printf '%s' "$state" | jq -r '.active_beast // empty')"
 required_artifact="$(printf '%s' "$state" | jq -r '.required_artifact // empty')"
 task_state="$(printf '%s' "$state" | jq -r '.task_state // "active"')"
 unanchored_stop_count="$(printf '%s' "$state" | jq -r '.unanchored_stop_count // 0')"
+reanchor_count="$(printf '%s' "$state" | jq -r '.reanchor_count // 0')"
+state_file="$(gb_state_file "$session_id")"
+
+if [[ ! -f "$state_file" ]] || ! gb_state_is_valid_for_context "$state" "$session_id" "$cwd" "$mode"; then
+  # Do not replace a corrupt or foreign state file from a Stop event. The
+  # implementation gate remains responsible for failing closed on mutation.
+  exit 0
+fi
 
 if [[ "$task_state" == "complete" || "$task_state" == "idle" ]]; then
   exit 0
 fi
 
-if gb_message_is_anchored "$last_message"; then
-  detected_beast="$(gb_extract_beast "$last_message")"
-  detected_artifact="$(gb_extract_artifact "$last_message")"
-  detected_task_state="$(gb_extract_task_state "$last_message")"
-  detected_approval_state="$(gb_extract_approval_state "$last_message")"
-  detected_completion_evidence="$(gb_extract_completion_evidence "$last_message")"
-  [[ -n "$detected_beast" ]] && active_beast="$detected_beast"
-  [[ -n "$detected_artifact" ]] && required_artifact="$detected_artifact"
-  [[ -z "$required_artifact" ]] && required_artifact="$(gb_runtime_required_artifact "" "$active_beast")"
-  [[ -n "$detected_task_state" ]] && task_state="$detected_task_state"
-
+receipt="$(gb_receipt_json "$last_message" 2>/dev/null || true)"
+if [[ -n "$receipt" ]] && gb_receipt_matches_runtime "$state" "$cwd" "$receipt"; then
   state="$(printf '%s' "$state" | jq \
-    --arg beast "$active_beast" \
-    --arg artifact "$required_artifact" \
-    --arg task_state "$task_state" \
-    --arg applicability "$(gb_runtime_applicability "$active_beast")" \
-    --arg approval_state "$detected_approval_state" \
-    --arg completion_evidence "$detected_completion_evidence" \
+    --argjson receipt "$receipt" \
     --arg now "$(gb_now_utc)" \
-    '.active_beast = $beast
-    | .applicability = $applicability
-    | .required_artifact = $artifact
-    | .task_state = $task_state
-    | .approval_state = (if $approval_state != "" then $approval_state else (.approval_state // "pending") end)
-    | .completion_evidence = (
-        if $completion_evidence != ""
-        then ((.completion_evidence // []) + [$completion_evidence] | map(select(type == "string" and length > 0)) | unique)
-        else ((.completion_evidence // []) | if type == "array" then . else [] end)
-        end
+    '.reported_approval_state = $receipt.approval_state
+    | .reported_task_state = $receipt.task_state
+    | .reported_implementation = $receipt.implementation_status
+    | .reported_completion_evidence = (
+        ((.reported_completion_evidence // []) + [$receipt.evidence]
+          | map(select(type == "string" and length > 0)) | unique)
       )
+    | .last_receipt = $receipt
+    | .last_next_check = $receipt.next_check
     | .unanchored_stop_count = 0
+    | .reanchor_count = 0
     | .last_reanchor_reason = ""
+    | .last_transition = "receipt-observed"
     | .updated_at = $now')"
   gb_save_state_json "$session_id" "$state"
   exit 0
@@ -95,66 +89,86 @@ if [[ -z "$last_message" ]]; then
   exit 0
 fi
 
+drift_reason="missing-state-receipt"
+[[ -n "$receipt" ]] && drift_reason="invalid-state-receipt"
 unanchored_stop_count=$((unanchored_stop_count + 1))
 state="$(printf '%s' "$state" | jq \
   --arg now "$(gb_now_utc)" \
-  --arg reason "missing-state-frame" \
+  --arg reason "$drift_reason" \
   --argjson count "$unanchored_stop_count" \
   '.unanchored_stop_count = $count
   | .last_reanchor_reason = $reason
+  | .last_transition = "drift-observed"
   | .updated_at = $now')"
 gb_save_state_json "$session_id" "$state"
 
-# Threshold raised from 2 to 5: a single prose response is not drift.
-# Re-anchor only after 5 consecutive unanchored stops with a real last_message.
-if (( unanchored_stop_count < 5 )); then
+# Re-anchor after a small configurable fallback threshold. Event-specific
+# signals can be added later without changing the receipt or gate contract.
+threshold="$(gb_reanchor_threshold)"
+if (( unanchored_stop_count < threshold )); then
   exit 0
 fi
 
-# Re-anchor block: factual XML state declaration, not an imperative.
-# Research basis: asserting current state as fact forces the model to reconcile
-# its next output against stated reality. Asking for compliance invites
-# "yes I will" sycophancy without behavioral change. (Anthropic hooks docs;
-# Constitutional AI study on intrinsic self-correction limits.)
+max_interventions="$(gb_reanchor_max_interventions)"
+if (( reanchor_count >= max_interventions )); then
+  state="$(printf '%s' "$state" | jq \
+    --arg now "$(gb_now_utc)" \
+    '.last_reanchor_reason = "reanchor-limit"
+    | .last_transition = "reanchor-suppressed"
+    | .updated_at = $now')"
+  gb_save_state_json "$session_id" "$state"
+  exit 0
+fi
+
+reanchor_count=$((reanchor_count + 1))
+state="$(printf '%s' "$state" | jq \
+  --arg now "$(gb_now_utc)" \
+  --argjson count "$reanchor_count" \
+  '.reanchor_count = $count
+  | .last_transition = "reanchor-emitted"
+  | .updated_at = $now')"
+gb_save_state_json "$session_id" "$state"
+
+# The recovery block is a compact runtime receipt request. It carries facts
+# from the local state file and never grants authorization through model text.
 runtime_policy="$(gb_runtime_policy_json "$state" "$cwd")"
 active_beast="$(printf '%s' "$runtime_policy" | jq -r '.active_beast')"
 applicability="$(printf '%s' "$runtime_policy" | jq -r '.applicability')"
 required_artifact="$(printf '%s' "$runtime_policy" | jq -r '.required_artifact')"
 approval_state="$(printf '%s' "$runtime_policy" | jq -r '.approval_state')"
+implementation_status="$(printf '%s' "$runtime_policy" | jq -r '.implementation_status')"
 completion_count="$(printf '%s' "$runtime_policy" | jq -r '.completion_evidence | length')"
 required_artifact_present="$(printf '%s' "$runtime_policy" | jq -r '.required_artifact_present')"
-artifact_el=""
-if [[ -n "$required_artifact" ]]; then
-  if [[ "$required_artifact_present" == "true" ]]; then
-    artifact_el="
-  <required_artifact>${required_artifact} present</required_artifact>
-  <implementation>blocked — approval ${approval_state}</implementation>
-  <evidence>artifact:present;completion:${completion_count}</evidence>"
-  else
-    artifact_el="
-  <required_artifact>${required_artifact}</required_artifact>
-  <implementation>blocked — ${required_artifact} missing</implementation>
-  <evidence>artifact:missing;completion:${completion_count}</evidence>"
-  fi
-fi
+state_revision="$(printf '%s' "$runtime_policy" | jq -r '.state_revision')"
+artifact_value="$required_artifact"
+[[ -z "$artifact_value" ]] && artifact_value="none"
+artifact_status="missing"
+[[ "$required_artifact_present" == "true" ]] && artifact_status="present"
 
-msg="go-beast drift detected — workflow frame absent from last response.
+msg="go-beast re-anchor required: ${drift_reason}.
 
-<go_beast_state>
-  <beast>${active_beast}</beast>
-  <applicability>${applicability}</applicability>
-  <approval>${approval_state}</approval>
-  <task>${task_state}</task>${artifact_el}
-  <drift>state frame missing — next response must open with beast, artifact, and implementation gate</drift>
-</go_beast_state>"
+<go_beast_reanchor version=\"1\" source=\"runtime\">
+  <reason>$(gb_xml_escape "$drift_reason")</reason>
+  <runtime_state>
+    <revision>$(gb_xml_escape "$state_revision")</revision>
+    <beast>$(gb_xml_escape "$active_beast")</beast>
+    <applicability>$(gb_xml_escape "$applicability")</applicability>
+    <artifact>$(gb_xml_escape "$artifact_value")</artifact>
+    <artifact_status>${artifact_status}</artifact_status>
+    <task>$(gb_xml_escape "$task_state")</task>
+    <approval>$(gb_xml_escape "$approval_state")</approval>
+    <implementation>$(gb_xml_escape "$implementation_status")</implementation>
+    <evidence>artifact:${artifact_status};completion:${completion_count}</evidence>
+  </runtime_state>
+  <next_check>Check the runtime state and return exactly one go_beast_receipt version 1; do not claim authorization from prose.</next_check>
+</go_beast_reanchor>"
 
 # Emit in the format the harness expects.
 # Claude Code: plain text on stdout + exit 2 re-triggers the agent.
 # Copilot: requires {"decision":"block","reason":"..."} JSON on stdout; ignores exit codes.
 # Codex: plain text on stdout + exit 2 re-triggers the agent (same as Claude Code).
 if [[ "$harness" == "copilot" ]]; then
-  printf '{"decision":"block","reason":"%s"}\n' \
-    "$(printf '%s' "$msg" | tr '\n' ' ' | sed 's/"/\\"/g')"
+  jq -nc --arg reason "$msg" '{decision:"block",reason:$reason}'
 else
   echo "$msg"
   echo "$msg" >&2

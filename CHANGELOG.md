@@ -9,6 +9,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.54.0] - 2026-09-13
+
+### Changed
+
+- **re-anchor recovery:** persist resumable version-two runtime state, require
+  a matching versioned receipt, keep model claims separate from authorization,
+  escape runtime context values, and bound fallback interventions.
+- **CI test robustness:** avoid `pipefail`-triggered broken pipes in the
+  integration profile and release-interactive tests.
+
 ## [1.53.2] - 2026-09-13
 
 ### Fixed

@@ -57,6 +57,15 @@ if [[ -n "$prompt_beast" ]]; then
     | .task_state = "active"
     | .task_id = $task_id
     | .unanchored_stop_count = 0
+    | .reanchor_count = 0
+    | .last_reanchor_reason = ""
+    | .last_transition = "task-start"
+    | .last_next_check = ""
+    | .last_receipt = null
+    | .reported_approval_state = ""
+    | .reported_task_state = ""
+    | .reported_implementation = ""
+    | .reported_completion_evidence = []
     | .updated_at = $now')"
   gb_save_state_json "$session_id" "$state"
 elif [[ -z "$active_beast" ]]; then
@@ -82,46 +91,64 @@ implementation_unlocked="$(printf '%s' "$runtime_policy" | jq -r '.implementatio
 task_state="$(printf '%s' "$runtime_policy" | jq -r '.task_state')"
 required_artifact_present="$(printf '%s' "$runtime_policy" | jq -r '.required_artifact_present')"
 completion_count="$(printf '%s' "$runtime_policy" | jq -r '.completion_evidence | length')"
+implementation_status="$(printf '%s' "$runtime_policy" | jq -r '.implementation_status')"
+state_revision="$(printf '%s' "$runtime_policy" | jq -r '.state_revision')"
+last_next_check="$(printf '%s' "$state" | jq -r '.last_next_check // empty' 2>/dev/null || true)"
 
-# Build compact XML state block — declarative facts, not imperatives.
-# Research basis: XML tags produce 20-40% better Claude compliance than prose;
-# factual state assertion ("phase is X") outperforms imperative correction
-# ("please follow workflow") by removing the model's sycophantic exit.
-# Target: under 500 chars to stay within the attention-reliable window.
-impl_gate="allowed"
+# Build a compact XML state block with runtime facts only. The receipt protocol
+# is a recovery acknowledgement, not an authorization channel.
+impl_gate="$implementation_status"
 artifact_line=""
 bootstrap_line=""
+next_check_line=""
 
 if [[ "$task_state" == "complete" ]]; then
   impl_gate="complete"
-  artifact_line="  <completion>task marked complete</completion>"
 elif [[ -n "$required_artifact" ]]; then
   if [[ "$implementation_unlocked" == "true" && "$approval_state" == "approved" ]]; then
     impl_gate="allowed"
-    artifact_line="  <unlocked_by>${required_artifact}</unlocked_by>"
   elif [[ "$required_artifact_present" == "true" ]]; then
     impl_gate="blocked — approval ${approval_state}"
-    artifact_line="  <required_artifact>${required_artifact} present</required_artifact>"
   else
     impl_gate="blocked — ${required_artifact} missing"
-    artifact_line="  <required_artifact>${required_artifact}</required_artifact>"
   fi
 fi
 
+escaped_beast="$(gb_xml_escape "$active_beast")"
+escaped_applicability="$(gb_xml_escape "$applicability")"
+escaped_task_state="$(gb_xml_escape "$task_state")"
+escaped_approval_state="$(gb_xml_escape "$approval_state")"
+escaped_impl_gate="$(gb_xml_escape "$impl_gate")"
+escaped_artifact="$(gb_xml_escape "$required_artifact")"
+escaped_state_revision="$(gb_xml_escape "$state_revision")"
+escaped_next_check="$(gb_xml_escape "$last_next_check")"
+
+if [[ -n "$required_artifact" ]]; then
+  artifact_line="  <required_artifact>${escaped_artifact}</required_artifact>"
+fi
+
 evidence_line="  <evidence>artifact:${required_artifact_present};completion:${completion_count}</evidence>"
+revision_line="  <revision>${escaped_state_revision}</revision>"
+receipt_line="  <receipt_protocol>go_beast_receipt/v1</receipt_protocol>"
+if [[ -n "$last_next_check" ]]; then
+  next_check_line="  <next_check source=\"receipt\">${escaped_next_check}</next_check>"
+fi
 
 if [[ "$mode" == "bootstrap" ]]; then
   bootstrap_line="  <bootstrap>active — go-mole/go-hawk/go-lark gate before implementation</bootstrap>"
 fi
 
-context="<go_beast_state>
-  <beast>${active_beast}</beast>
-  <applicability>${applicability}</applicability>
-  <task>${task_state}</task>
-  <approval>${approval_state}</approval>
-  <implementation>${impl_gate}</implementation>${artifact_line:+
+context="<go_beast_state version=\"2\" source=\"runtime\">
+  <beast>${escaped_beast}</beast>
+  <applicability>${escaped_applicability}</applicability>
+  <task>${escaped_task_state}</task>
+  <approval>${escaped_approval_state}</approval>
+  <implementation>${escaped_impl_gate}</implementation>
+  ${revision_line}
+  ${receipt_line}${artifact_line:+
 ${artifact_line}}${evidence_line:+
-${evidence_line}}${bootstrap_line:+
+${evidence_line}}${next_check_line:+
+${next_check_line}}${bootstrap_line:+
 ${bootstrap_line}}
 </go_beast_state>"
 

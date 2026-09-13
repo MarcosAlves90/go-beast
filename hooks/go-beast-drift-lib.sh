@@ -41,6 +41,61 @@ gb_json_get() {
   printf '%s' "$input" | jq -r "$query" 2>/dev/null || true
 }
 
+gb_xml_escape() {
+  local value="${1:-}"
+  printf '%s' "$value" | sed \
+    -e 's/&/\&amp;/g' \
+    -e 's/</\&lt;/g' \
+    -e 's/>/\&gt;/g' \
+    -e 's/"/\&quot;/g' \
+    -e "s/'/\&apos;/g"
+}
+
+gb_artifact_is_safe() {
+  local value="${1:-}"
+  [[ -z "$value" ]] && return 0
+
+  case "$value" in
+    /*|*..*|*$'\n'*|*$'\r'*|*'<'*|*'>'*|*'&'*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+gb_state_is_valid_for_context() {
+  local state="$1"
+  local session_id="$2"
+  local cwd="$3"
+  local mode="$4"
+
+  printf '%s' "$state" | jq -e \
+    --arg session_id "$session_id" \
+    --arg cwd "$cwd" \
+    --arg mode "$mode" \
+    '
+      type == "object"
+      and (.version == 1 or .version == 2)
+      and .session_id == $session_id
+      and .cwd == $cwd
+      and .mode == $mode
+      and (.task_state == "active" or .task_state == "complete" or .task_state == "idle")
+      and (.implementation_unlocked | type == "boolean")
+      and ((.unanchored_stop_count // 0) | if type == "number" then (. >= 0 and floor == .) else false end)
+      and ((.reanchor_count // 0) | if type == "number" then (. >= 0 and floor == .) else false end)
+    ' >/dev/null 2>&1
+}
+
+gb_reanchor_threshold() {
+  local value="${GO_BEAST_REANCHOR_THRESHOLD:-2}"
+  [[ "$value" =~ ^[1-9][0-9]*$ ]] || value=2
+  printf '%s\n' "$value"
+}
+
+gb_reanchor_max_interventions() {
+  local value="${GO_BEAST_REANCHOR_MAX_INTERVENTIONS:-3}"
+  [[ "$value" =~ ^[1-9][0-9]*$ ]] || value=3
+  printf '%s\n' "$value"
+}
+
 gb_safe_session_id() {
   local session_id="${1:-default}"
   printf '%s' "$session_id" | tr '/:[:space:]' '____'
@@ -65,7 +120,8 @@ gb_default_state_json() {
     --arg mode "$mode" \
     --arg now "$(gb_now_utc)" \
     '{
-      version: 1,
+      version: 2,
+      revision: 0,
       session_id: $session_id,
       cwd: $cwd,
       harness: $harness,
@@ -79,7 +135,15 @@ gb_default_state_json() {
       task_id: "",
       task_state: "active",
       unanchored_stop_count: 0,
+      reanchor_count: 0,
       last_reanchor_reason: "",
+      last_transition: "session-start",
+      last_next_check: "",
+      last_receipt: null,
+      reported_approval_state: "",
+      reported_task_state: "",
+      reported_implementation: "",
+      reported_completion_evidence: [],
       updated_at: $now
     }'
 }
@@ -96,10 +160,14 @@ gb_runtime_applicability() {
   esac
 }
 
+gb_known_beast() {
+  [[ "$(gb_runtime_applicability "${1:-}")" != "unknown" ]]
+}
+
 gb_runtime_required_artifact() {
   local explicit="${1:-}"
   local beast="${2:-go-chat}"
-  if [[ -n "$explicit" ]]; then
+  if [[ -n "$explicit" ]] && gb_artifact_is_safe "$explicit"; then
     printf '%s\n' "$explicit"
     return
   fi
@@ -120,12 +188,10 @@ gb_runtime_required_artifact() {
 
 gb_runtime_approval_state() {
   local state="$1"
-  local implementation_unlocked
   local approval
-  implementation_unlocked="$(printf '%s' "$state" | jq -r '.implementation_unlocked // false' 2>/dev/null || printf 'false')"
   approval="$(printf '%s' "$state" | jq -r '.approval_state // empty' 2>/dev/null || true)"
   if [[ "$approval" != "pending" && "$approval" != "approved" && "$approval" != "rejected" ]]; then
-    [[ "$implementation_unlocked" == "true" ]] && approval="approved" || approval="pending"
+    approval="pending"
   fi
   printf '%s\n' "$approval"
 }
@@ -153,6 +219,8 @@ gb_runtime_policy_json() {
   local completion_evidence
   local implementation_unlocked
   local task_state
+  local state_revision
+  local implementation_status
 
   beast="$(printf '%s' "$state" | jq -r '.active_beast // "go-chat"' 2>/dev/null || printf 'go-chat')"
   [[ -n "$beast" && "$beast" != "null" ]] || beast="go-chat"
@@ -164,11 +232,23 @@ gb_runtime_policy_json() {
   implementation_unlocked="$(printf '%s' "$state" | jq -r '.implementation_unlocked // false' 2>/dev/null || printf 'false')"
   [[ "$implementation_unlocked" == "true" || "$implementation_unlocked" == "false" ]] || implementation_unlocked="false"
   task_state="$(printf '%s' "$state" | jq -r '.task_state // "active"' 2>/dev/null || printf 'active')"
+  state_revision="$(printf '%s' "$state" | jq -r '.revision // 0' 2>/dev/null || printf '0')"
+  [[ "$state_revision" =~ ^[0-9]+$ ]] || state_revision=0
 
   if [[ -n "$required_artifact" && "$required_artifact" != /* && "$required_artifact" != *..* && -e "$cwd/$required_artifact" ]]; then
     required_artifact_present=true
   elif [[ -n "$required_artifact" && "$required_artifact" == /* && -e "$required_artifact" ]]; then
     required_artifact_present=true
+  fi
+
+  implementation_status="blocked"
+  if [[ "$implementation_unlocked" == "true" && "$approval_state" == "approved" \
+    && ( -z "$required_artifact" || "$required_artifact_present" == "true" ) ]]; then
+    if [[ "$task_state" == "complete" ]]; then
+      implementation_status="complete"
+    else
+      implementation_status="allowed"
+    fi
   fi
 
   jq -nc \
@@ -177,6 +257,8 @@ gb_runtime_policy_json() {
     --arg required_artifact "$required_artifact" \
     --arg approval_state "$approval_state" \
     --arg task_state "$task_state" \
+    --arg implementation_status "$implementation_status" \
+    --argjson state_revision "$state_revision" \
     --argjson required_artifact_present "$required_artifact_present" \
     --argjson completion_evidence "$completion_evidence" \
     --argjson implementation_unlocked "${implementation_unlocked:-false}" \
@@ -188,7 +270,9 @@ gb_runtime_policy_json() {
       approval_state: $approval_state,
       completion_evidence: $completion_evidence,
       implementation_unlocked: $implementation_unlocked,
-      task_state: $task_state
+      task_state: $task_state,
+      implementation_status: $implementation_status,
+      state_revision: $state_revision
     }'
 }
 
@@ -211,22 +295,48 @@ gb_save_state_json() {
   local session_id="$1"
   local json="$2"
   local state_file tmp_file
+  local normalized
 
   state_file="$(gb_state_file "$session_id")"
   mkdir -p "$(dirname "$state_file")"
-  tmp_file="${state_file}.tmp"
-  printf '%s\n' "$json" > "$tmp_file"
+
+  if ! normalized="$(printf '%s' "$json" | jq -c \
+    --arg now "$(gb_now_utc)" \
+    'if type != "object" then error("state must be a JSON object") else
+       .version = 2
+       | .revision = (((.revision // 0) | if type == "number" then floor else 0 end) + 1)
+       | .completion_evidence = ((.completion_evidence // []) | if type == "array" then . else [] end)
+       | .reported_completion_evidence = ((.reported_completion_evidence // []) | if type == "array" then . else [] end)
+       | .unanchored_stop_count = ((.unanchored_stop_count // 0) | if type == "number" and . >= 0 then floor else 0 end)
+       | .reanchor_count = ((.reanchor_count // 0) | if type == "number" and . >= 0 then floor else 0 end)
+       | .last_receipt = (.last_receipt // null)
+       | .last_next_check = (.last_next_check // "")
+       | .reported_approval_state = (.reported_approval_state // "")
+       | .reported_task_state = (.reported_task_state // "")
+       | .reported_implementation = (.reported_implementation // "")
+       | .last_transition = (.last_transition // "state-update")
+       | .updated_at = $now
+     end')"; then
+    return 1
+  fi
+
+  tmp_file="$(mktemp "${state_file}.tmp.XXXXXX")" || return 1
+  printf '%s\n' "$normalized" > "$tmp_file"
   mv "$tmp_file" "$state_file"
 }
 
 gb_extract_beast() {
   local text="${1:-}"
+  local candidate
   # Only extract a beast when it appears after an affirmative framing marker
   # ("Active beast:", "beast:", "<beast>", "using go-X", "invoking go-X").
   # Avoids extracting from negations ("don't use go-hawk") or incidental
   # mentions ("go-hawk would be premature here").
-  printf '%s\n' "$text" | grep -Eoi '(active beast|beast|<beast>|using|invoking|running|invoke)[[:space:]:]+(go-[a-z]+)' \
-    | grep -Eo 'go-[a-z]+' | head -n 1 || true
+  candidate="$(printf '%s\n' "$text" | grep -Eoi '(active beast|beast|<beast>|using|invoking|running|invoke)[[:space:]:]+(go-[a-z]+)' \
+    | grep -Eo 'go-[a-z]+' | head -n 1 || true)"
+  if [[ -n "$candidate" ]] && gb_known_beast "$candidate"; then
+    printf '%s\n' "$candidate"
+  fi
 }
 
 gb_extract_artifact() {
@@ -261,30 +371,110 @@ gb_extract_completion_evidence() {
   return 0
 }
 
+gb_receipt_tag_value() {
+  local body="$1"
+  local tag="$2"
+  local values
+  local count
+
+  values="$(printf '%s\n' "$body" | sed -nE "s|^[[:space:]]*<${tag}>([^<>]*)</${tag}>[[:space:]]*$|\\1|p")"
+  count="$(printf '%s\n' "$values" | sed '/^$/d' | wc -l | tr -d '[:space:]')"
+  [[ "$count" == "1" ]] || return 1
+  printf '%s\n' "$values"
+}
+
+gb_receipt_json() {
+  local text="${1:-}"
+  local open_count
+  local close_count
+  local block
+  local beast
+  local artifact
+  local task_state
+  local approval_state
+  local implementation_status
+  local next_check
+  local evidence
+  local expected_artifact
+
+  [[ -n "$text" ]] || return 1
+
+  open_count="$(printf '%s\n' "$text" | grep -Ec '^[[:space:]]*<go_beast_receipt version="1">[[:space:]]*$' || true)"
+  close_count="$(printf '%s\n' "$text" | grep -Ec '^[[:space:]]*</go_beast_receipt>[[:space:]]*$' || true)"
+  [[ "$open_count" == "1" && "$close_count" == "1" ]] || return 1
+
+  block="$(printf '%s\n' "$text" | awk '
+    /^[[:space:]]*<go_beast_receipt version="1">[[:space:]]*$/ { inside=1 }
+    inside { print }
+    /^[[:space:]]*<\/go_beast_receipt>[[:space:]]*$/ { inside=0 }
+  ')"
+  [[ -n "$block" ]] || return 1
+
+  beast="$(gb_receipt_tag_value "$block" beast)" || return 1
+  artifact="$(gb_receipt_tag_value "$block" artifact)" || return 1
+  task_state="$(gb_receipt_tag_value "$block" task)" || return 1
+  approval_state="$(gb_receipt_tag_value "$block" approval)" || return 1
+  implementation_status="$(gb_receipt_tag_value "$block" implementation)" || return 1
+  next_check="$(gb_receipt_tag_value "$block" next_check)" || return 1
+  evidence="$(gb_receipt_tag_value "$block" evidence)" || return 1
+
+  gb_known_beast "$beast" || return 1
+  expected_artifact="$(gb_runtime_required_artifact "" "$beast")"
+  if [[ -n "$expected_artifact" ]]; then
+    [[ "$artifact" == "$expected_artifact" ]] || return 1
+  else
+    [[ "$artifact" == "none" ]] || return 1
+  fi
+
+  case "$task_state" in
+    active|complete|idle) ;;
+    *) return 1 ;;
+  esac
+  case "$approval_state" in
+    pending|approved|rejected) ;;
+    *) return 1 ;;
+  esac
+  case "$implementation_status" in
+    allowed|blocked|complete) ;;
+    *) return 1 ;;
+  esac
+  [[ ${#next_check} -gt 0 && ${#next_check} -le 240 ]] || return 1
+  [[ ${#evidence} -gt 0 && ${#evidence} -le 240 ]] || return 1
+
+  jq -nc \
+    --arg beast "$beast" \
+    --arg artifact "$artifact" \
+    --arg task_state "$task_state" \
+    --arg approval_state "$approval_state" \
+    --arg implementation_status "$implementation_status" \
+    --arg next_check "$next_check" \
+    --arg evidence "$evidence" \
+    '{version: 1, beast: $beast, artifact: $artifact, task_state: $task_state,
+      approval_state: $approval_state, implementation_status: $implementation_status,
+      next_check: $next_check, evidence: $evidence}'
+}
+
+gb_receipt_matches_runtime() {
+  local state="$1"
+  local cwd="$2"
+  local receipt="$3"
+  local policy
+
+  policy="$(gb_runtime_policy_json "$state" "$cwd")"
+  printf '%s' "$receipt" | jq -e \
+    --arg beast "$(printf '%s' "$policy" | jq -r '.active_beast')" \
+    --arg artifact "$(printf '%s' "$policy" | jq -r '.required_artifact // ""')" \
+    --arg approval "$(printf '%s' "$policy" | jq -r '.approval_state')" \
+    --arg task_state "$(printf '%s' "$policy" | jq -r '.task_state')" \
+    --arg implementation_status "$(printf '%s' "$policy" | jq -r '.implementation_status')" \
+    '(.beast == $beast)
+     and (.artifact == (if $artifact == "" then "none" else $artifact end))
+     and (.approval_state == $approval)
+     and (.task_state == $task_state)
+     and (.implementation_status == $implementation_status)' >/dev/null 2>&1
+}
+
 gb_message_is_anchored() {
   local text="${1:-}"
-  [[ -z "$text" ]] && return 1
-
-  # Require at least one explicit state frame marker — incidental beast mentions
-  # ("go-hawk would be useful") do not constitute anchoring. The response must
-  # declare the current state, not merely reference a beast name in passing.
-  # Research basis: permissive matching (any go-X mention) caused false anchoring
-  # where drift persisted because casual mentions satisfied the check.
-  if printf '%s\n' "$text" | grep -Eqi \
-    'active beast[[:space:]]*:[[:space:]]*go-[a-z]+|<beast>[[:space:]]*go-[a-z]+|beast ativo[[:space:]]*:[[:space:]]*go-[a-z]+'; then
-    return 0
-  fi
-
-  if printf '%s\n' "$text" | grep -Eqi '(^|[[:space:]])beast[[:space:]]*:[[:space:]]*go-[a-z]+' \
-    && printf '%s\n' "$text" | grep -Eqi '(^|[[:space:]])artifact[[:space:]]*:[[:space:]]*`?(\.go-beast/)?(REQUIREMENTS\.md|APPROACH\.md|STACK\.md|ADR\.md|DIAGRAM\.md|CONTRACTS\.md|CHANGELOG\.md|AGENTS\.md|SECURITY_REVIEW|TEST_PLAN)`?([[:space:]]|$)' \
-    && printf '%s\n' "$text" | grep -Eqi 'implementation[[:space:]]+gate[[:space:]]*:[[:space:]]*(allowed|blocked|permitido|bloqueado)([[:space:][:punct:]]|$)'; then
-    return 0
-  fi
-
-  if printf '%s\n' "$text" | grep -Eqi \
-    'required artifact|implementation (is |not )?(un)?locked|re-anchor|bootstrap gate|implementation_unlocked|<implementation>|<required_artifact>'; then
-    return 0
-  fi
-
-  return 1
+  gb_receipt_json "$text" >/dev/null 2>&1
 }

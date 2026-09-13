@@ -23,7 +23,24 @@ cwd="$(gb_json_get "$input" '.cwd // empty')"
 
 harness="$(gb_detect_harness "$0")"
 mode="$(gb_detect_mode)"
-state="$(gb_default_state_json "$session_id" "$cwd" "$harness" "$mode")"
+state_file="$(gb_state_file "$session_id")"
+if [[ -f "$state_file" ]]; then
+  existing_state="$(cat "$state_file" 2>/dev/null || true)"
+  if gb_state_is_valid_for_context "$existing_state" "$session_id" "$cwd" "$mode"; then
+    state="$(printf '%s' "$existing_state" | jq \
+      --arg harness "$harness" \
+      --arg mode "$mode" \
+      --arg cwd "$cwd" \
+      '.harness = $harness
+      | .mode = $mode
+      | .cwd = $cwd
+      | .last_transition = "session-resume"')"
+  else
+    state="$(gb_default_state_json "$session_id" "$cwd" "$harness" "$mode")"
+  fi
+else
+  state="$(gb_default_state_json "$session_id" "$cwd" "$harness" "$mode")"
+fi
 
 gb_save_state_json "$session_id" "$state"
 

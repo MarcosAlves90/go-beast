@@ -56,13 +56,23 @@ grep -q '<applicability>discovery</applicability>' <<<"$prompt_output" || fail "
 grep -q '<approval>pending</approval>' <<<"$prompt_output" || fail "prompt context exposes approval state"
 pass "prompt adapter resets stale task state through the shared policy"
 
-stop_input='{"session_id":"runtime-policy-test","cwd":"/tmp/project","stop_hook_active":false,"last_assistant_message":"Active beast: go-lark; Artifact: .go-beast/APPROACH.md; Approval: approved; Completion evidence: npm run verify; Task state: complete."}'
-printf '%s' "$stop_input" | HOME="$TEST_HOME" GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE=codex bash "$STOP_HOOK" >/dev/null 2>&1 || true
-[[ "$(jq -r '.active_beast' "$STATE_FILE")" == "go-lark" ]] || fail "stop adapter records anchored beast"
-[[ "$(jq -r '.approval_state' "$STATE_FILE")" == "approved" ]] || fail "stop adapter records approval"
-[[ "$(jq -r '.completion_evidence | index("npm run verify")' "$STATE_FILE")" != "null" ]] || fail "stop adapter records completion evidence"
-[[ "$(jq -r '.task_state' "$STATE_FILE")" == "complete" ]] || fail "stop adapter records task completion"
-pass "stop adapter records approval and completion evidence"
+stop_input='<go_beast_receipt version="1">
+  <beast>go-hawk</beast>
+  <artifact>.go-beast/REQUIREMENTS.md</artifact>
+  <task>active</task>
+  <approval>pending</approval>
+  <implementation>blocked</implementation>
+  <next_check>inspect the requirements artifact</next_check>
+  <evidence>artifact:missing</evidence>
+</go_beast_receipt>'
+stop_input_json="$(jq -n --arg message "$stop_input" '{session_id:"runtime-policy-test",cwd:"/tmp/project",stop_hook_active:false,last_assistant_message:$message}')"
+printf '%s' "$stop_input_json" | HOME="$TEST_HOME" GO_BEAST_STATE_DIR="$STATE_DIR" GO_BEAST_HARNESS_OVERRIDE=codex bash "$STOP_HOOK" >/dev/null 2>&1 || true
+[[ "$(jq -r '.active_beast' "$STATE_FILE")" == "go-hawk" ]] || fail "stop adapter preserves runtime beast"
+[[ "$(jq -r '.approval_state' "$STATE_FILE")" == "pending" ]] || fail "stop adapter preserves runtime approval"
+[[ "$(jq -r '.reported_approval_state' "$STATE_FILE")" == "pending" ]] || fail "stop adapter records receipt approval report"
+[[ "$(jq -r '.reported_completion_evidence | index("artifact:missing")' "$STATE_FILE")" != "null" ]] || fail "stop adapter records reported receipt evidence"
+[[ "$(jq -r '.task_state' "$STATE_FILE")" == "active" ]] || fail "stop adapter preserves runtime task state"
+pass "stop adapter records receipt observations without changing authorization"
 
 printf '%s\n' '{"version":1,"session_id":"runtime-policy-test","cwd":"/tmp/project","harness":"codex","mode":"bootstrap","active_beast":"go-hawk","required_artifact":"","implementation_unlocked":false,"task_state":"active","approval_state":"pending","completion_evidence":[],"task_id":"runtime-policy-test","unanchored_stop_count":0,"last_reanchor_reason":"","updated_at":"2026-09-11T00:00:00Z"}' > "$STATE_FILE"
 gate_input="$(jq -nc '{tool_name:"Edit",tool_input:{file_path:"/tmp/project/src/implementation.js",new_string:"code"},session_id:"runtime-policy-test",cwd:"/tmp/project"}')"

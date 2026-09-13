@@ -58,11 +58,7 @@ if [[ ! -f "$state_file" ]]; then
   block_reason "go-beast implementation gate: blocked $tool_name for $target_file; bootstrap session state is missing or invalid"
 fi
 
-if ! printf '%s' "$state" | jq -e '
-  type == "object"
-  and (.task_state == "active" or .task_state == "complete")
-  and (.implementation_unlocked | type == "boolean")
-' >/dev/null 2>&1; then
+if ! gb_state_is_valid_for_context "$state" "$session_id" "$cwd" "$mode"; then
   block_reason "go-beast implementation gate: blocked $tool_name for $target_file; bootstrap session state is missing or invalid"
 fi
 
@@ -72,9 +68,9 @@ required_artifact="$(printf '%s' "$runtime_policy" | jq -r '.required_artifact')
 implementation_unlocked="$(printf '%s' "$runtime_policy" | jq -r '.implementation_unlocked')"
 approval_state="$(printf '%s' "$runtime_policy" | jq -r '.approval_state')"
 task_state="$(printf '%s' "$runtime_policy" | jq -r '.task_state')"
+implementation_status="$(printf '%s' "$runtime_policy" | jq -r '.implementation_status')"
 
-[[ "$task_state" == "complete" ]] && exit 0
-[[ "$implementation_unlocked" == "true" && "$approval_state" == "approved" ]] && exit 0
+[[ "$implementation_status" == "allowed" || "$implementation_status" == "complete" ]] && exit 0
 
 normalize_relative_path() {
   local value="$1"
