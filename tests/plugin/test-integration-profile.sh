@@ -68,8 +68,8 @@ if (stopHooks.some(entry => entry.command === 'bash ~/.codex/hooks/docs-update-r
 NODE
 
 dry_run=$(run_integration enable --agent codex --kind skill --name go-bear --dry-run --format json)
-printf '%s' "$dry_run" | grep -Fq 'go-bear'
-printf '%s' "$dry_run" | grep -Fq 'create'
+grep -Fq 'go-bear' <<<"$dry_run"
+grep -Fq 'create' <<<"$dry_run"
 test ! -e "$TEST_HOME/.codex/skills/go-bear"
 
 run_integration enable --agent codex --kind skill --name go-bear --format json >/tmp/go-beast-integration-enable-skill.json

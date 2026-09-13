@@ -68,7 +68,7 @@ INSTALL_OUTPUT="$(printf '1\n' | env \
   --interactive \
   --all 2>&1)"
 
-if ! printf '%s\n' "$INSTALL_OUTPUT" | grep -Fq 'Select an option [1]:'; then
+if ! grep -Fq 'Select an option [1]:' <<<"$INSTALL_OUTPUT"; then
   echo 'INTERACTIVE_RELEASE_MENU_MISSING' >&2
   printf '%s\n' "$INSTALL_OUTPUT" >&2
   exit 1
