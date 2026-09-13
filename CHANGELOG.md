@@ -9,6 +9,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.53.2] - 2026-09-13
+
+### Fixed
+
+- **interactive release installation:** keep the release and asset selection
+  prompts available through the README bootstrap script, while documenting
+  `--all` as the explicit non-interactive mode.
+
 ## [1.53.1] - 2026-09-12
 
 ### Fixed

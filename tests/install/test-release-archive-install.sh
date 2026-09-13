@@ -71,6 +71,7 @@ printf '1\n' | env \
   GO_BEAST_RELEASES_API_URL="http://127.0.0.1:$SERVER_PORT/releases.json" \
   HOME="$TEST_HOME" \
   bash "$REPO_ROOT/scripts/install.sh" \
+  --interactive \
   --all \
   --bootstrap
 
@@ -135,6 +136,7 @@ printf '2\n1\n' | env \
   GO_BEAST_RELEASES_API_URL="http://127.0.0.1:$SERVER_PORT/releases.json" \
   HOME="$TEST_HOME" \
   node "$REPO_ROOT/scripts/install-from-release-archive.mjs" \
+  --interactive \
   --all \
   --bootstrap
 

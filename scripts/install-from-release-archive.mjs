@@ -26,6 +26,8 @@ function parseArgs(argv) {
   const args = {
     archive: '',
     archiveUrl: '',
+    all: false,
+    interactive: false,
     latest: false,
     release: '',
     repo: DEFAULT_REPO_SLUG,
@@ -40,6 +42,15 @@ function parseArgs(argv) {
     }
     if (arg === '--archive-url') {
       args.archiveUrl = argv[++i] ?? ''
+      continue
+    }
+    if (arg === '--all') {
+      args.all = true
+      args.passthrough.push(arg)
+      continue
+    }
+    if (arg === '--interactive') {
+      args.interactive = true
       continue
     }
     if (arg === '--latest') {
@@ -223,7 +234,11 @@ async function resolveRequestedRelease(args) {
     return releaseToArchive(selected)
   }
 
-  if (args.latest || (!process.stdin.isTTY && process.env.GO_BEAST_FORCE_RELEASE_MENU !== '1')) {
+  if (args.interactive) {
+    return promptForRelease(repoSlug)
+  }
+
+  if (args.all || args.latest || (!process.stdin.isTTY && process.env.GO_BEAST_FORCE_RELEASE_MENU !== '1')) {
     return resolveLatestReleaseArchive(repoSlug)
   }
 

@@ -80,14 +80,21 @@ want ongoing refresh and drift correction.
 Use this path when you do not want a repository checkout:
 
 ```bash
+# Interactive release and asset selection
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --interactive
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --interactive --bootstrap
+
+# Non-interactive: latest release and every detected asset
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all --bootstrap
 ```
 
-The wrapper lets you select the latest or a specific GitHub release, extracts a
-versioned archive under `~/.go-beast/source/`, and runs the canonical installer.
-Use `--archive-url <url>` or `--archive <path>` to provide the archive directly.
-Re-running the command updates the active source pointer without manual cleanup.
+The `--interactive` wrapper lets you select the latest or a specific GitHub
+release, extracts a versioned archive under `~/.go-beast/source/`, and runs the
+canonical installer, which prompts for agents, skills, hooks, and workflows. Use
+`--all` when prompts are not desired. Use `--archive-url <url>` or
+`--archive <path>` to provide the archive directly. Re-running the command
+updates the active source pointer without manual cleanup.
 
 ## Agent setup
 

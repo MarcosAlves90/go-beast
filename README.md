@@ -9,24 +9,32 @@ Each `go-<animal>` skill owns one phase, states its prerequisites, and produces
 concrete artifacts for the next phase. Skills are plain Markdown and work with
 Claude Code, Codex, Copilot, Cursor, Gemini, and other agents.
 
-**Version 1.53.1** · [Changelog](CHANGELOG.md)
+**Version 1.53.2** · [Changelog](CHANGELOG.md)
 
 ## Start here
 
 For the fastest installation, choose the path that matches your environment:
 
 ```bash
-# From a checkout
+# From a checkout (interactive)
 git clone <repo-url> <repo-dir>
+node <repo-dir>/scripts/install.mjs
+
+# From a checkout (non-interactive, install everything detected)
 node <repo-dir>/scripts/install.mjs --all
 
-# Without cloning the repository
+# Without cloning the repository (interactive)
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --interactive
+
+# Without cloning the repository (non-interactive, install everything detected)
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all
 ```
 
 Use `--bootstrap` with either installer to enable the stricter discovery-first
-agent contract. See [Getting started](docs/GETTING_STARTED.md) for archive
-selection, updates, uninstall, and agent-specific setup.
+agent contract. `--interactive` shows the release and asset selection prompts;
+`--all` selects the latest release and installs every detected asset without
+prompts. See [Getting started](docs/GETTING_STARTED.md) for archive selection,
+updates, uninstall, and agent-specific setup.
 
 After installation, integrations can be managed independently per agent:
 
