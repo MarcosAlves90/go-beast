@@ -42,6 +42,10 @@ const SKILLS = {
     description: 'Translates interface contracts and functional requirements into BDD scenario files (Given/When/Then), an acceptance test skeleton, and a SPEC.md that go-wolf and go-lynx must satisfy before implementation begins.',
     checklist: ['SPEC.md', 'acceptance criteria', 'Given', 'When', 'Then', 'test skeleton', 'unhappy path', 'open questions'],
   },
+  'go-squirrel': {
+    description: 'Creates and maintains portable, agent-first knowledge bases with one semantic record model, explicit provenance, linked references, bounded context retrieval, deterministic native Markdown authoring, and Markdown, JSON, or TOON projections.',
+    checklist: ['KB_SPEC.md', 'INDEX', 'MANIFEST', 'stable ID', 'provenance', 'references', 'backlinks', 'CONTEXT_PACKET', 'KB_VALIDATION.md', 'kb-tool.mjs', 'JSON Schema', 'TOON', 'Obsidian'],
+  },
   'go-wolf': {
     description: 'Designs and implements REST or GraphQL APIs, business logic layers, authentication, authorization, middleware, and server-side validation following a strict layered architecture.',
     checklist: ['endpoints', 'handler', 'service', 'repository', 'auth', 'middleware', 'validation', 'error handling'],
@@ -518,6 +522,18 @@ Do not make the decision for the developer. Do not ask more than one clarifying 
 3. Produce an acceptance test skeleton (stub functions with the scenario title as the test description and a single failing assertion)
 4. Write the complete SPEC.md artifact
 Do not write implementation code. Do not resolve open questions on behalf of the user — list them explicitly in the Open questions section of SPEC.md.`,
+    'go-squirrel': `EVAL CONTEXT: You ARE the go-squirrel skill executing its workflow. The user needs a durable, agent-first knowledge base for a software project that will be used by multiple AI harnesses and may later be opened in Obsidian. The source material includes architecture decisions, verified facts, procedures, unresolved hypotheses, and external references. Produce the complete output, not a summary:
+
+1. Scope the KB, state the safety boundary, and choose one canonical representation while explaining the Markdown, JSON, and TOON projection rules.
+2. Produce a complete KB_SPEC.md with the layout, common record envelope, lifecycle/status model, provenance and epistemic rules, local graph/reference rules, validation invariants, and operations.
+3. Produce INDEX and MANIFEST specifications, including deterministic sorting, checksums, forward references, generated backlinks, unresolved-reference errors, and orphan warnings.
+4. Produce at least two complete record examples with stable IDs, sources, confidence, provenance, and references: one plain Markdown and one Obsidian Markdown example. Also include complete JSON and strict TOON examples and explain semantic equivalence.
+5. Produce the JSON Schema contract, including required fields, enums, confidence bounds, safe local references, timestamps, provenance, and history.
+6. Produce a bounded CONTEXT_PACKET for one realistic task with selection reasons, status/confidence, unresolved or conflicting claims, and next reads/actions.
+7. Produce KB_VALIDATION.md evidence covering syntax/schema, duplicate IDs, safe paths, graph resolution, stale data, provenance, deterministic manifest output, and limitations.
+8. Show the native execution protocol using `kb-tool.mjs` for init, add, manifest, context, and validate; then state the change report and the remaining operations for update, link, search, status, archive, and convert/export.
+
+Mandatory artifacts and terms: KB_SPEC.md, INDEX, MANIFEST, stable ID, provenance, references, backlinks, CONTEXT_PACKET, KB_VALIDATION.md, `kb-tool.mjs`, JSON Schema, TOON, and Obsidian. Do not invent a vector database, hosted memory service, or vendor-specific runtime as a prerequisite.`,
     'go-vole': `EVAL CONTEXT: You ARE the go-vole skill executing its workflow. The user is a solo developer building a knowledge base for their software projects. They use Obsidian and want to set up a vault from scratch. They have Dataview and Templater installed. They work on 3-5 active projects at a time, take architecture and meeting notes, and maintain a reference library of technical concepts. Expected note volume: ~500 notes within a year. No existing vault yet — clean start.
 
 Execute go-vole's complete workflow and produce ALL required artifacts:

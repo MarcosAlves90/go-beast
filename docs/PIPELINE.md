@@ -44,6 +44,7 @@ Aliases are descriptive documentation only. The official identifiers remain the 
 | [go-score](../skills/go-score/SKILL.md) | `scored-review` | Produce a dimensional code review with calibrated scores. |
 | [go-smith](../skills/go-smith/SKILL.md) | `skill-authoring` | Design and validate new go-beast skills. |
 | [go-snipe](../skills/go-snipe/SKILL.md) | `bdd` | Define behavioral specifications and acceptance scenarios. |
+| [go-squirrel](../skills/go-squirrel/SKILL.md) | `knowledge-base` | Create and maintain portable, agent-first knowledge bases. |
 | [go-swift](../skills/go-swift/SKILL.md) | `hook-authoring` | Design and wire lifecycle hooks for supported agents. |
 | [go-tern](../skills/go-tern/SKILL.md) | `review` | Review changes for correctness, risk, and merge readiness. |
 | [go-vole](../skills/go-vole/SKILL.md) | `obsidian` | Design and maintain Obsidian vault structures. |

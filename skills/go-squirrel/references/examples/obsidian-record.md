@@ -1,0 +1,37 @@
+---
+kind: record
+schema_version: 1.0
+id: cache-decision
+title: Use bounded cache invalidation
+record_type: decision
+status: active
+audience: both
+summary: Invalidate by deployment version rather than time alone.
+content: Use the deployment version as the cache namespace.
+tags: [architecture, caching]
+aliases: [cache namespace]
+references: [records/deployment-fact.md]
+sources: [docs/architecture.md]
+epistemic_status: sourced
+confidence: 0.95
+priority: high
+retrieval_hints: [cache, invalidation, deployment]
+created_at: 2026-09-13T10:00:00Z
+updated_at: 2026-09-13T10:00:00Z
+verified_at: 2026-09-13T10:00:00Z
+provenance:
+  - origin: human
+    actor: maintainer
+    source: docs/architecture.md
+    captured_at: 2026-09-13T10:00:00Z
+    note: Confirmed during architecture review.
+history: []
+---
+
+## Content
+
+Use the deployment version as the cache namespace.
+
+## References
+
+See [[records/deployment-fact|Deployments have immutable versions]].

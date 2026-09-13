@@ -657,6 +657,38 @@
       ],
       "conflicts_with": []
     },
+    "go-squirrel": {
+      "alias": "knowledge-base",
+      "description": "Create and maintain portable, agent-first knowledge bases.",
+      "phase": "knowledge",
+      "when_to_use": [
+        "Durable agent context or future reference needs a searchable source of truth"
+      ],
+      "prerequisites": [
+        "Project or research context"
+      ],
+      "input_artifacts": [
+        "Project context or source material"
+      ],
+      "output_artifacts": [
+        "KB_SPEC.md",
+        "INDEX.<ext>",
+        "MANIFEST.<ext>",
+        "records/<id>.<ext>",
+        "CONTEXT_PACKET.<ext>",
+        "KB_VALIDATION.md"
+      ],
+      "gates": [
+        "One semantic model",
+        "explicit provenance",
+        "resolved references",
+        "bounded retrieval context"
+      ],
+      "depends_on": [
+        "go-mole or go-hawk"
+      ],
+      "conflicts_with": []
+    },
     "go-swift": {
       "alias": "hook-authoring",
       "description": "Design and wire lifecycle hooks for supported agents.",

@@ -2,7 +2,7 @@
 
 ```text
 name:    go-beast
-version: 1.54.0
+version: 1.56.0
 date:    2026-09-13
 author:  MarcosAlves90
 type:    skill-pack
@@ -148,6 +148,7 @@ go-mule    ← explicit go-beast initialization; invoke before go-mole when Sess
 go-jay     ← AI context files; invoke when instructions cannot express the needed behavior
   └─► go-swift   ← hook automation; invoke after go-jay when shell-level automation is needed
         └─► go-raven  ← includes hooks in CI/CD and onboarding scripts
+go-squirrel ← portable agent knowledge bases; invoke when durable context needs a linked, validated source of truth
 go-chat    ← technical conversation; invoke when thinking is the work — before requirements are formal, before options are identified, before a beast is ready
 go-smith   ← skill authoring; invoke when a pack gap is identified
 go-tern    ← code review; invoke after implementation and before merge or handoff

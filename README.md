@@ -9,7 +9,7 @@ Each `go-<animal>` skill owns one phase, states its prerequisites, and produces
 concrete artifacts for the next phase. Skills are plain Markdown and work with
 Claude Code, Codex, Copilot, Cursor, Gemini, and other agents.
 
-**Version 1.54.0** · [Changelog](CHANGELOG.md)
+**Version 1.56.0** · [Changelog](CHANGELOG.md)
 
 ## Start here
 
@@ -63,6 +63,12 @@ machines, and named presets capture an agent's skill and hook policy. Use
 - Optional Claude Code, Codex, and Copilot CLI hooks and workflows.
 - A plugin adapter under `plugins/go-beast/`; canonical skills remain under
   `skills/`.
+
+| Knowledge need | Beast |
+|---|---|
+| Portable, provenance-aware agent knowledge bases in Markdown, JSON, or TOON | `go-squirrel` |
+| Obsidian vault structure, PKM navigation, and vault plugins | `go-vole` |
+| Agent instruction and memory files such as `AGENTS.md` or `CLAUDE.md` | `go-jay` |
 
 Browse the [skill pipeline and catalog](docs/PIPELINE.md), or jump directly to
 the [installation guide](docs/GETTING_STARTED.md), [validation contract](docs/TESTING.md),

@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MarcosAlves90/go-beast/schemas/kb-record.schema.json",
+  "title": "go-squirrel knowledge base record",
+  "description": "The portable semantic envelope for one go-squirrel record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "id",
+    "title",
+    "record_type",
+    "status",
+    "audience",
+    "summary",
+    "content",
+    "tags",
+    "aliases",
+    "references",
+    "sources",
+    "epistemic_status",
+    "confidence",
+    "priority",
+    "retrieval_hints",
+    "created_at",
+    "updated_at",
+    "verified_at",
+    "provenance"
+  ],
+  "properties": {
+    "kind": { "const": "record" },
+    "schema_version": { "const": "1.0" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "record_type": {
+      "type": "string",
+      "enum": ["fact", "decision", "hypothesis", "procedure", "reference", "session", "task", "concept"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "draft", "stale", "deprecated", "archived"]
+    },
+    "audience": { "type": "string", "enum": ["agent", "human", "both"] },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "content": { "type": "string", "minLength": 1 },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$" },
+      "uniqueItems": true
+    },
+    "aliases": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "references": {
+      "type": "array",
+      "description": "Stable local IDs or root-relative paths; no absolute or parent-escaping paths.",
+      "items": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._~:/#?=%-]+$"
+      },
+      "uniqueItems": true
+    },
+    "sources": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "epistemic_status": {
+      "type": "string",
+      "enum": ["observed", "sourced", "inferred", "hypothesis", "unknown", "disputed"]
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "priority": { "type": "string", "enum": ["low", "normal", "high", "critical"] },
+    "retrieval_hints": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "verified_at": {
+      "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }]
+    },
+    "provenance": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/provenance" }
+    },
+    "history": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/history" }
+    }
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "captured_at"],
+      "properties": {
+        "origin": { "type": "string", "enum": ["human", "agent", "import", "tool", "external"] },
+        "actor": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "captured_at": { "type": "string", "format": "date-time" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "changed_at", "change"],
+      "properties": {
+        "version": { "type": "integer", "minimum": 1 },
+        "changed_at": { "type": "string", "format": "date-time" },
+        "change": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

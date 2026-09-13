@@ -1,0 +1,24 @@
+toon_spec_version: 4.1
+kind: record
+schema_version: 1.0
+id: cache-decision
+title: Use bounded cache invalidation
+record_type: decision
+status: active
+audience: both
+summary: Invalidate by deployment version rather than time alone.
+content: Use the deployment version as the cache namespace.
+tags[2]: architecture,caching
+aliases[1]: cache namespace
+references[1]: records/deployment-fact.toon
+sources[1]: docs/architecture.md
+epistemic_status: sourced
+confidence: 0.95
+priority: high
+retrieval_hints[3]: cache,invalidation,deployment
+created_at: 2026-09-13T10:00:00Z
+updated_at: 2026-09-13T10:00:00Z
+verified_at: 2026-09-13T10:00:00Z
+provenance[1]{origin,actor,source,captured_at,note}:
+  human,maintainer,docs/architecture.md,2026-09-13T10:00:00Z,Confirmed during architecture review.
+history[0]{version,changed_at,change,reason}:

@@ -9,6 +9,20 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.56.0] - 2026-09-13
+
+### Added
+
+- **go-squirrel/SKILL.md** (v1.0.0 → v1.1.0): add a native execution protocol and deterministic helper for initializing, authoring, retrieving, and validating Markdown knowledge bases without fragile wrappers.
+
+## [1.55.0] - 2026-09-13
+
+### Added
+
+- **agent knowledge bases:** add `go-squirrel` with a portable semantic record
+  standard, Markdown/Obsidian/JSON/TOON projections, provenance-aware graph
+  rules, bounded context packets, and validation fixtures.
+
 ## [1.54.0] - 2026-09-13
 
 ### Changed
