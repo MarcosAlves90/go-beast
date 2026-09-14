@@ -34,6 +34,7 @@ go-beast/
 ├── CHANGELOG.md           ← Version history
 ├── go-beast.manifest.yaml ← Canonical transversal rules manifest
 ├── go-beast.manifest.schema.json ← Structural contract for the manifest
+├── go-beast.capabilities.schema.json ← Versioned v2 capability registry contract
 ├── go-beast.workflow.schema.json ← Structural contract for workflow manifests
 ├── release-certificate.json ← Signed-style release attestation for the latest cut
 ├── package.json           ← Package metadata and maintenance scripts
@@ -60,6 +61,12 @@ go-beast/
 │       ├── ADR-004-delivery-controller.md ← Strict delivery controller architecture decision
 │       ├── ADR-005-behavioral-conformance.md ← Harness-neutral conformance architecture decision
 │       ├── ADR-006-runtime-policy-gate.md ← Shared runtime policy gate architecture decision
+│       ├── GO_BEAST_V2_ROADMAP.md ← Prioritized v2 implementation slices and release gates
+│       ├── task-artifacts/       ← v2 ADR, stack, diagram, and interface contracts
+│       │   ├── ADR.md
+│       │   ├── STACK.md
+│       │   ├── DIAGRAM.md
+│       │   └── CONTRACTS.md
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Maintainer guide for global, bootstrap, and repo-local instruction layering
 │       ├── TRANSVERSAL_RULES.md ← Generated transversal rules reference
 │       ├── transversal-rules-index.json ← Generated validator-facing manifest index
@@ -86,6 +93,7 @@ go-beast/
 │   ├── install.mjs            ← Cross-platform installer (Node.js 18+, no deps)
 │   ├── prepare-release.mjs     ← Generates release PR version and changelog surfaces
 │   ├── release-version.mjs    ← Canonical release/versioning contract: check and cut releases from package.json
+│   ├── capabilities.mjs       ← Deterministic v2 capability registry compiler and CLI
 │   ├── delivery.mjs            ← Strict delivery route planner and workflow-engine adapter
 │   ├── conformance.mjs         ← Harness adapters and delivery trace conformance checker
 │   ├── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
@@ -95,6 +103,7 @@ go-beast/
 │   ├── helpers.sh             ← Shared shell assertions for integration tests
 │   ├── claude-code/           ← Claude Code real-session integration tests
 │   ├── codex/                 ← Codex real-session integration tests
+│   ├── architecture/          ← Architecture artifact checks
 │   └── plugin/                ← Plugin bundle, integration profile, and shell checks
 └── hooks/
     ├── manifest.json             ← Shared hook manifest for Claude Code, Codex, and Copilot CLI

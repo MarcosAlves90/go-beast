@@ -9,6 +9,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **v2 capability registry:** add a versioned schema, deterministic compiler,
+  compatibility validator, and `go-beast capabilities` inspection commands
+  for skills, hooks, workflows, profiles, and lifecycle adapters.
+
 ## [1.56.0] - 2026-09-13
 
 ### Added

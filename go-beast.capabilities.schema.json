@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Go Beast v2 capability registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_from", "capabilities"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 2 },
+    "generated_from": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capability" },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "version",
+        "phase",
+        "depends_on",
+        "conflicts_with",
+        "inputs",
+        "outputs",
+        "permissions",
+        "risk",
+        "supports",
+        "source",
+        "deprecated"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9._:-]*$" },
+        "kind": { "enum": ["skill", "hook", "workflow", "profile", "adapter"] },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "phase": { "type": "string", "minLength": 1 },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "conflicts_with": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "inputs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "permissions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "risk": { "enum": ["low", "medium", "high"] },
+        "supports": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" },
+          "minProperties": 1
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+        },
+        "deprecated": { "type": "boolean" }
+      }
+    }
+  }
+}

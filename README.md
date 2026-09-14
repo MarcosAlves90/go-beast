@@ -154,6 +154,21 @@ only describes the declared trace; normalization does not prove hidden agent
 intent and verification does not replace tests, security review, or human
 judgment.
 
+The v2 capability registry exposes a deterministic structural view of the
+canonical skills, hooks, workflows, profiles, and lifecycle adapters. It is
+metadata-only and does not execute any registered asset:
+
+```bash
+go-beast capabilities validate --format text
+go-beast capabilities list --kind skill --format json
+go-beast capabilities show go-hawk --format json
+go-beast capabilities export --output ./go-beast-capabilities.json
+```
+
+Validate an exported or externally supplied registry with
+`go-beast capabilities validate --input PATH`; malformed references and unsafe
+source paths fail closed.
+
 Lifecycle adapters share one runtime policy for active-beast applicability,
 required artifacts, approvals, implementation unlock, and completion evidence.
 See [ADR-006](docs/architecture/ADR-006-runtime-policy-gate.md).
