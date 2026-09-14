@@ -23,6 +23,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **v2 validation baseline:** add deterministic P0 unit coverage, fixtures for
   all supported adapters, a separate live-agent matrix, and documented
   baseline metrics and limitations.
+- **v2 transactional installer:** add permission preview, dry-run, per-asset
+  integrity metadata, fail-closed verification, persisted rollback, and a
+  recoverable release-archive pointer swap while preserving unmanaged targets.
 
 ## [1.56.0] - 2026-09-13
 

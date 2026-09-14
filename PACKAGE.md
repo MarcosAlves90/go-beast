@@ -63,6 +63,7 @@ go-beast/
 │       ├── ADR-004-delivery-controller.md ← Strict delivery controller architecture decision
 │       ├── ADR-005-behavioral-conformance.md ← Harness-neutral conformance architecture decision
 │       ├── ADR-006-runtime-policy-gate.md ← Shared runtime policy gate architecture decision
+│       ├── ADR-007-transactional-installation.md ← Transactional install, integrity, and rollback decision
 │       ├── GO_BEAST_V2_ROADMAP.md ← Prioritized v2 implementation slices and release gates
 │       ├── V2_VALIDATION_BASELINE.md ← Measured v2 deterministic/live validation baseline
 │       ├── task-artifacts/       ← v2 ADR, stack, diagram, and interface contracts
@@ -100,6 +101,7 @@ go-beast/
 │   ├── profile-resolver.mjs    ← Global/project/session effective profile resolver
 │   ├── doctor.mjs              ← Read-only v2 profile diagnostic CLI
 │   ├── evidence.mjs            ← Append-only v2 provenance ledger and audit CLI
+│   ├── install-transaction.mjs  ← Install plan, integrity manifest, and rollback boundary
 │   ├── delivery.mjs            ← Strict delivery route planner and workflow-engine adapter
 │   ├── conformance.mjs         ← Harness adapters and delivery trace conformance checker
 │   ├── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks

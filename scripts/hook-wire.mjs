@@ -2,8 +2,9 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { fileURLToPath } from 'url'
 
-const REPO = path.resolve(import.meta.dirname, '..')
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const HOME = os.homedir()
 
 // Copilot CLI uses camelCase event names and a flat entry format (no `hooks` wrapper).

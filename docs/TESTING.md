@@ -73,3 +73,9 @@ The existing `go-skill-eval` and `go-hook-eval` workflows are agent-dependent
 LLM evaluations and are not silently folded into `npm run verify`. See the
 [v2 validation baseline](architecture/V2_VALIDATION_BASELINE.md) for measured
 results and residual limitations.
+
+The installation regression suite also covers permission preview, dry-run
+non-mutation, per-asset integrity metadata, tamper rejection, unmanaged-file
+preservation, failed-transaction rollback, explicit rollback, and upgrade
+records. Archive-source pointer replacement is tested separately by the
+release-archive installation suite.

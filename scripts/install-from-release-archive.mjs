@@ -288,15 +288,34 @@ function updateCurrentPointer(versionDir) {
   fs.mkdirSync(path.dirname(CURRENT_ROOT), { recursive: true })
 
   const tempLink = path.join(path.dirname(CURRENT_ROOT), `.current.tmp-${process.pid}-${Date.now()}`)
+  const previousLink = path.join(path.dirname(CURRENT_ROOT), `.current.previous-${process.pid}-${Date.now()}`)
   fs.rmSync(tempLink, { recursive: true, force: true })
+  fs.rmSync(previousLink, { recursive: true, force: true })
   fs.symlinkSync(versionDir, tempLink, 'dir')
 
+  let hadCurrent = false
   try {
+    fs.lstatSync(CURRENT_ROOT)
+    hadCurrent = true
+  } catch (error) {
+    if (error?.code !== 'ENOENT') fail(`Failed to inspect the current release source pointer: ${error.message}`)
+  }
+
+  try {
+    if (hadCurrent) fs.renameSync(CURRENT_ROOT, previousLink)
     fs.renameSync(tempLink, CURRENT_ROOT)
   } catch (error) {
-    fs.rmSync(CURRENT_ROOT, { recursive: true, force: true })
-    fs.renameSync(tempLink, CURRENT_ROOT)
+    try { fs.rmSync(tempLink, { recursive: true, force: true }) } catch {}
+    try {
+      if (hadCurrent && fs.existsSync(previousLink)) fs.renameSync(previousLink, CURRENT_ROOT)
+    } catch (restoreError) {
+      fail(`Failed to replace release source pointer and restore the previous pointer: ${restoreError.message}`)
+    }
+    fail(`Failed to replace release source pointer: ${error.message}`)
   }
+  // Keep the previous pointer only for the duration of the swap. The versioned
+  // source directory remains available for a future explicit reinstall.
+  fs.rmSync(previousLink, { recursive: true, force: true })
 }
 
 async function main() {
