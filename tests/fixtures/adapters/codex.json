@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "harness": "codex",
+  "kind": "feature",
+  "events": [
+    {
+      "event": "skill",
+      "phase": "discovery",
+      "skill": "go-hawk"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "harness": "claude-code",
+  "kind": "feature",
+  "events": [
+    {
+      "event": "skill",
+      "phase": "discovery",
+      "skill": "go-hawk"
+    }
+  ]
+}

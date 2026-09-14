@@ -64,6 +64,7 @@ go-beast/
 │       ├── ADR-005-behavioral-conformance.md ← Harness-neutral conformance architecture decision
 │       ├── ADR-006-runtime-policy-gate.md ← Shared runtime policy gate architecture decision
 │       ├── GO_BEAST_V2_ROADMAP.md ← Prioritized v2 implementation slices and release gates
+│       ├── V2_VALIDATION_BASELINE.md ← Measured v2 deterministic/live validation baseline
 │       ├── task-artifacts/       ← v2 ADR, stack, diagram, and interface contracts
 │       │   ├── ADR.md
 │       │   ├── STACK.md
@@ -106,6 +107,9 @@ go-beast/
 │   └── workflow.mjs           ← Optional workflow state-machine coordinator
 ├── tests/
 │   ├── helpers.sh             ← Shared shell assertions for integration tests
+│   ├── fixtures/adapters/     ← Harness-neutral adapter input fixtures
+│   ├── unit/                  ← Deterministic Node unit tests for P0 modules
+│   ├── live/                  ← Live-agent regression matrix inventory
 │   ├── claude-code/           ← Claude Code real-session integration tests
 │   ├── codex/                 ← Codex real-session integration tests
 │   ├── architecture/          ← Architecture artifact checks

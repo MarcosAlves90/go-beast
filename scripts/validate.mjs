@@ -53,6 +53,21 @@ function shellFiles(directory) {
   return files.sort()
 }
 
+function nodeTestFiles(directory) {
+  const files = []
+  const visit = current => {
+    const absolute = path.join(repoRoot, current)
+    if (!fs.existsSync(absolute)) return
+    for (const entry of fs.readdirSync(absolute, { withFileTypes: true })) {
+      const relative = path.join(current, entry.name)
+      if (entry.isDirectory()) visit(relative)
+      else if (entry.isFile() && entry.name.endsWith('.test.mjs')) files.push(relative)
+    }
+  }
+  visit(directory)
+  return files.sort()
+}
+
 function runDirectorySuite(label, directory) {
   for (const file of shellFiles(directory)) {
     const status = run(`${label}: ${file}`, 'bash', [file])
@@ -84,8 +99,14 @@ function runTests() {
   return 0
 }
 
+function runUnitTests() {
+  const files = nodeTestFiles('tests/unit')
+  if (files.length === 0) return 0
+  return run('unit tests', process.execPath, ['--test', ...files])
+}
+
 function runLiveTests() {
-  for (const directory of ['tests/claude-code', 'tests/codex', 'tests/copilot']) {
+  for (const directory of ['tests/live', 'tests/claude-code', 'tests/codex', 'tests/copilot']) {
     const status = runDirectorySuite('live tests', directory)
     if (status !== 0) return status
   }
@@ -102,9 +123,14 @@ if (mode === 'test:live') {
 }
 
 const initialStatus = mode === 'verify' ? gitStatus() : null
-const status = mode === 'lint' ? runLint() : mode === 'test' ? runTests() : (() => {
+const status = mode === 'lint' ? runLint() : mode === 'test' ? (() => {
+  const testStatus = runTests()
+  return testStatus === 0 ? runUnitTests() : testStatus
+})() : (() => {
   const lintStatus = runLint()
-  return lintStatus === 0 ? runTests() : lintStatus
+  if (lintStatus !== 0) return lintStatus
+  const testStatus = runTests()
+  return testStatus === 0 ? runUnitTests() : testStatus
 })()
 
 if (status !== 0) process.exit(status)

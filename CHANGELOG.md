@@ -20,6 +20,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **v2 evidence ledger:** add an append-only, hash-linked event envelope with
   command and artifact provenance, trust-state auditing, adapter validation,
   tamper detection, and protocol verification through `go-beast evidence`.
+- **v2 validation baseline:** add deterministic P0 unit coverage, fixtures for
+  all supported adapters, a separate live-agent matrix, and documented
+  baseline metrics and limitations.
 
 ## [1.56.0] - 2026-09-13
 
