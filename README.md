@@ -176,6 +176,25 @@ Validate an exported or externally supplied registry with
 `go-beast capabilities validate --input PATH`; malformed references and unsafe
 source paths fail closed.
 
+The v2 evidence ledger records an append-only, hash-linked account of workflow
+events. It keeps command and artifact digests, source adapter identity, and the
+distinction between declared, observed, and verified evidence. It does not
+store raw command output or treat a digest as authorization:
+
+```bash
+go-beast evidence init --output .go-beast/evidence.json \
+  --task task-123 --harness codex --adapter go-beast-codex
+go-beast evidence append --ledger .go-beast/evidence.json \
+  --event .go-beast/events/implementation.json
+go-beast evidence verify --ledger .go-beast/evidence.json --protocol --format json
+go-beast evidence audit --ledger .go-beast/evidence.json --format json
+```
+
+`verify` detects altered events, broken sequence links, unsafe artifact paths,
+and unsupported adapter claims. With `--protocol`, it reuses the v1
+harness-neutral conformance rules, preserving compatibility while making
+provenance auditable.
+
 Lifecycle adapters share one runtime policy for active-beast applicability,
 required artifacts, approvals, implementation unlock, and completion evidence.
 See [ADR-006](docs/architecture/ADR-006-runtime-policy-gate.md).

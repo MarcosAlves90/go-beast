@@ -36,6 +36,7 @@ go-beast/
 ├── go-beast.manifest.schema.json ← Structural contract for the manifest
 ├── go-beast.capabilities.schema.json ← Versioned v2 capability registry contract
 ├── go-beast.profile.schema.json ← Versioned v2 layered profile contract
+├── go-beast.evidence.schema.json ← Versioned v2 append-only evidence ledger contract
 ├── go-beast.workflow.schema.json ← Structural contract for workflow manifests
 ├── release-certificate.json ← Signed-style release attestation for the latest cut
 ├── package.json           ← Package metadata and maintenance scripts
@@ -97,6 +98,7 @@ go-beast/
 │   ├── capabilities.mjs       ← Deterministic v2 capability registry compiler and CLI
 │   ├── profile-resolver.mjs    ← Global/project/session effective profile resolver
 │   ├── doctor.mjs              ← Read-only v2 profile diagnostic CLI
+│   ├── evidence.mjs            ← Append-only v2 provenance ledger and audit CLI
 │   ├── delivery.mjs            ← Strict delivery route planner and workflow-engine adapter
 │   ├── conformance.mjs         ← Harness adapters and delivery trace conformance checker
 │   ├── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks

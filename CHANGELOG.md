@@ -17,6 +17,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **v2 profile resolver:** add global/project/session precedence, v1-compatible
   profile loading, and a read-only `go-beast doctor` report with provenance,
   gaps, conflicts, ownership, and exact dry-run mutations.
+- **v2 evidence ledger:** add an append-only, hash-linked event envelope with
+  command and artifact provenance, trust-state auditing, adapter validation,
+  tamper detection, and protocol verification through `go-beast evidence`.
 
 ## [1.56.0] - 2026-09-13
 
