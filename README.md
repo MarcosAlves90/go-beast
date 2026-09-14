@@ -47,6 +47,7 @@ go-beast integration export --agent codex --output ./codex-profile.json
 go-beast integration import --agent codex --input ./codex-profile.json --dry-run
 go-beast integration preset save minimal --agent codex
 go-beast integration preset apply minimal --agent codex
+go-beast doctor --agent codex --project . --session current --format json
 ```
 
 Selections are persisted in `~/.go-beast/config.json`. Session-start sync
@@ -55,6 +56,12 @@ untouched. Status reports desired state, installation ownership, dependency
 gaps, conflicts, and blocked assets. Profiles can be exported/imported between
 machines, and named presets capture an agent's skill and hook policy. Use
 `--dry-run` to inspect a change before applying it.
+
+The v2 doctor resolves the global v1-compatible profile, optional project
+`.go-beast/profile.json`, and optional session
+`.go-beast/sessions/<id>.json` in that order. It reports provenance,
+capability gaps, conflicts, ownership, blocked assets, and exact reconciliation
+mutations without writing files.
 
 ## What is included
 

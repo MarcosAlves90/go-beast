@@ -14,6 +14,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **v2 capability registry:** add a versioned schema, deterministic compiler,
   compatibility validator, and `go-beast capabilities` inspection commands
   for skills, hooks, workflows, profiles, and lifecycle adapters.
+- **v2 profile resolver:** add global/project/session precedence, v1-compatible
+  profile loading, and a read-only `go-beast doctor` report with provenance,
+  gaps, conflicts, ownership, and exact dry-run mutations.
 
 ## [1.56.0] - 2026-09-13
 

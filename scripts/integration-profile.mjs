@@ -1299,6 +1299,7 @@ export {
   configureAgent,
   deletePreset,
   exportProfile,
+  hookNames,
   importProfile,
   loadProfile,
   listPresets,
@@ -1308,6 +1309,7 @@ export {
   profilePath,
   reconcileAgent,
   savePreset,
+  skillNames,
   statusAgent,
   sync,
 }
