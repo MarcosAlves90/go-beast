@@ -43,6 +43,25 @@ explicit so the core checker has no dependency on Claude Code, Codex, or
 Copilot APIs. Unsupported harnesses, malformed traces, and unsupported raw
 event types fail closed.
 
+## v2 evidence ledger
+
+The v2 control plane adds `go-beast.evidence.schema.json` and
+`scripts/evidence.mjs` as an append-only evidence layer around the existing
+checker. Each event carries a task and source identity, actor, payload,
+provenance, trust status, timestamp, sequence number, previous hash, and its
+own SHA-256 hash. The CLI assigns sequence and hash fields when appending, so
+an append cannot rewrite earlier event bytes or hashes.
+
+The ledger accepts only the exact adapter declared for a supported harness
+(`go-beast-claude-code`, `go-beast-codex`, or `go-beast-copilot`). Command
+provenance stores stdout and stderr digests rather than raw output. Artifact
+provenance is repository-relative and rejects traversal or absolute paths.
+`audit` reports trust and provenance counts separately, while
+`verify --protocol` projects the ledger into the v1 canonical trace and runs the same
+ordering and prerequisite checks. This keeps v1 traces compatible without
+allowing a v2 evidence record to change runtime policy or impersonate an
+authorization decision.
+
 ## Consequences
 
 ### Benefits

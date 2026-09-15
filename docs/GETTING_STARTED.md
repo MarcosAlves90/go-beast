@@ -25,10 +25,29 @@ hooks, workflows, and global instructions. For a non-interactive installation:
 node <repo-dir>/scripts/install.mjs --all
 node <repo-dir>/scripts/install.mjs --all --bootstrap
 node <repo-dir>/scripts/install.mjs --uninstall
+
+# Inspect or simulate the installation before changing the home directory
+node <repo-dir>/scripts/install.mjs --all --permission-preview
+node <repo-dir>/scripts/install.mjs --all --dry-run
+
+# Verify source assets before installing, or roll back the latest transaction
+node <repo-dir>/scripts/install.mjs --all --verify-integrity
+node <repo-dir>/scripts/install.mjs --rollback
 ```
 
 `--bootstrap` installs the stricter discovery-first instructions. `--uninstall`
 removes links that point back to the checkout.
+
+`--permission-preview` reports the managed paths and required write locations
+without mutating them. `--dry-run` evaluates the same selection and mutation
+plan without creating links, configuration, or transaction state. A committed
+installation records per-asset SHA-256, size, file count, source, kind, and
+agent metadata in `~/.go-beast/install-manifest.json`. `--verify-integrity`
+checks that manifest before any installation mutation and fails closed when an
+asset has changed. Each mutating installation also persists a transaction under
+`~/.go-beast/install-transactions/`; `--rollback` restores the latest recorded
+state. Files and directories not owned by go-beast remain unmanaged and are
+preserved.
 
 The installer records the selected integration policy in
 `~/.go-beast/config.json`. You can change individual skills and hooks later
@@ -94,7 +113,9 @@ release, extracts a versioned archive under `~/.go-beast/source/`, and runs the
 canonical installer, which prompts for agents, skills, hooks, and workflows. Use
 `--all` when prompts are not desired. Use `--archive-url <url>` or
 `--archive <path>` to provide the archive directly. Re-running the command
-updates the active source pointer without manual cleanup.
+updates the active source pointer without manual cleanup. The pointer replacement
+is staged through a temporary symlink and restores the previous pointer if the
+swap fails.
 
 ## Agent setup
 
@@ -102,6 +123,10 @@ The installer writes only the selected agent integrations and preserves
 existing configuration. Claude Code uses `~/.claude/settings.json`; Codex uses
 `~/.codex/hooks.json` or inline `[hooks]` configuration; Copilot CLI uses JSON
 files under `~/.copilot/hooks/`.
+
+The local install manifest is an integrity and recovery aid, not a signed
+release attestation. Trust the release archive and its published checksums when
+authenticity of the source itself matters.
 
 To wire the session-start sync manually:
 

@@ -1,0 +1,92 @@
+{
+  "schema_version": 2,
+  "contract_version": 2,
+  "generated_from": [
+    "hooks/manifest.json",
+    "scripts/hook-wire.mjs",
+    "scripts/conformance.mjs"
+  ],
+  "adapters": [
+    {
+      "id": "go-beast-claude-code",
+      "harness": "claude-code",
+      "contract_version": 2,
+      "capabilities": ["configuration", "hooks", "install", "lifecycle-events", "prompt-context", "skills", "tool-events"],
+      "events": {
+        "session_start": {"native": "SessionStart", "canonical": "session-start", "supported": true},
+        "user_prompt_submit": {"native": "UserPromptSubmit", "canonical": "user-prompt-submit", "supported": true},
+        "stop": {"native": "Stop", "canonical": "stop", "supported": true},
+        "pre_tool_use": {"native": "PreToolUse", "canonical": "pre-tool-use", "supported": true},
+        "post_tool_use": {"native": "PostToolUse", "canonical": "post-tool-use", "supported": true}
+      },
+      "config_paths": ["~/.claude/settings.json"],
+      "install": {
+        "hook_dir": "~/.claude/hooks",
+        "config_path": "~/.claude/settings.json",
+        "native_format": "claude",
+        "preserves_unmanaged": true
+      },
+      "degradation": [
+        {"capability": "tool-events", "when": "native payload omits tool metadata", "behavior": "continue with lifecycle-only evidence and report the missing tool fields"},
+        {"capability": "prompt-context", "when": "native prompt context injection is unavailable", "behavior": "fall back to Markdown instructions and report the adapter limitation"}
+      ],
+      "compatibility": {"contract_range": "^2.0.0", "min_node": "18", "trace_version": 1},
+      "ownership": {"managed_by": "go-beast", "key_strategy": "event+matcher+command", "preserves_unmanaged": true},
+      "source": "scripts/hook-wire.mjs"
+    },
+    {
+      "id": "go-beast-codex",
+      "harness": "codex",
+      "contract_version": 2,
+      "capabilities": ["configuration", "hooks", "install", "lifecycle-events", "prompt-context", "skills", "tool-events"],
+      "events": {
+        "session_start": {"native": "SessionStart", "canonical": "session-start", "supported": true},
+        "user_prompt_submit": {"native": "UserPromptSubmit", "canonical": "user-prompt-submit", "supported": true},
+        "stop": {"native": "Stop", "canonical": "stop", "supported": true},
+        "pre_tool_use": {"native": "PreToolUse", "canonical": "pre-tool-use", "supported": true},
+        "post_tool_use": {"native": "PostToolUse", "canonical": "post-tool-use", "supported": true}
+      },
+      "config_paths": ["~/.codex/hooks.json"],
+      "install": {
+        "hook_dir": "~/.codex/hooks",
+        "config_path": "~/.codex/hooks.json",
+        "native_format": "claude",
+        "preserves_unmanaged": true
+      },
+      "degradation": [
+        {"capability": "tool-events", "when": "native payload omits tool metadata", "behavior": "continue with lifecycle-only evidence and report the missing tool fields"},
+        {"capability": "prompt-context", "when": "native prompt context injection is unavailable", "behavior": "fall back to Markdown instructions and report the adapter limitation"}
+      ],
+      "compatibility": {"contract_range": "^2.0.0", "min_node": "18", "trace_version": 1},
+      "ownership": {"managed_by": "go-beast", "key_strategy": "event+matcher+command", "preserves_unmanaged": true},
+      "source": "scripts/hook-wire.mjs"
+    },
+    {
+      "id": "go-beast-copilot",
+      "harness": "copilot",
+      "contract_version": 2,
+      "capabilities": ["configuration", "hooks", "install", "lifecycle-events", "prompt-context", "skills", "tool-events"],
+      "events": {
+        "session_start": {"native": "sessionStart", "canonical": "session-start", "supported": true},
+        "user_prompt_submit": {"native": "userPromptSubmitted", "canonical": "user-prompt-submit", "supported": true},
+        "stop": {"native": "agentStop", "canonical": "stop", "supported": true},
+        "pre_tool_use": {"native": "preToolUse", "canonical": "pre-tool-use", "supported": true},
+        "post_tool_use": {"native": "postToolUse", "canonical": "post-tool-use", "supported": true}
+      },
+      "config_paths": ["~/.copilot/hooks/go-beast.json"],
+      "install": {
+        "hook_dir": "~/.copilot/hooks",
+        "config_path": "~/.copilot/hooks/go-beast.json",
+        "native_format": "copilot",
+        "preserves_unmanaged": true
+      },
+      "degradation": [
+        {"capability": "tool-events", "when": "native payload omits tool metadata", "behavior": "continue with lifecycle-only evidence and report the missing tool fields"},
+        {"capability": "prompt-context", "when": "native prompt context injection is unavailable", "behavior": "fall back to Markdown instructions and report the adapter limitation"}
+      ],
+      "compatibility": {"contract_range": "^2.0.0", "min_node": "18", "trace_version": 1},
+      "ownership": {"managed_by": "go-beast", "key_strategy": "event+matcher+command", "preserves_unmanaged": true},
+      "source": "scripts/hook-wire.mjs"
+    }
+  ]
+}

@@ -7,10 +7,19 @@ import fs   from 'fs'
 import path from 'path'
 import os   from 'os'
 import readline from 'readline'
+import { fileURLToPath } from 'url'
 import { hooksForAgent, loadHookManifest, syncAgentHooks, wireAgentConfig } from './hook-wire.mjs'
 import { configureAgent } from './integration-profile.mjs'
+import {
+  buildIntegrityManifest,
+  buildPermissionPreview,
+  createInstallTransaction,
+  rollbackLastInstall,
+  verifyIntegrityManifest,
+  writeIntegrityManifest,
+} from './install-transaction.mjs'
 
-const DEFAULT_REPO = path.resolve(import.meta.dirname, '..')
+const DEFAULT_REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const REPO   = path.resolve(process.env.GO_BEAST_INSTALL_ROOT || DEFAULT_REPO)
 const HOME   = os.homedir()
 const IS_WIN = process.platform === 'win32'
@@ -18,6 +27,7 @@ const W      = process.stdout.columns || 60
 const j      = (...p) => path.join(...p)
 const CANONICAL_SKILLS_DIR = j(REPO, 'skills')
 const BOOTSTRAP_MARKER = j(HOME, '.go-beast', 'bootstrap.enabled')
+const INSTALL_MANIFEST = j(HOME, '.go-beast', 'install-manifest.json')
 
 // ── ANSI ──────────────────────────────────────────────────────────────────────
 const TTY = process.stdout.isTTY && (!IS_WIN || process.env.WT_SESSION || process.env.TERM)
@@ -102,6 +112,63 @@ const collectSkills    = () => fs.readdirSync(CANONICAL_SKILLS_DIR).filter(n => 
 const HOOK_MANIFEST = loadHookManifest(REPO)
 const collectHooks     = () => HOOK_MANIFEST.map(h => h.name).sort()
 const collectWorkflows = () => fs.readdirSync(j(REPO,'workflows')).filter(n => n.endsWith('.js')).sort()
+
+function packageVersion() {
+  try { return JSON.parse(fs.readFileSync(j(REPO, 'package.json'), 'utf8')).version ?? null } catch { return null }
+}
+
+function installTargets({ selAgents, selSkills, hookAgents, selHooks, cc, selWorkflows }) {
+  const targets = []
+  for (const agent of selAgents) {
+    for (const skill of selSkills) targets.push({ target: j(agent.skills, skill), action: 'skill' })
+    if (agent.globalMd) targets.push({ target: agent.globalMd, action: 'global-instructions' })
+  }
+  for (const agent of hookAgents) {
+    for (const hook of collectHooks()) targets.push({ target: j(agent.hooks, hook), action: selHooks.includes(hook) ? 'hook-create' : 'hook-remove' })
+    if (agent.hookConfig) targets.push({ target: agent.hookConfig, action: 'hook-config' })
+  }
+  if (cc) for (const workflow of selWorkflows) targets.push({ target: j(cc.workflows, workflow), action: 'workflow' })
+  targets.push({ target: j(HOME, '.go-beast', 'config.json'), action: 'profile' })
+  targets.push({ target: BOOTSTRAP_MARKER, action: 'bootstrap-marker' })
+  targets.push({ target: INSTALL_MANIFEST, action: 'integrity-manifest' })
+  const seen = new Set()
+  return targets.filter(item => {
+    const resolved = path.resolve(item.target)
+    if (seen.has(resolved)) return false
+    seen.add(resolved)
+    return true
+  })
+}
+
+function installAssets({ selAgents, selSkills, hookAgents, selHooks, cc, selWorkflows, globalSrc }) {
+  const assets = []
+  for (const agent of selAgents) {
+    for (const skill of selSkills) assets.push({ agent: agent.name, kind: 'skill', name: skill, source: j(CANONICAL_SKILLS_DIR, skill) })
+    if (agent.globalMd) assets.push({ agent: agent.name, kind: 'instructions', name: path.basename(globalSrc), source: globalSrc })
+  }
+  for (const agent of hookAgents) {
+    for (const hook of selHooks) assets.push({ agent: agent.name, kind: 'hook', name: hook, source: j(REPO, 'hooks', hook) })
+  }
+  if (cc) for (const workflow of selWorkflows) assets.push({ agent: cc.name, kind: 'workflow', name: workflow, source: j(REPO, 'workflows', workflow) })
+  return assets
+}
+
+function printPermissionPreview(report) {
+  section('Permission preview')
+  ln(`  home       ${report.home}`)
+  ln(`  targets    ${report.targets.length}`)
+  for (const target of report.targets) ln(`  ${target.action.padEnd(20)} ${target.state.padEnd(10)} ${target.target}`)
+}
+
+function printDryRun(report) {
+  section('Dry-run')
+  ln(`  no files changed; ${report.targets.length} target(s) would be evaluated`)
+  for (const target of report.targets) ln(`  ${target.action.padEnd(20)} ${target.state.padEnd(10)} ${target.target}`)
+}
+
+function installFailures(results) {
+  return results.filter(result => result.ico === icon.err || result.status === 'err' || result.status === 'error')
+}
 
 // ── Symlink ───────────────────────────────────────────────────────────────────
 
@@ -279,6 +346,19 @@ async function main() {
   const flags = new Set(process.argv.slice(2))
   const installAll = flags.has('--all')
   const bootstrapFlag = flags.has('--bootstrap')
+  const dryRun = flags.has('--dry-run')
+  const permissionPreview = flags.has('--permission-preview')
+  const verifyIntegrity = flags.has('--verify-integrity')
+  if (flags.has('--rollback')) {
+    const result = rollbackLastInstall({ home: HOME })
+    ln(`Install rollback: ${result.id} restored ${result.restored} target(s)`)
+    rl.close()
+    return
+  }
+  if (verifyIntegrity) {
+    const result = verifyIntegrityManifest({ manifestPath: INSTALL_MANIFEST, repoRoot: REPO })
+    ln(`Integrity verification: PASS (${result.assets} asset(s))`)
+  }
   if (flags.has('--uninstall')) { uninstall(); rl.close(); return }
 
   // Header
@@ -360,10 +440,37 @@ async function main() {
 
   rl.close()
 
+  const targets = installTargets({ selAgents, selSkills, hookAgents, selHooks, cc, selWorkflows })
+  const preview = buildPermissionPreview({ home: HOME, targets })
+  if (permissionPreview) {
+    printPermissionPreview(preview)
+    return
+  }
+  if (dryRun) {
+    printDryRun(preview)
+    return
+  }
+
   // 6. Install
   section('Installing')
 
-  const counts = { new: 0, refreshed: 0, skip: 0, warn: 0 }
+  const globalSrc = useBootstrap ? j(REPO, 'AGENTS.bootstrap.md') : j(REPO, 'AGENTS.global.md')
+  const transactionTargets = targets.map(item => item.target)
+  let transaction = null
+
+  try {
+    transaction = createInstallTransaction({
+      home: HOME,
+      targets: transactionTargets,
+      metadata: { repository: REPO, package_version: packageVersion() },
+    })
+    const integrityManifest = buildIntegrityManifest({
+      repoRoot: REPO,
+      assets: installAssets({ selAgents, selSkills, hookAgents, selHooks, cc, selWorkflows, globalSrc }),
+      packageVersion: packageVersion(),
+      transactionId: transaction.id,
+    })
+    const counts = { new: 0, refreshed: 0, skip: 0, warn: 0 }
 
   if (selSkills.length) {
     for (const agent of selAgents) {
@@ -372,6 +479,7 @@ async function main() {
       const results = []
       for (const skill of selSkills) linkItem(j(CANONICAL_SKILLS_DIR, skill), agent.skills, results, replaceConflicts)
       printResults(results)
+      if (installFailures(results).length) throw new Error(`skill installation failed for ${agent.name}`)
       for (const r of results) {
         if (r.ico === icon.new)  counts.new++
         if (r.ico === icon.ok)   counts.refreshed++
@@ -395,6 +503,7 @@ async function main() {
         return { ico, name: result.name, note: result.note }
       })
       printResults(results)
+      if (installFailures(synced.results).length) throw new Error(`hook installation failed for ${agent.name}`)
       const wired = wireAgentConfig({ repoRoot: REPO, home: HOME, agentName: agent.name, hookNames: available.map(h => h.name) })
       if (wired.added > 0 || wired.replaced > 0) {
         ln(row(icon.ok, `${agent.name} hook config`, wired.path.replace(HOME, '~')))
@@ -414,7 +523,7 @@ async function main() {
     const selectedAgentHooks = agent.hooks
       ? hooksForAgent(HOOK_MANIFEST, agent.name, selHooks).map(hook => hook.name)
       : undefined
-    configureAgent({
+    const configured = configureAgent({
       repoRoot: REPO,
       home: HOME,
       agentName: agent.name,
@@ -423,6 +532,7 @@ async function main() {
       hookNames: selectedAgentHooks,
       hooksMode: installAll ? 'all' : 'selected',
     })
+    if (installFailures([...(configured.skills ?? []), ...(configured.hooks ?? [])]).length) throw new Error(`profile reconciliation failed for ${agent.name}`)
   }
 
   if (cc && selWorkflows.length) {
@@ -431,9 +541,9 @@ async function main() {
     const results = []
     for (const wf of selWorkflows) linkItem(j(REPO, 'workflows', wf), cc.workflows, results, replaceConflicts)
     printResults(results)
+    if (installFailures(results).length) throw new Error('workflow installation failed')
   }
 
-  const globalSrc = useBootstrap ? j(REPO, 'AGENTS.bootstrap.md') : j(REPO, 'AGENTS.global.md')
   if (fs.existsSync(globalSrc)) {
     ln(); ln(`  ${icon.link} ${bold('global instructions')}`)
     for (const agent of selAgents) {
@@ -453,6 +563,10 @@ async function main() {
     ln(row(icon.skip, 'bootstrap mode', 'disabled'))
   }
 
+  writeIntegrityManifest(INSTALL_MANIFEST, integrityManifest)
+  transaction.commit({ asset_count: integrityManifest.assets.length, manifest: INSTALL_MANIFEST })
+  ln(row(icon.ok, 'integrity manifest', INSTALL_MANIFEST.replace(HOME, '~')))
+
   // Summary box
   ln()
   box('Done', [
@@ -466,6 +580,12 @@ async function main() {
   ])
 
   ln()
+  } catch (error) {
+    let rollbackError = null
+    try { if (transaction) transaction.rollback() } catch (rollbackFailure) { rollbackError = rollbackFailure.message }
+    const suffix = rollbackError ? `; rollback failed: ${rollbackError}` : '; rollback completed'
+    throw new Error(`install transaction failed: ${error.message}${suffix}`)
+  }
 }
 
 main().catch(e => { console.error(e); process.exit(1) })

@@ -2,8 +2,8 @@
 
 ```text
 name:    go-beast
-version: 1.56.0
-date:    2026-09-13
+version: 2.0.0
+date:    2026-09-15
 author:  MarcosAlves90
 type:    skill-pack
 scope:   full-stack software development lifecycle
@@ -34,7 +34,15 @@ go-beast/
 ├── CHANGELOG.md           ← Version history
 ├── go-beast.manifest.yaml ← Canonical transversal rules manifest
 ├── go-beast.manifest.schema.json ← Structural contract for the manifest
+├── go-beast.capabilities.schema.json ← Versioned v2 capability registry contract
+├── go-beast.profile.schema.json ← Versioned v2 layered profile contract
+├── go-beast.evidence.schema.json ← Versioned v2 append-only evidence ledger contract
 ├── go-beast.workflow.schema.json ← Structural contract for workflow manifests
+├── go-beast.context.schema.json ← Versioned v2 bounded phase context packet contract
+├── go-beast.adapters.schema.json ← Versioned v2 harness adapter contract
+├── go-beast.task.schema.json ← Versioned v2 task control-plane record contract
+├── adapters/
+│   └── manifest.json            ← Claude Code, Codex, and Copilot adapter matrix
 ├── release-certificate.json ← Signed-style release attestation for the latest cut
 ├── package.json           ← Package metadata and maintenance scripts
 ├── .github/
@@ -48,6 +56,9 @@ go-beast/
 │   ├── RELEASES.md             ← Release-train preparation and publication flow
 │   ├── architecture/DECLARATIVE_ORCHESTRATION.md ← Manifest orchestration contract
 │   ├── architecture/WORKFLOW_ENGINE.md ← Optional workflow engine contract and CLI
+│   ├── architecture/CONTEXT_COMPILER.md ← Bounded phase context compiler contract
+│   ├── architecture/ADAPTER_SDK.md ← Harness adapter SDK and degradation contract
+│   ├── architecture/TASK_CLI.md ← Task-oriented v2 control-plane CLI contract
 │   ├── GETTING_STARTED.md      ← Installation and agent setup
 │   ├── HARNESS.md              ← Harness integrations and adapter boundaries
 │   ├── PIPELINE.md             ← Skill pipeline, semantic alias catalog, and workflows
@@ -60,6 +71,22 @@ go-beast/
 │       ├── ADR-004-delivery-controller.md ← Strict delivery controller architecture decision
 │       ├── ADR-005-behavioral-conformance.md ← Harness-neutral conformance architecture decision
 │       ├── ADR-006-runtime-policy-gate.md ← Shared runtime policy gate architecture decision
+│       ├── ADR-008-workflow-engine-v2.md ← Resumable routes, parallel slices, provenance, and handoffs
+│       ├── ADR-009-context-compiler.md ← Hash-verifiable phase context handoff decision
+│       ├── ADR-010-adapter-sdk.md ← Versioned harness adapter SDK decision
+│       ├── ADR-011-task-cli.md ← Task-oriented v2 control-plane CLI decision
+│       ├── ADR-007-transactional-installation.md ← Transactional install, integrity, and rollback decision
+│       ├── GO_BEAST_V2_ROADMAP.md ← Prioritized v2 implementation slices and release gates
+│       ├── V2_VALIDATION_BASELINE.md ← Measured v2 deterministic/live validation baseline
+│       ├── V2_EVALUATION_REPORT.md ← Versioned deterministic and agent-runtime evaluation evidence
+│       ├── CONTEXT_QUALITY_BASELINE.md ← Deterministic go-squirrel retrieval-quality baseline
+│       ├── V2_CODEX_LIVE_EVIDENCE.md ← Fresh-context Codex live observations and limitations
+│       ├── V2_CLAUDE_LIVE_EVIDENCE.md ← Fresh-context Claude Code live observations and limitations
+│       ├── task-artifacts/       ← v2 ADR, stack, diagram, and interface contracts
+│       │   ├── ADR.md
+│       │   ├── STACK.md
+│       │   ├── DIAGRAM.md
+│       │   └── CONTRACTS.md
 │       ├── AGENT_INSTRUCTION_CONTRACTS.md ← Maintainer guide for global, bootstrap, and repo-local instruction layering
 │       ├── TRANSVERSAL_RULES.md ← Generated transversal rules reference
 │       ├── transversal-rules-index.json ← Generated validator-facing manifest index
@@ -86,15 +113,28 @@ go-beast/
 │   ├── install.mjs            ← Cross-platform installer (Node.js 18+, no deps)
 │   ├── prepare-release.mjs     ← Generates release PR version and changelog surfaces
 │   ├── release-version.mjs    ← Canonical release/versioning contract: check and cut releases from package.json
+│   ├── capabilities.mjs       ← Deterministic v2 capability registry compiler and CLI
+│   ├── profile-resolver.mjs    ← Global/project/session effective profile resolver
+│   ├── doctor.mjs              ← Read-only v2 profile diagnostic CLI
+│   ├── evidence.mjs            ← Append-only v2 provenance ledger and audit CLI
+│   ├── install-transaction.mjs  ← Install plan, integrity manifest, and rollback boundary
 │   ├── delivery.mjs            ← Strict delivery route planner and workflow-engine adapter
+│   ├── context-compiler.mjs    ← Bounded go-squirrel phase context compiler and verifier
+│   ├── adapters.mjs             ← Adapter manifest validator, matrix, and diagnostics
+│   ├── task-cli.mjs              ← Task-oriented v2 control-plane facade
 │   ├── conformance.mjs         ← Harness adapters and delivery trace conformance checker
 │   ├── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
 │   ├── transversal-rules.mjs  ← Generates and checks transversal rule surfaces
 │   └── workflow.mjs           ← Optional workflow state-machine coordinator
 ├── tests/
 │   ├── helpers.sh             ← Shared shell assertions for integration tests
+│   ├── fixtures/adapters/     ← Harness-neutral adapter input fixtures
+│   ├── fixtures/task-cli-v2/  ← Stable task CLI text contract snapshots
+│   ├── unit/                  ← Deterministic Node unit tests for P0 modules
+│   ├── live/                  ← Live-agent regression matrix inventory
 │   ├── claude-code/           ← Claude Code real-session integration tests
 │   ├── codex/                 ← Codex real-session integration tests
+│   ├── architecture/          ← Architecture artifact checks
 │   └── plugin/                ← Plugin bundle, integration profile, and shell checks
 └── hooks/
     ├── manifest.json             ← Shared hook manifest for Claude Code, Codex, and Copilot CLI

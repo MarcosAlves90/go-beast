@@ -3,9 +3,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
+import { loadAdapterManifest } from './adapters.mjs'
 
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const KINDS = new Set(['feature', 'bugfix', 'refactor', 'docs'])
-const SUPPORTED_HARNESSES = new Set(['claude-code', 'codex', 'copilot'])
+const ADAPTER_MANIFEST = loadAdapterManifest(REPO)
+const SUPPORTED_HARNESSES = new Set(ADAPTER_MANIFEST.adapters.map(adapter => adapter.harness))
 const RAW_EVENT_TYPES = new Map([
   ['skill', 'skill_invoked'],
   ['skill_invoked', 'skill_invoked'],
@@ -44,8 +48,8 @@ function fail(message, format = 'text') {
   process.exit(2)
 }
 
-function parseArgs() {
-  const args = process.argv.slice(2)
+function parseArgs(argv = process.argv.slice(2)) {
+  const args = [...argv]
   const command = args.shift() ?? 'help'
   const options = { command, trace: null, kind: null, format: 'text' }
   while (args.length) {
@@ -219,12 +223,16 @@ function normalizeTrace(rawTrace, requestedKind = null) {
 
   const kind = requestedKind ?? rawTrace.kind ?? 'feature'
   if (!KINDS.has(kind)) throw new Error(`unsupported task kind: ${kind}`)
+  const adapter = ADAPTER_MANIFEST.adapters.find(candidate => candidate.harness === rawTrace.harness)
   return {
     version: 1,
     kind,
     source: {
       harness: rawTrace.harness,
       adapter: 'go-beast-conformance',
+      adapter_id: adapter.id,
+      contract_version: adapter.contract_version,
+      capabilities: [...adapter.capabilities],
     },
     events: rawTrace.events.map(normalizeEvent),
   }
@@ -250,15 +258,21 @@ function help() {
   console.log('Usage: go-beast conformance <normalize|check|verify> --trace PATH [--kind feature|bugfix|refactor|docs] [--format text|json]')
 }
 
-const options = parseArgs()
-if (options.command === 'help') help()
-else if (options.command === 'normalize') {
-  try {
-    printNormalized(normalizeTrace(readJson(options.trace ?? fail('--trace is required', options.format), options.format, 'raw trace'), options.kind), options.format)
-  } catch (error) {
-    fail(error.message, options.format)
+function main(argv = process.argv.slice(2)) {
+  const options = parseArgs(argv)
+  if (options.command === 'help') help()
+  else if (options.command === 'normalize') {
+    try {
+      printNormalized(normalizeTrace(readJson(options.trace ?? fail('--trace is required', options.format), options.format, 'raw trace'), options.kind), options.format)
+    } catch (error) {
+      fail(error.message, options.format)
+    }
+  } else if (options.command === 'check' || options.command === 'verify') {
+    printVerdict(checkTrace(loadTrace(options.trace ?? fail('--trace is required', options.format), options.format), options.kind), options.format)
   }
-} else if (options.command === 'check' || options.command === 'verify') {
-  printVerdict(checkTrace(loadTrace(options.trace ?? fail('--trace is required', options.format), options.format), options.kind), options.format)
+  else fail(`unknown conformance command: ${options.command}`, options.format)
 }
-else fail(`unknown conformance command: ${options.command}`, options.format)
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) main()
+
+export { checkTrace, loadTrace, main, normalizeTrace }

@@ -13,12 +13,29 @@ The commands are intentionally thin wrappers around existing repository
 checks:
 
 - `npm run lint` checks plugin synchronization and release/version consistency.
-- `npm run test` runs the mandatory plugin and release-archive installation
-  suites.
+- `npm run test` runs the mandatory offline plugin and release-archive
+  installation suites, followed by Node's built-in deterministic unit tests.
 - `npm run verify` runs `lint`, then `test`, and fails if either validation
   changes the Git working tree unexpectedly.
-- `npm run test:live` runs agent-dependent Claude Code, Codex, and Copilot CLI
-  tests separately. It is not part of `verify`.
+- `npm run test:live` runs the separate live-agent matrix and the
+  agent-dependent Claude Code, Codex, and Copilot CLI tests. It is not part of
+  `verify`.
+
+## Test taxonomy
+
+The v2 validation boundary has three deliberately different layers:
+
+| Layer | Location | Dependencies | Default command | Evidence |
+|---|---|---|---|---|
+| Deterministic unit | `tests/unit/*.test.mjs` | Node.js built-ins and local modules | `npm run verify` | pure registry, profile, conformance, and evidence assertions |
+| Offline integration and fixtures | `tests/plugin/`, `tests/install/`, `tests/fixtures/` | Node.js, Bash, temporary files | `npm run verify` | CLI, installation, adapter, and migration behavior |
+| Live-agent regression | `tests/live/`, `tests/claude-code/`, `tests/codex/`, `tests/copilot/` | opt-in harness binaries and credentials | `npm run test:live` | harness-specific output or an explicit skip |
+
+The live matrix inventory always checks that all three supported harness suites
+exist. Live execution is disabled unless `GO_BEAST_RUN_LIVE_AGENT_TESTS=1` is
+set, and an unavailable harness remains `SKIP`; neither state is reported as a
+passing live run. The offline layers do not invoke a harness, network service,
+or credential.
 
 ## Granular scripts
 
@@ -50,7 +67,30 @@ remain owned by the existing release workflow.
 
 ## Scope and limitations
 
-This repository currently relies on deterministic shell integration suites and
-does not define a unit-test framework or coverage threshold. Adding new test
-levels, coverage tooling, or live-agent cases is outside the scope of the
-unified-command change.
+The current baseline uses deterministic shell integration suites and Node's
+built-in test runner; it does not define an instrumented coverage threshold.
+The existing `go-skill-eval` and `go-hook-eval` workflows are agent-dependent
+LLM evaluations and are not silently folded into `npm run verify`. See the
+[v2 validation baseline](architecture/V2_VALIDATION_BASELINE.md) and its
+[evaluation evidence report](architecture/V2_EVALUATION_REPORT.md) for measured
+results and residual limitations. To regenerate the report with the offline
+gate measured, run:
+
+```bash
+node scripts/v2-validation-report.mjs \
+  --repo . \
+  --verify \
+  --format markdown \
+  --output docs/architecture/V2_EVALUATION_REPORT.md
+```
+
+Fresh Codex and Claude Code observations are captured separately in the
+[Codex live evidence](architecture/V2_CODEX_LIVE_EVIDENCE.md) and [Claude Code
+live evidence](architecture/V2_CLAUDE_LIVE_EVIDENCE.md). A blocked or timed-out
+subagent is recorded as inconclusive, never as a passing live run.
+
+The installation regression suite also covers permission preview, dry-run
+non-mutation, per-asset integrity metadata, tamper rejection, unmanaged-file
+preservation, failed-transaction rollback, explicit rollback, and upgrade
+records. Archive-source pointer replacement is tested separately by the
+release-archive installation suite.

@@ -9,6 +9,31 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-15
+
+### Added
+
+- **adapter:** add versioned adapter sdk
+- **cli:** add task-oriented v2 facade
+- **context:** add bounded phase compiler
+- **context:** add deterministic quality benchmark
+- **evidence:** add v2 provenance ledger
+- **install:** add transactional integrity and rollback
+- **profiles:** add layered doctor diagnostics
+- **registry:** add v2 capability inspection
+- **validation:** add v2 evaluation evidence report
+- **workflow:** add resumable v2 coordination
+
+### Changed
+
+- **architecture:** define go-beast v2 control plane
+- **branding:** refresh go-beast banner
+- **branding:** replace go-beast banner
+- **cli:** lock v2 task command snapshots
+- **test:** record fresh Claude Code live evidence and refresh Codex go-mule retry evidence
+- **test:** record fresh Codex live evidence
+- **v2:** add deterministic validation baseline
+
 ## [1.56.0] - 2026-09-13
 
 ### Added

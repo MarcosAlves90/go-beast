@@ -39,6 +39,12 @@ judge free-form instructional prose.
 Run `npm run rules:generate` after changing the manifest, review the generated
 diff, and run `npm run verify`. Generated blocks must not be edited manually.
 
+The v2 capability registry is a deterministic metadata projection over these
+federated sources. Use `go-beast capabilities validate` to check the current
+inventory, `list` or `show` to inspect structural facts, and `export` when a
+consumer needs a JSON snapshot. The registry does not replace the manifest,
+copy skill prose, or execute hooks and workflows.
+
 ## Deferred migration
 
 This contract does not replace Markdown execution instructions or introduce a

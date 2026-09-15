@@ -80,6 +80,13 @@ Use `add` to create a record, `update` to revise it without erasing history, `li
 
 Start at `INDEX.<ext>`, search by terms/tags/status, traverse only relevant graph edges, and prefer recent, high-confidence records. For Markdown, use `scripts/kb-tool.mjs context` with explicit record IDs or a bounded query. Produce `CONTEXT_PACKET.<ext>` with the task, scope, budget, selected records and reasons, unresolved or conflicting claims, and next reads/actions. Keep the packet bounded; do not dump the whole KB into a prompt.
 
+When the task is entering a declared v2 workflow phase, use the package-level
+`go-beast context compile` command to turn this retrieval into a
+`context_packet`. It adds workflow and phase identity, record digests,
+validation evidence, and machine-readable provenance. Use `go-beast context
+verify` before relying on a saved packet; recompile when a selected record or
+the KB validation report changes.
+
 ### 7. Validate and maintain
 
 Run `validate` after initialization, import, conversion, and material updates. For Markdown, invoke `scripts/kb-tool.mjs validate` and retain its `KB_VALIDATION.md`. Check syntax, schema fields, duplicate IDs, safe paths, index and manifest consistency, unresolved references, orphan warnings, stale records, provenance, and deterministic output. Write `KB_VALIDATION.md` with the command or method, timestamp, checks, findings, and limitations.
@@ -102,6 +109,9 @@ Run `validate` after initialization, import, conversion, and material updates. F
 - `MANIFEST.<ext>` — deterministic machine index, graph edges, checksums, and backlink data
 - `records/<id>.<ext>` — linked durable records using the common semantic envelope
 - `CONTEXT_PACKET.<ext>` — bounded task-specific retrieval context when requested
+- v2 phase context packet — hash-verifiable workflow handoff produced by
+  `go-beast context compile`, with a finalized completion record when the phase
+  is complete
 - `KB_VALIDATION.md` — validation evidence, warnings, and remaining limitations
 - Native execution protocol — copy-safe commands and `scripts/kb-tool.mjs` for deterministic Markdown initialization, authoring, retrieval, and validation
 - Change report — records added, updated, linked, archived, or converted

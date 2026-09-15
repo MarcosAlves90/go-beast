@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MarcosAlves90/go-beast/blob/main/go-beast.evidence.schema.json",
+  "title": "go-beast v2 evidence ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "ledger_id", "task_id", "source", "events"],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "ledger_id": { "type": "string", "minLength": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["feature", "bugfix", "refactor", "docs"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "source": { "$ref": "#/$defs/source" },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/event" }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["harness", "adapter"],
+      "properties": {
+        "harness": { "enum": ["claude-code", "codex", "copilot"] },
+        "adapter": { "type": "string", "minLength": 1 }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": { "enum": ["agent", "human", "tool"] },
+        "id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["argv", "cwd", "exit_code", "stdout_sha256", "stderr_sha256"],
+      "properties": {
+        "argv": { "type": "array", "items": { "type": "string" } },
+        "cwd": { "type": "string", "minLength": 1 },
+        "exit_code": { "type": "integer" },
+        "stdout_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "stderr_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "kind"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|/|\\\\)\\.\\.(?:/|\\\\|$)).+$"
+        },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "kind": { "type": "string", "minLength": 1 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "command": { "$ref": "#/$defs/command" },
+        "artifact": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "sequence",
+        "type",
+        "status",
+        "task_id",
+        "source",
+        "actor",
+        "payload",
+        "provenance",
+        "recorded_at",
+        "previous_hash",
+        "event_hash"
+      ],
+      "properties": {
+        "event_id": { "type": "string", "minLength": 1 },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "type": {
+          "enum": [
+            "skill_invoked",
+            "artifact",
+            "approval",
+            "red",
+            "implementation",
+            "green",
+            "review",
+            "finish",
+            "command",
+            "phase"
+          ]
+        },
+        "status": { "enum": ["declared", "observed", "verified", "failed"] },
+        "task_id": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/$defs/source" },
+        "actor": { "$ref": "#/$defs/actor" },
+        "payload": { "type": "object" },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "recorded_at": { "type": "string", "format": "date-time" },
+        "previous_hash": {
+          "anyOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+          ]
+        },
+        "event_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    }
+  }
+}

@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MarcosAlves90/go-beast/blob/main/go-beast.context.schema.json",
+  "title": "go-beast v2 bounded context packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "compiler_version",
+    "workflow_id",
+    "phase",
+    "task",
+    "scope",
+    "budget",
+    "records",
+    "decisions",
+    "open_questions",
+    "conflicts",
+    "unresolved",
+    "next_reads",
+    "validation_evidence",
+    "provenance",
+    "completion"
+  ],
+  "properties": {
+    "kind": { "const": "context_packet" },
+    "schema_version": { "const": 1 },
+    "compiler_version": { "type": "string", "minLength": 1 },
+    "workflow_id": { "type": "string", "minLength": 1 },
+    "phase": { "$ref": "#/$defs/phase" },
+    "task": { "type": "string", "minLength": 1 },
+    "scope": { "enum": ["phase-entry", "phase-completion"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "budget": { "$ref": "#/$defs/budget" },
+    "records": { "type": "array", "items": { "$ref": "#/$defs/record" } },
+    "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+    "open_questions": { "type": "array", "items": { "$ref": "#/$defs/question" } },
+    "conflicts": { "type": "array", "items": { "$ref": "#/$defs/conflict" } },
+    "unresolved": { "type": "array", "items": { "type": "string" } },
+    "next_reads": { "type": "array", "items": { "type": "string" } },
+    "validation_evidence": { "$ref": "#/$defs/validation" },
+    "provenance": { "$ref": "#/$defs/provenance" },
+    "completion": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/completion" }] }
+  },
+  "$defs": {
+    "phase": {
+      "type": "object",
+      "required": ["id", "skill", "depends_on", "requires", "produces"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "skill": { "type": "string", "minLength": 1 },
+        "depends_on": { "type": "array", "items": { "type": "string" } },
+        "requires": { "type": "array" },
+        "produces": { "type": "array" }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "required": ["max_records", "max_tokens", "used_records", "used_tokens", "truncated"],
+      "additionalProperties": false,
+      "properties": {
+        "max_records": { "type": "integer", "minimum": 1 },
+        "max_tokens": { "type": "integer", "minimum": 1 },
+        "used_records": { "type": "integer", "minimum": 0 },
+        "used_tokens": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" }
+      }
+    },
+    "record": {
+      "type": "object",
+      "required": ["id", "path", "title", "reason", "status", "confidence", "summary", "content_excerpt", "references", "sha256", "estimated_tokens", "record_type", "epistemic_status", "provenance"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "summary": { "type": "string" },
+        "content_excerpt": { "type": "string" },
+        "references": { "type": "array", "items": { "type": "string" } },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "estimated_tokens": { "type": "integer", "minimum": 1 },
+        "record_type": { "type": "string" },
+        "epistemic_status": { "type": "string" },
+        "provenance": { "type": "array" }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": ["id", "path", "summary", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "path": { "type": "string" },
+        "summary": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "question": {
+      "type": "object",
+      "required": ["id", "path", "question", "epistemic_status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "path": { "type": "string" },
+        "question": { "type": "string" },
+        "epistemic_status": { "type": "string" }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "required": ["id", "path", "reason"],
+      "additionalProperties": false,
+      "properties": { "id": { "type": "string" }, "path": { "type": "string" }, "reason": { "type": "string" } }
+    },
+    "validation": {
+      "type": "object",
+      "required": ["path", "status", "sha256", "errors", "warnings"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "status": { "enum": ["PASS", "FAIL", "UNKNOWN", "MISSING"] },
+        "sha256": { "anyOf": [{ "type": "null" }, { "type": "string", "pattern": "^[a-f0-9]{64}$" }] },
+        "errors": { "type": "array", "items": { "type": "string" } },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source", "compiler", "workflow_manifest", "kb_spec", "record_hashes", "selection", "warnings"],
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string" },
+        "compiler": { "type": "string" },
+        "workflow_manifest": { "$ref": "#/$defs/digest" },
+        "kb_spec": { "$ref": "#/$defs/digest" },
+        "record_hashes": { "type": "object", "additionalProperties": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+        "selection": { "type": "object" },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "digest": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "additionalProperties": false,
+      "properties": { "path": { "type": "string" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+    },
+    "completion": {
+      "type": "object",
+      "required": ["decisions", "open_questions", "validation_evidence", "provenance", "completed_at"],
+      "additionalProperties": false,
+      "properties": {
+        "decisions": { "type": "array" },
+        "open_questions": { "type": "array" },
+        "validation_evidence": { "type": "array" },
+        "provenance": { "type": "array" },
+        "completed_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Go Beast v2 profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "agents"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 2 },
+    "kind": { "const": "go-beast-profile" },
+    "agents": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/agent" }
+    }
+  },
+  "$defs": {
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "skills": { "$ref": "#/$defs/policy" },
+        "hooks": { "$ref": "#/$defs/policy" }
+      }
+    },
+    "policy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "disabled"],
+          "properties": {
+            "mode": { "const": "all" },
+            "disabled": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "enabled"],
+          "properties": {
+            "mode": { "const": "selected" },
+            "enabled": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+          }
+        }
+      ]
+    }
+  }
+}

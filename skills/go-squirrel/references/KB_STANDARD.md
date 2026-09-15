@@ -385,6 +385,17 @@ The packet includes summaries and reasons before full bodies, caps the number
 of records or tokens, and identifies what was not retrieved. It is a derived
 view, not a second source of truth.
 
+For a v2 workflow phase, the package-level `go-beast context compile` command
+uses the native Markdown parser and selector to produce the same bounded
+contract with workflow identity, phase requirements, SHA-256 record and
+validation digests, and selection provenance. It may use explicit IDs or a
+bounded lexical seed, then follows resolvable local graph references until the
+budget is reached. Semantic search is optional and must not replace local
+validation. `go-beast context verify` rejects packets whose selected records,
+workflow manifest, or validation report changed; `go-beast context finalize`
+adds bounded completion notes and hashes their evidence before a workflow phase
+can accept the packet.
+
 ## 10. Conversion checklist
 
 Before accepting a projection or import:

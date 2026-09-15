@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "harness": "copilot",
+  "kind": "feature",
+  "events": [
+    {
+      "event": "skill",
+      "phase": "discovery",
+      "skill": "go-hawk"
+    }
+  ]
+}

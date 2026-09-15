@@ -63,6 +63,14 @@ accidentally copying a Codex hook policy into an agent with another hook
 surface. The plugin adapter remains a symlink view of canonical skills and is
 not filtered internally by this profile layer.
 
+The v2 profile resolver adds optional project and session layers without
+rewriting the global v1 file. Run `go-beast doctor --agent codex --project .
+--session <id> --format json` to inspect the effective policy. The report names
+the source and precedence of each decision, identifies missing or unsupported
+capabilities and conflicts, classifies managed versus unmanaged targets, and
+shows the exact dry-run link and hook-configuration mutations. Doctor is
+read-only; use the existing `integration` commands for explicit mutations.
+
 Use [Getting started](GETTING_STARTED.md) for installation commands and
 [Harness and bootstrap architecture](architecture/HARNESS_BOOTSTRAP_ARCHITECTURE.md)
 for source-of-truth boundaries.
