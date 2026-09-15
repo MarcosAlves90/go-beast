@@ -12,6 +12,54 @@ const STATE_DIR = path.join('.go-beast', 'workflows')
 const LOCK_DIR = path.join(STATE_DIR, 'locks')
 const DEFAULT_LOCK_TIMEOUT_MS = 5 * 60 * 1000
 const MODES = new Set(['off', 'warn', 'strict'])
+const ARTIFACT_VALIDATOR_TYPES = new Set(['non-empty', 'markdown-heading', 'json-schema', 'yaml-valid', 'contains-pattern'])
+const MAX_VALIDATOR_PATTERN_LENGTH = 256
+const MAX_VALIDATOR_INPUT_LENGTH = 2 * 1024 * 1024
+const MAX_JSON_SCHEMA_DEPTH = 64
+
+function patternValidationError(pattern, flags = '', label = 'pattern') {
+  if (typeof pattern !== 'string' || pattern.length === 0) return `${label} must be a non-empty string`
+  if (pattern.length > MAX_VALIDATOR_PATTERN_LENGTH) return `${label} must be at most ${MAX_VALIDATOR_PATTERN_LENGTH} characters`
+  if (typeof flags !== 'string' || !/^[ims]*$/.test(flags) || new Set(flags).size !== flags.length) return `${label} flags must contain only unique i, m, or s flags`
+  if (/\\(?:[1-9]|k<)/.test(pattern)) return `${label} cannot use backreferences`
+  if (/\(\?[=!<]/.test(pattern)) return `${label} cannot use lookaround assertions`
+  if (/(?:\([^()\n]*(?:[+*]|\{\d+(?:,\d*)?\})[^()\n]*\)|\[[^\]\n]+\])(?:[+*]|\{\d+(?:,\d*)?\})/.test(pattern)) return `${label} cannot use nested quantifiers`
+  try { new RegExp(pattern, flags) } catch (error) { return `${label} is not a valid regular expression: ${error.message}` }
+  return null
+}
+
+function compileSafePattern(pattern, flags = '', label = 'pattern') {
+  const error = patternValidationError(pattern, flags, label)
+  assert(!error, error)
+  return new RegExp(pattern, flags)
+}
+
+function compileSafePatternForRuntime(pattern, flags = '', label = 'pattern') {
+  const error = patternValidationError(pattern, flags, label)
+  if (error) throw new Error(error)
+  return new RegExp(pattern, flags)
+}
+
+function validateArtifactValidator(validator, label) {
+  assert(validator && typeof validator === 'object' && !Array.isArray(validator), `${label} must be an object`)
+  assert(typeof validator.type === 'string' && ARTIFACT_VALIDATOR_TYPES.has(validator.type), `${label}.type is unsupported`)
+  const allowedKeys = {
+    'non-empty': ['type'],
+    'markdown-heading': ['type', 'text', 'level'],
+    'json-schema': ['type', 'schema'],
+    'yaml-valid': ['type'],
+    'contains-pattern': ['type', 'pattern', 'flags'],
+  }[validator.type]
+  for (const key of Object.keys(validator)) assert(allowedKeys.includes(key), `${label} has unknown key: ${key}`)
+  if (validator.type === 'markdown-heading') {
+    assert(typeof validator.text === 'string' && validator.text.trim().length > 0, `${label}.text must be a non-empty string`)
+    if (validator.level !== undefined) assert(Number.isInteger(validator.level) && validator.level >= 1 && validator.level <= 6, `${label}.level must be an integer from 1 to 6`)
+  }
+  if (validator.type === 'json-schema') {
+    assert(typeof validator.schema === 'string' && safeRelativePath(validator.schema), `${label}.schema must be a safe repository-relative path`)
+  }
+  if (validator.type === 'contains-pattern') compileSafePattern(validator.pattern, validator.flags, `${label}.pattern`)
+}
 
 function fail(message, code = 1) {
   console.error(`Workflow validation failed: ${message}`)
@@ -77,19 +125,24 @@ function validateWorkflowSchema(packageRoot) {
   assert(fs.existsSync(schemaPath), `workflow schema is missing from package root ${packageRoot}: ${schemaPath}`)
   let schema
   try { schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8')) } catch (error) { fail(`workflow schema is not valid JSON at package root ${packageRoot}: ${error.message}`) }
-  assert(schema.type === 'object' && schema.title && schema.$defs?.artifact, 'workflow schema has an invalid structural contract')
+  assert(schema.type === 'object' && schema.title && schema.$defs?.artifact && schema.$defs?.['artifact-validator'], 'workflow schema has an invalid structural contract')
   for (const key of ['schema_version', 'id', 'version', 'phases']) assert(schema.required?.includes(key), `workflow schema is missing required field: ${key}`)
 }
 
 function validateArtifactDescriptor(artifact, label) {
   assert(artifact && typeof artifact === 'object' && !Array.isArray(artifact), `${label} must be an object`)
-  for (const key of Object.keys(artifact)) assert(['path', 'type', 'non_empty', 'sections'].includes(key), `${label} has unknown key ${key}`)
+  for (const key of Object.keys(artifact)) assert(['path', 'type', 'non_empty', 'sections', 'validators'].includes(key), `${label} has unknown key ${key}`)
   assert(typeof artifact.path === 'string' && artifact.path.length > 0, `${label}.path must be non-empty`)
   assert(!path.isAbsolute(artifact.path) && !artifact.path.split('/').includes('..'), `${label}.path must stay within the repository`)
   assert(['file', 'directory'].includes(artifact.type), `${label}.type must be file or directory`)
+  if (artifact.non_empty === undefined) artifact.non_empty = false
   assert(typeof artifact.non_empty === 'boolean', `${label}.non_empty must be boolean`)
   if (artifact.sections === undefined) artifact.sections = []
   assert(Array.isArray(artifact.sections) && artifact.sections.every(section => typeof section === 'string' && section.length > 0), `${label}.sections must be an array of non-empty strings`)
+  if (artifact.validators !== undefined) {
+    assert(Array.isArray(artifact.validators), `${label}.validators must be an array`)
+    artifact.validators.forEach((validator, index) => validateArtifactValidator(validator, `${label}.validators[${index}]`))
+  }
 }
 
 function validateManifest(manifest, root) {
@@ -419,18 +472,221 @@ function violation(mode, messages) {
   return false
 }
 
+function markdownHeadingExists(content, expectedText, expectedLevel) {
+  let fence = null
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trimEnd()
+    const fenceMatch = line.match(/^ {0,3}(`{3,}|~{3,})/)
+    if (fence) {
+      if (fenceMatch && fenceMatch[1][0] === fence.character && fenceMatch[1].length >= fence.length) fence = null
+      continue
+    }
+    if (fenceMatch) {
+      fence = { character: fenceMatch[1][0], length: fenceMatch[1].length }
+      continue
+    }
+    const headingMatch = line.match(/^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*$/)
+    if (!headingMatch) continue
+    const level = headingMatch[1].length
+    const text = headingMatch[2].replace(/[ \t]+#+[ \t]*$/, '').trim()
+    if (text === expectedText.trim() && (expectedLevel === undefined || level === expectedLevel)) return true
+  }
+  return false
+}
+
+function jsonTypeMatches(value, type) {
+  if (type === 'null') return value === null
+  if (type === 'boolean') return typeof value === 'boolean'
+  if (type === 'object') return value !== null && typeof value === 'object' && !Array.isArray(value)
+  if (type === 'array') return Array.isArray(value)
+  if (type === 'number') return typeof value === 'number' && Number.isFinite(value)
+  if (type === 'integer') return Number.isInteger(value)
+  if (type === 'string') return typeof value === 'string'
+  return false
+}
+
+function jsonValuesEqual(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right)
+}
+
+function jsonPathChild(parent, key) {
+  return `${parent}[${JSON.stringify(String(key))}]`
+}
+
+const JSON_SCHEMA_SUPPORTED_KEYWORDS = new Set([
+  '$defs', '$ref', 'additionalProperties', 'allOf', 'anyOf', 'const', 'enum',
+  'exclusiveMaximum', 'exclusiveMinimum', 'items', 'maxItems', 'maxLength',
+  'maxProperties', 'maximum', 'minItems', 'minLength', 'minProperties',
+  'minimum', 'not', 'oneOf', 'pattern', 'properties', 'required', 'type',
+])
+const JSON_SCHEMA_IGNORED_KEYWORDS = new Set([
+  '$anchor', '$comment', '$id', '$schema', 'default', 'deprecated', 'description',
+  'examples', 'readOnly', 'title', 'writeOnly',
+])
+
+function resolveJsonSchemaPointer(rootSchema, reference) {
+  if (reference === '#') return rootSchema
+  if (typeof reference !== 'string' || !reference.startsWith('#/')) throw new Error(`external JSON Schema references are unsupported: ${reference}`)
+  return reference.slice(2).split('/').map(part => part.replaceAll('~1', '/').replaceAll('~0', '~')).reduce((current, part) => {
+    if (current === undefined || current === null || !Object.hasOwn(current, part)) throw new Error(`JSON Schema reference not found: ${reference}`)
+    return current[part]
+  }, rootSchema)
+}
+
+function jsonSchemaProblems(value, schema, rootSchema = schema, instancePath = '$', depth = 0) {
+  if (depth > MAX_JSON_SCHEMA_DEPTH) throw new Error(`JSON Schema nesting exceeds ${MAX_JSON_SCHEMA_DEPTH} levels`)
+  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) throw new Error('JSON Schema nodes must be objects')
+  for (const key of Object.keys(schema)) {
+    if (!JSON_SCHEMA_SUPPORTED_KEYWORDS.has(key) && !JSON_SCHEMA_IGNORED_KEYWORDS.has(key)) throw new Error(`unsupported JSON Schema keyword: ${key}`)
+  }
+  if (schema.$ref !== undefined) return jsonSchemaProblems(value, resolveJsonSchemaPointer(rootSchema, schema.$ref), rootSchema, instancePath, depth + 1)
+
+  const problems = []
+  if (schema.type !== undefined) {
+    const types = Array.isArray(schema.type) ? schema.type : [schema.type]
+    if (!types.every(type => typeof type === 'string')) throw new Error(`${instancePath}: JSON Schema type must be a string or array of strings`)
+    if (!types.some(type => jsonTypeMatches(value, type))) return [`${instancePath} must be ${types.join(' or ')}`]
+  }
+  if (schema.enum !== undefined && (!Array.isArray(schema.enum) || !schema.enum.some(candidate => jsonValuesEqual(value, candidate)))) problems.push(`${instancePath} is not an allowed value`)
+  if (schema.const !== undefined && !jsonValuesEqual(value, schema.const)) problems.push(`${instancePath} must equal the schema const value`)
+
+  if (typeof value === 'string') {
+    if (schema.minLength !== undefined && value.length < schema.minLength) problems.push(`${instancePath} must contain at least ${schema.minLength} characters`)
+    if (schema.maxLength !== undefined && value.length > schema.maxLength) problems.push(`${instancePath} must contain at most ${schema.maxLength} characters`)
+    if (schema.pattern !== undefined && !compileSafePatternForRuntime(schema.pattern, '', `${instancePath}.pattern`).test(value)) problems.push(`${instancePath} does not match the schema pattern`)
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    if (schema.minimum !== undefined && value < schema.minimum) problems.push(`${instancePath} must be at least ${schema.minimum}`)
+    if (schema.maximum !== undefined && value > schema.maximum) problems.push(`${instancePath} must be at most ${schema.maximum}`)
+    if (schema.exclusiveMinimum !== undefined && value <= schema.exclusiveMinimum) problems.push(`${instancePath} must be greater than ${schema.exclusiveMinimum}`)
+    if (schema.exclusiveMaximum !== undefined && value >= schema.exclusiveMaximum) problems.push(`${instancePath} must be less than ${schema.exclusiveMaximum}`)
+  }
+
+  if (Array.isArray(value)) {
+    if (schema.minItems !== undefined && value.length < schema.minItems) problems.push(`${instancePath} must contain at least ${schema.minItems} items`)
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) problems.push(`${instancePath} must contain at most ${schema.maxItems} items`)
+    if (schema.items && !Array.isArray(schema.items)) value.forEach((item, index) => problems.push(...jsonSchemaProblems(item, schema.items, rootSchema, jsonPathChild(instancePath, index), depth + 1)))
+  }
+
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    const keys = Object.keys(value)
+    if (schema.minProperties !== undefined && keys.length < schema.minProperties) problems.push(`${instancePath} must contain at least ${schema.minProperties} properties`)
+    if (schema.maxProperties !== undefined && keys.length > schema.maxProperties) problems.push(`${instancePath} must contain at most ${schema.maxProperties} properties`)
+    if (schema.required !== undefined) {
+      if (!Array.isArray(schema.required) || !schema.required.every(key => typeof key === 'string')) throw new Error(`${instancePath}: required must be an array of strings`)
+      for (const key of schema.required) if (!Object.hasOwn(value, key)) problems.push(`${jsonPathChild(instancePath, key)} is required`)
+    }
+    const properties = schema.properties ?? {}
+    if (typeof properties !== 'object' || Array.isArray(properties)) throw new Error(`${instancePath}: properties must be an object`)
+    for (const [key, propertySchema] of Object.entries(properties)) {
+      if (Object.hasOwn(value, key)) problems.push(...jsonSchemaProblems(value[key], propertySchema, rootSchema, jsonPathChild(instancePath, key), depth + 1))
+    }
+    for (const key of keys.filter(key => !Object.hasOwn(properties, key))) {
+      if (schema.additionalProperties === false) problems.push(`${jsonPathChild(instancePath, key)} is not allowed`)
+      else if (schema.additionalProperties && typeof schema.additionalProperties === 'object') problems.push(...jsonSchemaProblems(value[key], schema.additionalProperties, rootSchema, jsonPathChild(instancePath, key), depth + 1))
+    }
+  }
+
+  for (const keyword of ['allOf']) {
+    if (schema[keyword] !== undefined) {
+      if (!Array.isArray(schema[keyword])) throw new Error(`${instancePath}: ${keyword} must be an array`)
+      for (const childSchema of schema[keyword]) problems.push(...jsonSchemaProblems(value, childSchema, rootSchema, instancePath, depth + 1))
+    }
+  }
+  for (const keyword of ['anyOf', 'oneOf']) {
+    if (schema[keyword] === undefined) continue
+    if (!Array.isArray(schema[keyword])) throw new Error(`${instancePath}: ${keyword} must be an array`)
+    const matches = schema[keyword].filter(childSchema => jsonSchemaProblems(value, childSchema, rootSchema, instancePath, depth + 1).length === 0).length
+    if ((keyword === 'anyOf' && matches === 0) || (keyword === 'oneOf' && matches !== 1)) problems.push(`${instancePath} does not satisfy ${keyword}`)
+  }
+  if (schema.not !== undefined && jsonSchemaProblems(value, schema.not, rootSchema, instancePath, depth + 1).length === 0) problems.push(`${instancePath} must not satisfy the schema`)
+  return problems
+}
+
+function readArtifactContent(target, stat) {
+  if (!stat.isFile()) return { content: null, problems: ['requires a file'] }
+  try { return { content: fs.readFileSync(target, 'utf8'), problems: [] } } catch (error) { return { content: null, problems: [`could not read file: ${error.message}`] } }
+}
+
+function artifactValidatorLabel(artifact, index, descriptor) {
+  return `artifact ${artifact.path} validator ${index + 1} (${descriptor.type})`
+}
+
+const ARTIFACT_VALIDATORS = Object.freeze({
+  'non-empty': ({ target, stat }) => {
+    const empty = (stat.isFile() && stat.size === 0) || (stat.isDirectory() && fs.readdirSync(target).length === 0)
+    return empty ? ['artifact is empty'] : []
+  },
+  'markdown-heading': ({ descriptor, readContent }) => {
+    const input = readContent()
+    if (input.problems.length) return input.problems
+    return markdownHeadingExists(input.content, descriptor.text, descriptor.level) ? [] : [`missing Markdown heading: ${descriptor.level ? `${'#'.repeat(descriptor.level)} ` : ''}${descriptor.text}`]
+  },
+  'json-schema': ({ root, target, descriptor, readContent }) => {
+    const input = readContent()
+    if (input.problems.length) return input.problems
+    try {
+      const value = JSON.parse(input.content)
+      const schemaPath = resolveSafePath(root, descriptor.schema, 'validator schema')
+      const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'))
+      return jsonSchemaProblems(value, schema).map(problem => `JSON Schema violation: ${problem}`)
+    } catch (error) {
+      return [`JSON Schema validation failed: ${error.message}`]
+    }
+  },
+  'yaml-valid': ({ readContent }) => {
+    const input = readContent()
+    if (input.problems.length) return input.problems
+    try { parseYaml(input.content); return [] } catch (error) { return [`YAML validation failed: ${error.message}`] }
+  },
+  'contains-pattern': ({ descriptor, readContent }) => {
+    const input = readContent()
+    if (input.problems.length) return input.problems
+    if (input.content.length > MAX_VALIDATOR_INPUT_LENGTH) return [`content exceeds the ${MAX_VALIDATOR_INPUT_LENGTH}-character pattern validation limit`]
+    try {
+      const pattern = compileSafePatternForRuntime(descriptor.pattern, descriptor.flags)
+      return pattern.test(input.content) ? [] : [`pattern did not match: ${descriptor.pattern}`]
+    } catch (error) { return [`pattern validation failed: ${error.message}`] }
+  },
+})
+
 function artifactProblems(root, artifacts) {
   const problems = []
   for (const artifact of artifacts) {
-    const target = path.resolve(root, artifact.path)
+    const target = resolveSafePath(root, artifact.path, 'artifact')
     if (!fs.existsSync(target)) { problems.push(`missing artifact: ${artifact.path}`); continue }
     const stat = fs.statSync(target)
     if (artifact.type === 'file' && !stat.isFile()) problems.push(`artifact is not a file: ${artifact.path}`)
     if (artifact.type === 'directory' && !stat.isDirectory()) problems.push(`artifact is not a directory: ${artifact.path}`)
-    if (artifact.non_empty && ((stat.isFile() && stat.size === 0) || (stat.isDirectory() && fs.readdirSync(target).length === 0))) problems.push(`artifact is empty: ${artifact.path}`)
+
+    let cachedContent = null
+    let contentLoaded = false
+    const readContent = () => {
+      if (!contentLoaded) {
+        cachedContent = readArtifactContent(target, stat)
+        contentLoaded = true
+      }
+      return cachedContent
+    }
+
+    if (artifact.non_empty) {
+      const legacyProblems = ARTIFACT_VALIDATORS['non-empty']({ target, stat })
+      for (const problem of legacyProblems) problems.push(`artifact ${artifact.path} validator legacy non_empty: ${problem}`)
+    }
     if (stat.isFile() && artifact.sections.length) {
-      const content = fs.readFileSync(target, 'utf8')
-      for (const section of artifact.sections) if (!content.includes(section)) problems.push(`artifact ${artifact.path} is missing section: ${section}`)
+      const input = readContent()
+      for (const section of artifact.sections) if (!input.problems.length && !input.content.includes(section)) problems.push(`artifact ${artifact.path} is missing section: ${section}`)
+      for (const problem of input.problems) problems.push(`artifact ${artifact.path} validator legacy sections: ${problem}`)
+    }
+    for (const [index, descriptor] of (artifact.validators ?? []).entries()) {
+      if (descriptor.type === 'non-empty' && artifact.non_empty) continue
+      const label = artifactValidatorLabel(artifact, index, descriptor)
+      const implementation = ARTIFACT_VALIDATORS[descriptor.type]
+      const validatorProblems = implementation
+        ? implementation({ root, target, stat, artifact, descriptor, readContent })
+        : [`validator type is not implemented: ${descriptor.type}`]
+      for (const problem of validatorProblems) problems.push(`${label}: ${problem}`)
     }
   }
   return problems
