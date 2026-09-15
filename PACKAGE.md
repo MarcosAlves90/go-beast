@@ -63,6 +63,7 @@ go-beast/
 │       ├── ADR-004-delivery-controller.md ← Strict delivery controller architecture decision
 │       ├── ADR-005-behavioral-conformance.md ← Harness-neutral conformance architecture decision
 │       ├── ADR-006-runtime-policy-gate.md ← Shared runtime policy gate architecture decision
+│       ├── ADR-008-workflow-engine-v2.md ← Resumable routes, parallel slices, provenance, and handoffs
 │       ├── ADR-007-transactional-installation.md ← Transactional install, integrity, and rollback decision
 │       ├── GO_BEAST_V2_ROADMAP.md ← Prioritized v2 implementation slices and release gates
 │       ├── V2_VALIDATION_BASELINE.md ← Measured v2 deterministic/live validation baseline

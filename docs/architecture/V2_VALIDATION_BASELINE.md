@@ -22,6 +22,9 @@ The following results were captured on the repository's `release/v2` branch:
   checks completed without changing the Git tree.
 - P0 deterministic unit cases: **4 passed** through Node's built-in test
   runner.
+- Workflow engine regression: **PASS**; route compilation, parallel continue,
+  checkpoint digests, handoff state, interruption recovery, retry attempts, and
+  v1 state migration passed in `tests/plugin/test-workflow-engine-v2.sh`.
 - Adapter fixtures: **3/3 passed** for Claude Code, Codex, and Copilot,
   including v1 normalization and v2 exact adapter-source claims.
 - Live matrix inventory: **3/3 suites present**. Live-agent execution was not

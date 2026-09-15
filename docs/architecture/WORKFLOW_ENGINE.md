@@ -20,17 +20,38 @@ The schema is versioned in `go-beast.workflow.schema.json`. The example
 `workflows/minimal-pipeline.json` is intentionally small and does not replace
 the existing evaluation workflows.
 
+Schema version 2 adds optional route metadata: `parallel_group` groups
+independent phases into one coordinator slice, `retry.max_attempts` bounds
+attempts, `handoff.targets` declares allowed external agents, and `checkpoint`
+marks phases that benefit from durable provenance. Version 1 manifests remain
+valid and compile through the same route boundary.
+
 ## CLI
 
 After package installation, use:
 
 ```bash
 go-beast workflow validate --file workflows/minimal-pipeline.json
+go-beast workflow plan --file workflows/minimal-pipeline.json --format json
 go-beast workflow start --file workflows/minimal-pipeline.json
 go-beast workflow status --file workflows/minimal-pipeline.json
 go-beast workflow begin --file workflows/minimal-pipeline.json --phase discover
+go-beast workflow continue --file workflows/minimal-pipeline.json
+go-beast workflow checkpoint --file workflows/minimal-pipeline.json --phase discover --name discovery --artifact .go-beast/REQUIREMENTS.md
+go-beast workflow handoff --file workflows/minimal-pipeline.json --phase discover --to codex --note "Continue external execution"
+go-beast workflow retry --file workflows/minimal-pipeline.json --phase discover
+go-beast workflow resume --file workflows/minimal-pipeline.json
 go-beast workflow complete --file workflows/minimal-pipeline.json --phase discover
 ```
+
+`plan` compiles a deterministic topological route with dependency edges and
+parallel slices without writing state. `continue` atomically starts every
+eligible phase whose dependencies and gates are satisfied; it never invokes the
+declared skill. `resume` converts running phases left by an interrupted process
+to `interrupted`, while `retry` queues an interrupted, failed, or handed-off
+phase for its next bounded attempt. `checkpoint` stores only hashes, metadata,
+and command context. `handoff` records a bounded note and target agent while
+leaving execution to that external agent or runner.
 
 The CLI resolves package resources, such as `go-beast.workflow.schema.json`,
 from the installed package location. Workflow manifests, state, locks, and
@@ -38,9 +59,11 @@ artifacts are resolved from the project root: pass `--root <path>` for an
 explicit root, or omit it to discover the nearest ancestor containing a
 `workflows/` directory and then fall back to the current directory.
 
-`npm run workflow -- <command>` is available in a checkout. `resume` reads the
-persisted state and reports the current phase statuses; running `begin` again
-for a completed phase reopens it and invalidates its dependent phases.
+`npm run workflow -- <command>` is available in a checkout. A v1 persisted state
+is migrated to the v2 state shape on the first mutating command or `resume`; its
+history is retained and a migration event is recorded. Migration does not
+authorize a phase or infer a completion claim. Running `begin` again for a
+completed phase reopens it and invalidates its dependent phases.
 
 ## Modes and state
 
@@ -53,6 +76,11 @@ State is JSON under `.go-beast/workflows/` and is local disposable output. The
 directory is added to the repository's local Git exclude by setup; workflow
 manifests and schemas remain commit-worthy. `verify` validates manifests and
 schemas but does not execute workflows.
+
+Checkpoint records contain SHA-256 artifact digests, actor/session metadata,
+and the command working directory; they never persist prompts or command
+output. Handoff notes are bounded and targets are checked against the phase's
+declared `handoff.targets` list when one exists.
 
 ## Concurrent updates
 

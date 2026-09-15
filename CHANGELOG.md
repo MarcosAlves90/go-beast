@@ -26,6 +26,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **v2 transactional installer:** add permission preview, dry-run, per-asset
   integrity metadata, fail-closed verification, persisted rollback, and a
   recoverable release-archive pointer swap while preserving unmanaged targets.
+- **v2 workflow engine:** add deterministic route planning, parallel `continue`,
+  interruption recovery, bounded retry, digest-only checkpoints, explicit
+  handoffs, and persisted migration from v1 workflow state.
 
 ## [1.56.0] - 2026-09-13
 

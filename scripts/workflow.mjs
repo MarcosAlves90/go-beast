@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { parseYaml } from './transversal-rules.mjs'
 import { resolveWorkflowRoots } from './workflow-roots.mjs'
 
@@ -26,11 +26,11 @@ function failCode(code, message, exitCode = 1) {
 function parseArgs() {
   const args = process.argv.slice(2)
   const command = args.shift() ?? 'help'
-  const options = { command, file: null, mode: null, phase: null, root: null, all: false }
+  const options = { command, file: null, mode: null, phase: null, root: null, format: 'text', name: null, artifact: null, to: null, note: null, all: false }
   while (args.length) {
     const arg = args.shift()
     if (arg === '--all') options.all = true
-    else if (['--file', '--mode', '--phase', '--root'].includes(arg)) {
+    else if (['--file', '--mode', '--phase', '--root', '--format', '--name', '--artifact', '--to', '--note'].includes(arg)) {
       const value = args.shift()
       if (!value) fail(`${arg} requires a value`, 2)
       options[arg.slice(2)] = value
@@ -94,18 +94,45 @@ function validateArtifactDescriptor(artifact, label) {
 
 function validateManifest(manifest, root) {
   assert(manifest && typeof manifest === 'object' && !Array.isArray(manifest), 'manifest must be an object')
-  for (const key of Object.keys(manifest)) assert(['schema_version', 'id', 'version', 'mode', 'phases'].includes(key), `manifest has unknown key ${key}`)
+  const schemaVersion = manifest.schema_version
+  const manifestKeys = ['schema_version', 'id', 'version', 'mode', 'phases']
+  if (schemaVersion === 2) manifestKeys.push('route')
+  for (const key of Object.keys(manifest)) assert(manifestKeys.includes(key), `manifest has unknown key ${key}`)
   for (const key of ['schema_version', 'id', 'version', 'phases']) assert(Object.hasOwn(manifest, key), `manifest is missing ${key}`)
-  assert(manifest.schema_version === 1, `unsupported schema_version ${manifest.schema_version}`)
+  assert([1, 2].includes(schemaVersion), `unsupported schema_version ${manifest.schema_version}`)
   assert(typeof manifest.id === 'string' && /^[a-z0-9-]+$/.test(manifest.id), 'id must match ^[a-z0-9-]+$')
   assert(Number.isInteger(manifest.version) && manifest.version >= 1, 'version must be a positive integer')
   if (manifest.mode !== undefined) assert(MODES.has(manifest.mode), `mode must be one of ${[...MODES].join(', ')}`)
+  if (manifest.route !== undefined) {
+    assert(schemaVersion === 2 && manifest.route && typeof manifest.route === 'object' && !Array.isArray(manifest.route), 'route must be an object in schema version 2')
+    for (const key of Object.keys(manifest.route)) assert(['strategy'].includes(key), `route has unknown key ${key}`)
+    if (manifest.route.strategy !== undefined) assert(manifest.route.strategy === 'compiled', 'route.strategy must be compiled')
+  }
   assert(Array.isArray(manifest.phases) && manifest.phases.length > 0, 'phases must be a non-empty array')
 
   const phases = new Map()
   for (const [index, phase] of manifest.phases.entries()) {
     const label = `phases[${index}]`
-    assertKeys(phase, ['id', 'skill', 'depends_on', 'preconditions', 'requires', 'produces', 'transitions'], label)
+    const phaseKeys = ['id', 'skill', 'depends_on', 'preconditions', 'requires', 'produces', 'transitions']
+    const v2PhaseKeys = [...phaseKeys, 'parallel_group', 'retry', 'handoff', 'checkpoint']
+    if (schemaVersion === 1) assertKeys(phase, phaseKeys, label)
+    else {
+      for (const key of Object.keys(phase)) assert(v2PhaseKeys.includes(key), `${label} has unknown key ${key}`)
+      for (const key of phaseKeys) assert(Object.hasOwn(phase, key), `${label} is missing ${key}`)
+      if (phase.parallel_group !== undefined) assert(typeof phase.parallel_group === 'string' && /^[a-z0-9-]+$/.test(phase.parallel_group), `${label}.parallel_group is invalid`)
+      if (phase.checkpoint !== undefined) assert(typeof phase.checkpoint === 'boolean', `${label}.checkpoint must be boolean`)
+      if (phase.retry !== undefined) {
+        assert(phase.retry && typeof phase.retry === 'object' && !Array.isArray(phase.retry), `${label}.retry must be an object`)
+        for (const key of Object.keys(phase.retry)) assert(['max_attempts', 'backoff_ms'].includes(key), `${label}.retry has unknown key ${key}`)
+        assert(Number.isInteger(phase.retry.max_attempts) && phase.retry.max_attempts >= 1, `${label}.retry.max_attempts must be a positive integer`)
+        if (phase.retry.backoff_ms !== undefined) assert(Number.isInteger(phase.retry.backoff_ms) && phase.retry.backoff_ms >= 0, `${label}.retry.backoff_ms must be a non-negative integer`)
+      }
+      if (phase.handoff !== undefined) {
+        assert(phase.handoff && typeof phase.handoff === 'object' && !Array.isArray(phase.handoff), `${label}.handoff must be an object`)
+        for (const key of Object.keys(phase.handoff)) assert(['targets'].includes(key), `${label}.handoff has unknown key ${key}`)
+        assert(Array.isArray(phase.handoff.targets) && phase.handoff.targets.every(target => typeof target === 'string' && target.length > 0), `${label}.handoff.targets must be an array of non-empty strings`)
+      }
+    }
     assert(typeof phase.id === 'string' && /^[a-z0-9-]+$/.test(phase.id), `${label}.id is invalid`)
     assert(!phases.has(phase.id), `duplicate phase: ${phase.id}`)
     assert(typeof phase.skill === 'string' && phase.skill.length > 0, `${label}.skill must be non-empty`)
@@ -149,6 +176,87 @@ function resolveMode(manifest, requested) {
   const mode = requested ?? process.env.GO_BEAST_WORKFLOW_MODE ?? manifest.mode ?? 'warn'
   if (!MODES.has(mode)) fail(`invalid workflow mode: ${mode}`, 2)
   return mode
+}
+
+function compileRoute(manifest, phases) {
+  const order = []
+  const visiting = new Set()
+  const visited = new Set()
+  const visit = id => {
+    if (visiting.has(id)) fail(`dependency cycle detected while compiling route: ${id}`)
+    if (visited.has(id)) return
+    visiting.add(id)
+    for (const dependency of phases.get(id).depends_on) visit(dependency)
+    visiting.delete(id)
+    visited.add(id)
+    order.push(id)
+  }
+  for (const phase of manifest.phases) visit(phase.id)
+
+  const parallel = new Map()
+  for (const phase of manifest.phases) {
+    if (!phase.parallel_group) continue
+    if (!parallel.has(phase.parallel_group)) parallel.set(phase.parallel_group, [])
+    parallel.get(phase.parallel_group).push(phase.id)
+  }
+  return {
+    schema_version: 1,
+    workflow_id: manifest.id,
+    manifest_version: manifest.version,
+    order,
+    roots: manifest.phases.filter(phase => phase.depends_on.length === 0).map(phase => phase.id),
+    edges: manifest.phases.flatMap(phase => phase.transitions.map(to => ({ from: phase.id, to }))),
+    parallel_slices: [...parallel.entries()].map(([id, phaseIds]) => ({ id, phases: phaseIds })),
+    phases: manifest.phases.map(phase => ({
+      id: phase.id,
+      skill: phase.skill,
+      depends_on: [...phase.depends_on],
+      transitions: [...phase.transitions],
+      parallel_group: phase.parallel_group ?? null,
+      retry: phase.retry ?? { max_attempts: null },
+      handoff: phase.handoff ?? null,
+    })),
+  }
+}
+
+function phaseRetryLimit(phase) {
+  return phase.retry?.max_attempts ?? Number.POSITIVE_INFINITY
+}
+
+function phaseRecord(phase) {
+  return {
+    status: 'pending',
+    skill: phase.skill,
+    attempts: 0,
+    checkpoints: [],
+    handoff: null,
+  }
+}
+
+function normalizeState(state, manifest, phases) {
+  const migrated = state.schema_version === 1
+  const normalized = {
+    ...state,
+    schema_version: 2,
+    route: compileRoute(manifest, phases),
+    history: Array.isArray(state.history) ? [...state.history] : [],
+    phases: Object.fromEntries(manifest.phases.map(phase => {
+      const current = state.phases[phase.id] ?? phaseRecord(phase)
+      return [phase.id, {
+        ...phaseRecord(phase),
+        ...current,
+        skill: phase.skill,
+        attempts: Number.isInteger(current.attempts) && current.attempts >= 0 ? current.attempts : 0,
+        checkpoints: Array.isArray(current.checkpoints) ? current.checkpoints : [],
+        handoff: current.handoff ?? null,
+      }]
+    })),
+  }
+  if (migrated) {
+    normalized.history.push({ event: 'migrate', from_schema: 1, to_schema: 2, at: new Date().toISOString() })
+  }
+  Object.defineProperty(normalized, '__migrated', { value: migrated, enumerable: false })
+  return normalized
 }
 
 function statePath(root, manifest) {
@@ -274,7 +382,7 @@ function loadState(root, manifest) {
   assert(fs.existsSync(filePath), `no persisted state for ${manifest.id}; run workflow start first`)
   const state = JSON.parse(fs.readFileSync(filePath, 'utf8'))
   assert(state && typeof state === 'object' && !Array.isArray(state), 'persisted state is not a JSON object')
-  assert(state.schema_version === 1, `persisted state schema version is incompatible: ${state.schema_version ?? 'missing'}`)
+  assert([1, 2].includes(state.schema_version), `persisted state schema version is incompatible: ${state.schema_version ?? 'missing'}`)
   assert(state.workflow_id === manifest.id && state.manifest_version === manifest.version, 'persisted state does not match the manifest version')
   assert(state.phases && typeof state.phases === 'object' && !Array.isArray(state.phases), 'persisted state is incomplete: phases are missing')
   for (const phase of manifest.phases) {
@@ -282,20 +390,23 @@ function loadState(root, manifest) {
     assert(typeof state.phases[phase.id].status === 'string', `persisted state is incomplete: phase ${phase.id} status is missing`)
   }
   if (!Number.isInteger(state.revision)) state.revision = 0
-  return state
+  const phases = validateManifest(manifest, root)
+  return normalizeState(state, manifest, phases)
 }
 
-function newState(manifest, mode) {
+function newState(manifest, mode, root) {
   const now = new Date().toISOString()
+  const phases = validateManifest(manifest, root)
   return {
-    schema_version: 1,
+    schema_version: 2,
     revision: 0,
     workflow_id: manifest.id,
     manifest_version: manifest.version,
     mode,
     created_at: now,
     updated_at: now,
-    phases: Object.fromEntries(manifest.phases.map(phase => [phase.id, { status: 'pending', skill: phase.skill }])),
+    route: compileRoute(manifest, phases),
+    phases: Object.fromEntries(manifest.phases.map(phase => [phase.id, phaseRecord(phase)])),
     history: [],
     manifest,
   }
@@ -325,6 +436,73 @@ function artifactProblems(root, artifacts) {
   return problems
 }
 
+function safeRelativePath(value) {
+  if (typeof value !== 'string' || value.length === 0 || value.includes('\0') || path.isAbsolute(value)) return false
+  return !value.replaceAll('\\', '/').split('/').includes('..')
+}
+
+function resolveSafePath(root, value, label = 'path') {
+  assert(safeRelativePath(value), `${label} must be a safe repository-relative path`, 2)
+  const resolvedRoot = path.resolve(root)
+  const resolved = path.resolve(resolvedRoot, value)
+  assert(resolved === resolvedRoot || resolved.startsWith(`${resolvedRoot}${path.sep}`), `${label} escapes the repository root`, 2)
+  return resolved
+}
+
+function sha256File(filePath) {
+  return createHash('sha256').update(fs.readFileSync(filePath)).digest('hex')
+}
+
+function hashPath(root, relativePath) {
+  const target = resolveSafePath(root, relativePath, 'artifact')
+  assert(fs.existsSync(target), `checkpoint artifact is missing: ${relativePath}`)
+  const stat = fs.lstatSync(target)
+  if (stat.isFile()) return { path: relativePath, kind: 'file', sha256: sha256File(target), size: stat.size }
+  if (stat.isSymbolicLink()) return { path: relativePath, kind: 'symlink', sha256: createHash('sha256').update(fs.readlinkSync(target)).digest('hex') }
+  assert(stat.isDirectory(), `checkpoint artifact must be a file, directory, or symlink: ${relativePath}`)
+  const digest = createHash('sha256')
+  let fileCount = 0
+  const visit = (directory, prefix) => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true }).sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0)) {
+      const child = path.join(directory, entry.name)
+      const childRelative = `${prefix}/${entry.name}`
+      if (entry.isDirectory()) visit(child, childRelative)
+      else {
+        const childStat = fs.lstatSync(child)
+        const childHash = childStat.isSymbolicLink()
+          ? createHash('sha256').update(fs.readlinkSync(child)).digest('hex')
+          : sha256File(child)
+        digest.update(`${childRelative}\0${childHash}\n`)
+        fileCount += 1
+      }
+    }
+  }
+  visit(target, relativePath)
+  return { path: relativePath, kind: 'directory', sha256: digest.digest('hex'), files: fileCount }
+}
+
+function actorMetadata() {
+  return {
+    kind: 'agent',
+    id: process.env.GO_BEAST_AGENT || process.env.AGENT || 'unknown',
+    session_id: process.env.GO_BEAST_SESSION_ID || process.env.CODEX_SESSION_ID || 'unknown',
+  }
+}
+
+function commandProvenance(root) {
+  return {
+    command: process.argv[2] ?? 'unknown',
+    argv_sha256: createHash('sha256').update(JSON.stringify(process.argv.slice(1))).digest('hex'),
+    cwd: path.resolve(root),
+    exit_code: 0,
+  }
+}
+
+function attemptProblems(phase, record) {
+  if (record.attempts >= phaseRetryLimit(phase)) return [`retry limit reached for phase: ${phase.id}`]
+  return []
+}
+
 function preconditionProblems(root, preconditions) {
   return preconditions.flatMap(precondition => {
     if (precondition.type === 'path_exists' && !fs.existsSync(path.resolve(root, precondition.path))) return [`precondition path does not exist: ${precondition.path}`]
@@ -340,10 +518,12 @@ function invalidateDependents(state, phases, phaseId, visited = new Set()) {
     if (visited.has(phase.id)) continue
     visited.add(phase.id)
     const record = state.phases[phase.id]
-    if (record.status === 'completed' || record.status === 'running') {
+    if (['completed', 'running', 'handoff_pending'].includes(record.status)) {
       record.status = 'invalidated'
       delete record.started_at
       delete record.completed_at
+      delete record.interrupted_at
+      delete record.handoff
       invalidated.push(phase.id)
     }
     invalidated.push(...invalidateDependents(state, phases, phase.id, visited))
@@ -357,22 +537,67 @@ function unlockedProblems(root, phase, state, phases) {
     if (state.phases[dependency].status !== 'completed') problems.push(`dependency is not complete: ${dependency}`)
     if (!phases.get(dependency).transitions.includes(phase.id)) problems.push(`transition is not allowed: ${dependency} -> ${phase.id}`)
   }
+  problems.push(...attemptProblems(phase, state.phases[phase.id]))
   problems.push(...artifactProblems(root, phase.requires))
   problems.push(...preconditionProblems(root, phase.preconditions))
   return problems
 }
 
+function readyPhaseIds(root, state, phases, requestedPhase = null) {
+  return [...phases.values()]
+    .filter(phase => !requestedPhase || phase.id === requestedPhase)
+    .filter(phase => ['pending', 'invalidated'].includes(state.phases[phase.id].status))
+    .filter(phase => unlockedProblems(root, phase, state, phases).length === 0)
+    .map(phase => phase.id)
+}
+
+function startPhaseRecord(state, phase, source) {
+  const record = state.phases[phase.id]
+  record.status = 'running'
+  record.attempts = (record.attempts ?? 0) + 1
+  record.started_at = new Date().toISOString()
+  delete record.completed_at
+  delete record.interrupted_at
+  delete record.failed_at
+  delete record.error
+  record.handoff = null
+  state.history.push({ event: 'begin', phase: phase.id, source, attempt: record.attempts, at: record.started_at })
+  state.updated_at = record.started_at
+}
+
 function printStatus(state, phases) {
-  console.log(JSON.stringify({ workflow_id: state.workflow_id, mode: state.mode, phases: Object.fromEntries([...phases.keys()].map(id => [id, state.phases[id].status])) }, null, 2))
+  const ready = [...phases.values()]
+    .filter(phase => ['pending', 'invalidated'].includes(state.phases[phase.id].status))
+    .filter(phase => phase.depends_on.every(dependency => state.phases[dependency].status === 'completed'))
+    .map(phase => phase.id)
+  console.log(JSON.stringify({
+    workflow_id: state.workflow_id,
+    mode: state.mode,
+    schema_version: state.schema_version,
+    revision: state.revision,
+    ready,
+    phases: Object.fromEntries([...phases.keys()].map(id => [id, state.phases[id].status])),
+  }, null, 2))
+}
+
+function printRoute(route, format) {
+  if (format === 'json') {
+    console.log(JSON.stringify(route, null, 2))
+    return
+  }
+  console.log(`Workflow route: ${route.workflow_id}`)
+  console.log(`  order: ${route.order.join(' -> ')}`)
+  for (const slice of route.parallel_slices) console.log(`  parallel ${slice.id}: ${slice.phases.join(', ')}`)
 }
 
 function commandHelp() {
-  console.log('Usage: go-beast workflow <validate|start|status|resume|begin|complete|unlock> [--root PATH] [--file PATH] [--mode off|warn|strict] [--phase ID]')
+  console.log('Usage: go-beast workflow <validate|plan|start|status|resume|continue|begin|complete|retry|checkpoint|handoff|unlock> [--root PATH] [--file PATH] [--mode off|warn|strict] [--phase ID] [--format text|json]')
 }
 
 function main() {
   const options = parseArgs()
   if (options.command === 'help') return commandHelp()
+  assert(['text', 'json'].includes(options.format), '--format must be text or json', 2)
   const { packageRoot, projectRoot } = resolveWorkflowRoots({ explicitRoot: options.root })
   if (options.command === 'validate' && options.all) {
     const files = manifestFiles(projectRoot)
@@ -393,18 +618,62 @@ function main() {
     console.log(`Workflow manifest valid: ${path.relative(projectRoot, filePath)} (${manifest.phases.length} phases)`)
     return
   }
+  if (options.command === 'plan') {
+    printRoute(compileRoute(manifest, phases), options.format)
+    return
+  }
   if (options.command === 'unlock') { unlockStale(projectRoot, manifest); return }
   if (mode === 'off') { console.log(`Workflow engine disabled (mode: off): ${manifest.id}`); return }
   if (options.command === 'start') {
     withLock(projectRoot, manifest, () => {
       const file = statePath(projectRoot, manifest)
       if (fs.existsSync(file)) printStatus(loadState(projectRoot, manifest), phases)
-      else { const state = newState(manifest, mode); saveNewState(projectRoot, state); console.log(`Workflow started: ${manifest.id}`) }
+      else { const state = newState(manifest, mode, projectRoot); saveNewState(projectRoot, state); console.log(`Workflow started: ${manifest.id}`) }
     })
     return
   }
-  if (options.command === 'status' || options.command === 'resume') { printStatus(loadState(projectRoot, manifest), phases); return }
-  assert(['begin', 'complete'].includes(options.command), `unknown workflow command: ${options.command}`, 2)
+  if (options.command === 'status') { printStatus(loadState(projectRoot, manifest), phases); return }
+  if (options.command === 'resume') {
+    withLock(projectRoot, manifest, () => {
+      const state = loadState(projectRoot, manifest)
+      const expectedRevision = state.revision
+      const interrupted = []
+      for (const phase of phases.values()) {
+        const record = state.phases[phase.id]
+        if (record.status !== 'running') continue
+        record.status = 'interrupted'
+        record.interrupted_at = new Date().toISOString()
+        record.error = 'execution interrupted; retry or begin the phase to continue'
+        state.history.push({ event: 'interrupt', phase: phase.id, at: record.interrupted_at })
+        state.updated_at = record.interrupted_at
+        interrupted.push(phase.id)
+      }
+      if (state.__migrated || interrupted.length > 0) saveState(projectRoot, state, expectedRevision)
+      if (options.format === 'json') console.log(JSON.stringify({ workflow_id: manifest.id, migrated: Boolean(state.__migrated), interrupted }, null, 2))
+      else console.log(`Workflow resumed: ${manifest.id} (${interrupted.length} interrupted, ${state.__migrated ? 'v1 state migrated' : 'state current'})`)
+    })
+    return
+  }
+  if (options.command === 'continue') {
+    withLock(projectRoot, manifest, () => {
+      const state = loadState(projectRoot, manifest)
+      const expectedRevision = state.revision
+      state.mode = mode
+      const candidates = [...phases.values()]
+        .filter(phase => (!options.phase || phase.id === options.phase) && ['pending', 'invalidated'].includes(state.phases[phase.id].status))
+        .filter(phase => phase.depends_on.every(dependency => state.phases[dependency].status === 'completed' && phases.get(dependency).transitions.includes(phase.id)))
+      const warnings = candidates.flatMap(phase => unlockedProblems(projectRoot, phase, state, phases).map(message => `${phase.id}: ${message}`))
+      if (violation(mode, warnings) && !candidates.every(phase => unlockedProblems(projectRoot, phase, state, phases).length === 0)) { process.exitCode = 1; return }
+      const ready = candidates.filter(phase => unlockedProblems(projectRoot, phase, state, phases).length === 0)
+      for (const phase of ready) startPhaseRecord(state, phase, 'continue')
+      if (ready.length > 0 || state.__migrated) saveState(projectRoot, state, expectedRevision)
+      if (options.format === 'json') console.log(JSON.stringify({ workflow_id: manifest.id, started: ready.map(phase => phase.id), parallel_slices: [...new Set(ready.map(phase => phase.parallel_group).filter(Boolean))] }, null, 2))
+      else if (ready.length > 0) console.log(`Workflow phases started: ${ready.map(phase => phase.id).join(', ')}`)
+      else console.log(`No workflow phases ready: ${manifest.id}`)
+    })
+    return
+  }
+  assert(['begin', 'complete', 'retry', 'checkpoint', 'handoff'].includes(options.command), `unknown workflow command: ${options.command}`, 2)
   assert(options.phase && phases.has(options.phase), '--phase must identify a phase in the manifest', 2)
   const phase = phases.get(options.phase)
   withLock(projectRoot, manifest, () => {
@@ -422,15 +691,71 @@ function main() {
       }
       warnings.push(...unlockedProblems(projectRoot, phase, state, phases))
       if (violation(mode, warnings)) { process.exitCode = 1; return }
-      record.status = 'running'
-      record.started_at = new Date().toISOString()
-      state.history.push({ event: 'begin', phase: phase.id, at: record.started_at })
-      state.updated_at = record.started_at
+      startPhaseRecord(state, phase, 'begin')
       saveState(projectRoot, state, expectedRevision)
       console.log(`Phase unlocked: ${phase.id} (skill: ${phase.skill})`)
       return
     }
-    assert(record.status === 'running', `phase is not running: ${phase.id}`)
+    if (options.command === 'retry') {
+      assert(['interrupted', 'failed', 'handoff_pending'].includes(record.status), `phase is not retryable: ${phase.id}`)
+      assert(record.attempts < phaseRetryLimit(phase), `retry limit reached for phase: ${phase.id}`)
+      record.status = 'pending'
+      record.retry_at = new Date().toISOString()
+      delete record.started_at
+      delete record.completed_at
+      delete record.interrupted_at
+      delete record.failed_at
+      delete record.error
+      record.handoff = null
+      state.history.push({ event: 'retry', phase: phase.id, next_attempt: record.attempts + 1, at: record.retry_at })
+      state.updated_at = record.retry_at
+      saveState(projectRoot, state, expectedRevision)
+      console.log(`Phase queued for retry: ${phase.id} (attempt ${record.attempts + 1})`)
+      return
+    }
+    if (options.command === 'checkpoint') {
+      assert(typeof options.name === 'string' && /^[A-Za-z0-9._-]+$/.test(options.name), '--name must be a non-empty checkpoint identifier', 2)
+      assert(['running', 'handoff_pending', 'completed'].includes(record.status), `phase is not checkpointable: ${phase.id}`)
+      const checkpointAt = new Date().toISOString()
+      const checkpoint = {
+        id: `${phase.id}:${options.name}:${record.checkpoints.length + 1}`,
+        name: options.name,
+        phase: phase.id,
+        created_at: checkpointAt,
+        actor: actorMetadata(),
+        provenance: {
+          command: commandProvenance(projectRoot),
+          artifacts: options.artifact ? [hashPath(projectRoot, options.artifact)] : [],
+        },
+      }
+      record.checkpoints.push(checkpoint)
+      state.history.push({ event: 'checkpoint', phase: phase.id, checkpoint_id: checkpoint.id, at: checkpointAt })
+      state.updated_at = checkpointAt
+      saveState(projectRoot, state, expectedRevision)
+      console.log(`Checkpoint recorded: ${checkpoint.id}`)
+      return
+    }
+    if (options.command === 'handoff') {
+      assert(typeof options.to === 'string' && /^[A-Za-z0-9._-]+$/.test(options.to), '--to must be a non-empty agent identifier', 2)
+      assert(typeof options.note === 'string' && options.note.length <= 500, '--note must be provided and contain at most 500 characters', 2)
+      assert(['running', 'handoff_pending'].includes(record.status), `phase is not handoff-ready: ${phase.id}`)
+      if (phase.handoff?.targets && !phase.handoff.targets.includes(options.to)) fail(`handoff target is not allowed for ${phase.id}: ${options.to}`, 2)
+      const handoffAt = new Date().toISOString()
+      record.status = 'handoff_pending'
+      record.handoff = {
+        target: options.to,
+        note: options.note,
+        actor: actorMetadata(),
+        checkpoint_id: record.checkpoints.at(-1)?.id ?? null,
+        created_at: handoffAt,
+      }
+      state.history.push({ event: 'handoff', phase: phase.id, target: options.to, checkpoint_id: record.handoff.checkpoint_id, at: handoffAt })
+      state.updated_at = handoffAt
+      saveState(projectRoot, state, expectedRevision)
+      console.log(`Phase handed off: ${phase.id} -> ${options.to}`)
+      return
+    }
+    assert(record.status === 'running' || record.status === 'handoff_pending', `phase is not running: ${phase.id}`)
     warnings.push(...artifactProblems(projectRoot, phase.produces))
     if (violation(mode, warnings)) { process.exitCode = 1; return }
     record.status = 'completed'
