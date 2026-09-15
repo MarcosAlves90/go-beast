@@ -48,6 +48,10 @@ The following results were captured on the repository's `release/v2` branch:
   set to `1`), so no harness result is represented as a pass.
 - `go-skill-eval` and `go-hook-eval`: **not measured** in this baseline; both
   require an agent workflow runtime and remain outside the offline gate.
+- Fresh Codex subagent evidence: **2/2 `go-tern` cases passed** with a new
+  `codex exec` process; the `go-mule` case was **INCONCLUSIVE** because its
+  sandbox could not initialize the state DB/app-server, and the full matrix
+  attempt timed out. See the [Codex live evidence](V2_CODEX_LIVE_EVIDENCE.md).
 
 The report generator records these states explicitly instead of collapsing
 unrequested, skipped, failed, or timed-out execution into a pass:

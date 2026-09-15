@@ -84,6 +84,10 @@ node scripts/v2-validation-report.mjs \
   --output docs/architecture/V2_EVALUATION_REPORT.md
 ```
 
+Fresh Codex subagent observations are captured separately in the [Codex live
+evidence](architecture/V2_CODEX_LIVE_EVIDENCE.md). A blocked or timed-out
+subagent is recorded as inconclusive, never as a passing live run.
+
 The installation regression suite also covers permission preview, dry-run
 non-mutation, per-asset integrity metadata, tamper rejection, unmanaged-file
 preservation, failed-transaction rollback, explicit rollback, and upgrade

@@ -47,6 +47,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
   coverage in the `go-squirrel` context compiler.
 - **v2 task CLI contract:** add a help-text snapshot and migration assertions
   for the stable JSON envelope and preserved v1 capabilities namespace.
+- **v2 Codex live evidence:** record fresh-context `go-tern` passes separately
+  from an inconclusive `go-mule` sandbox run and a timed-out full matrix.
 
 ## [1.56.0] - 2026-09-13
 
