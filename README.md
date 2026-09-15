@@ -192,6 +192,24 @@ Hook wiring and conformance consume this manifest while preserving unmanaged
 native configuration and the v1 normalized trace source field. See the
 [adapter SDK contract](docs/architecture/ADAPTER_SDK.md).
 
+The task-oriented v2 CLI provides a single task ID across planning, workflow
+state, explanations, recovery, and structural audit. The existing lower-level
+namespaces remain compatible entry points:
+
+```bash
+go-beast init --id task-login --agent codex --profile default
+go-beast plan --task task-login --kind feature --surface backend --format json
+go-beast run --task task-login --adapter codex --format json
+go-beast status --task task-login --format json
+go-beast resume --task task-login --format json
+go-beast explain capability go-hawk --format json
+go-beast audit --task task-login --format json
+```
+
+`audit` reports structural observations and labels execution as
+`not_verified` until a stronger evidence source is present. See the [task CLI
+contract](docs/architecture/TASK_CLI.md).
+
 The v2 evidence ledger records an append-only, hash-linked account of workflow
 events. It keeps command and artifact digests, source adapter identity, and the
 distinction between declared, observed, and verified evidence. It does not

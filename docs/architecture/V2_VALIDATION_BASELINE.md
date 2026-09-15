@@ -32,6 +32,10 @@ The following results were captured on the repository's `release/v2` branch:
   unsupported diagnostics, all three adapter fixtures, native configuration
   preservation, and registry provenance passed in
   `tests/plugin/test-adapter-sdk-v2.sh`.
+- Task CLI regression: **PASS**; root-bounded initialization, delivery-plan
+  delegation, workflow start/status/resume, capability explanation, structural
+  audit, and v1 namespace compatibility passed in
+  `tests/plugin/test-task-cli-v2.sh`.
 - Adapter fixtures: **3/3 passed** for Claude Code, Codex, and Copilot,
   including v1 normalization and v2 exact adapter-source claims.
 - Live matrix inventory: **3/3 suites present**. Live-agent execution was not

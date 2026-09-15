@@ -36,6 +36,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
   declaration with lifecycle/tool-event mappings, compatibility and ownership
   metadata, degradation diagnostics, native-config preservation, and
   conformance provenance.
+- **v2 task CLI:** add task-oriented `init`, `plan`, `run`, `status`, `explain`,
+  `resume`, and `audit` commands with root-bounded state, JSON envelopes,
+  workflow delegation, and v1 namespace compatibility.
 
 ## [1.56.0] - 2026-09-13
 

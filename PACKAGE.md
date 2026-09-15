@@ -40,6 +40,7 @@ go-beast/
 ├── go-beast.workflow.schema.json ← Structural contract for workflow manifests
 ├── go-beast.context.schema.json ← Versioned v2 bounded phase context packet contract
 ├── go-beast.adapters.schema.json ← Versioned v2 harness adapter contract
+├── go-beast.task.schema.json ← Versioned v2 task control-plane record contract
 ├── adapters/
 │   └── manifest.json            ← Claude Code, Codex, and Copilot adapter matrix
 ├── release-certificate.json ← Signed-style release attestation for the latest cut
@@ -57,6 +58,7 @@ go-beast/
 │   ├── architecture/WORKFLOW_ENGINE.md ← Optional workflow engine contract and CLI
 │   ├── architecture/CONTEXT_COMPILER.md ← Bounded phase context compiler contract
 │   ├── architecture/ADAPTER_SDK.md ← Harness adapter SDK and degradation contract
+│   ├── architecture/TASK_CLI.md ← Task-oriented v2 control-plane CLI contract
 │   ├── GETTING_STARTED.md      ← Installation and agent setup
 │   ├── HARNESS.md              ← Harness integrations and adapter boundaries
 │   ├── PIPELINE.md             ← Skill pipeline, semantic alias catalog, and workflows
@@ -72,6 +74,7 @@ go-beast/
 │       ├── ADR-008-workflow-engine-v2.md ← Resumable routes, parallel slices, provenance, and handoffs
 │       ├── ADR-009-context-compiler.md ← Hash-verifiable phase context handoff decision
 │       ├── ADR-010-adapter-sdk.md ← Versioned harness adapter SDK decision
+│       ├── ADR-011-task-cli.md ← Task-oriented v2 control-plane CLI decision
 │       ├── ADR-007-transactional-installation.md ← Transactional install, integrity, and rollback decision
 │       ├── GO_BEAST_V2_ROADMAP.md ← Prioritized v2 implementation slices and release gates
 │       ├── V2_VALIDATION_BASELINE.md ← Measured v2 deterministic/live validation baseline
@@ -114,6 +117,7 @@ go-beast/
 │   ├── delivery.mjs            ← Strict delivery route planner and workflow-engine adapter
 │   ├── context-compiler.mjs    ← Bounded go-squirrel phase context compiler and verifier
 │   ├── adapters.mjs             ← Adapter manifest validator, matrix, and diagnostics
+│   ├── task-cli.mjs              ← Task-oriented v2 control-plane facade
 │   ├── conformance.mjs         ← Harness adapters and delivery trace conformance checker
 │   ├── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
 │   ├── transversal-rules.mjs  ← Generates and checks transversal rule surfaces
