@@ -1,16 +1,16 @@
 {
-  "version": "1.56.0",
-  "tag": "v1.56.0",
-  "date": "2026-09-13",
+  "version": "2.0.0",
+  "tag": "v2.0.0",
+  "date": "2026-09-15",
   "canonicalVersionSource": "package.json",
   "generatedBy": "scripts/release-version.mjs",
-  "generatedAt": "2026-09-13T05:48:25.583Z",
+  "generatedAt": "2026-09-15T02:00:25.656Z",
   "surfaces": {
-    "package.json": "d2a5f26933575e3955f3f63ec329028fc22a6582f2f8dc084394b2ebd8409356",
-    "README.md": "e5b7edca24264c0c718c97e590072decba381fc014490320a62861afef140368",
-    "PACKAGE.md": "0d387adbf8a2c5f7ead89b28ad593e7643ed2a8d4d88ac8a1d6a3fade159d682",
-    "CHANGELOG.md": "c5d93801c30b2fac5a64d36cf503d1c60e308c22febfe8c035a92956576ecbb2",
-    "plugins/go-beast/.codex-plugin/plugin.json": "293c9557904488179933644b5b1fc7caa0cbe539daf8669a5294fc9a39868f95",
-    "plugins/go-beast/.claude-plugin/plugin.json": "9ffbcbefc4b17c2dbbb0a86391f8de4230ab2a3c7801bea229613e7e86e32b1f"
+    "package.json": "b63263744dbbbab0ebb85b213789b1e661deadb85ce67edd331c6e2db98b59e1",
+    "README.md": "6744b3c9259c2da46e9047f0178e8c0d3374a3b5dbf637daa2714b3f20b2d922",
+    "PACKAGE.md": "950bfe665ccea23aa054919f89da99f1eac36681e89669fb11abe6ad43e4b2a6",
+    "CHANGELOG.md": "341e854d2ad47fe631e3d9087d1f520fb429473725a9284b6e77a12afcbb6d9d",
+    "plugins/go-beast/.codex-plugin/plugin.json": "9c1c8e5f66a3cf20cc9b0304afe06910e9138da7229788856fb0967d60dce500",
+    "plugins/go-beast/.claude-plugin/plugin.json": "bfbcc3524865281c4ee1ee3de9a880afbcffec870b8c789d202f2dbcafd7cd3b"
   }
 }

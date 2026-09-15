@@ -9,46 +9,29 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-15
+
 ### Added
 
-- **v2 capability registry:** add a versioned schema, deterministic compiler,
-  compatibility validator, and `go-beast capabilities` inspection commands
-  for skills, hooks, workflows, profiles, and lifecycle adapters.
-- **v2 profile resolver:** add global/project/session precedence, v1-compatible
-  profile loading, and a read-only `go-beast doctor` report with provenance,
-  gaps, conflicts, ownership, and exact dry-run mutations.
-- **v2 evidence ledger:** add an append-only, hash-linked event envelope with
-  command and artifact provenance, trust-state auditing, adapter validation,
-  tamper detection, and protocol verification through `go-beast evidence`.
-- **v2 validation baseline:** add deterministic P0 unit coverage, fixtures for
-  all supported adapters, a separate live-agent matrix, and documented
-  baseline metrics and limitations.
-- **v2 transactional installer:** add permission preview, dry-run, per-asset
-  integrity metadata, fail-closed verification, persisted rollback, and a
-  recoverable release-archive pointer swap while preserving unmanaged targets.
-- **v2 workflow engine:** add deterministic route planning, parallel `continue`,
-  interruption recovery, bounded retry, digest-only checkpoints, explicit
-  handoffs, and persisted migration from v1 workflow state.
-- **v2 context compiler:** add bounded, hash-verifiable phase packets sourced
-  from validated `go-squirrel` records, completion evidence, and workflow
-  integration through `go-beast context`.
-- **v2 adapter SDK:** add a schema-backed Claude Code, Codex, and Copilot
-  declaration with lifecycle/tool-event mappings, compatibility and ownership
-  metadata, degradation diagnostics, native-config preservation, and
-  conformance provenance.
-- **v2 task CLI:** add task-oriented `init`, `plan`, `run`, `status`, `explain`,
-  `resume`, and `audit` commands with root-bounded state, JSON envelopes,
-  workflow delegation, and v1 namespace compatibility.
-- **v2 evaluation evidence:** add a deterministic report generator that
-  separates offline measurements, live-agent inventory and execution status,
-  structural workflow checks, and explicit unmeasured LLM limitations.
-- **v2 context-quality baseline:** add labelled bounded-retrieval cases for
-  relevance recall, irrelevant exclusion, uncertainty capture, and provenance
-  coverage in the `go-squirrel` context compiler.
-- **v2 task CLI contract:** add a help-text snapshot and migration assertions
-  for the stable JSON envelope and preserved v1 capabilities namespace.
-- **v2 Codex live evidence:** record fresh-context `go-tern` passes separately
-  from an inconclusive `go-mule` sandbox run and a timed-out full matrix.
+- **adapter:** add versioned adapter sdk
+- **cli:** add task-oriented v2 facade
+- **context:** add bounded phase compiler
+- **context:** add deterministic quality benchmark
+- **evidence:** add v2 provenance ledger
+- **install:** add transactional integrity and rollback
+- **profiles:** add layered doctor diagnostics
+- **registry:** add v2 capability inspection
+- **validation:** add v2 evaluation evidence report
+- **workflow:** add resumable v2 coordination
+
+### Changed
+
+- **architecture:** define go-beast v2 control plane
+- **branding:** refresh go-beast banner
+- **branding:** replace go-beast banner
+- **cli:** lock v2 task command snapshots
+- **test:** record fresh Codex live evidence
+- **v2:** add deterministic validation baseline
 
 ## [1.56.0] - 2026-09-13
 

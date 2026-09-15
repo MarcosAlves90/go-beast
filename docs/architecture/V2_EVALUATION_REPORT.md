@@ -1,8 +1,8 @@
 # Go Beast v2 evaluation report
 
-Captured: 2026-09-15T01:33:15.481Z
-Repository: release/v2 at 51e7cefdcc9e3baf7c0f2c5136f10a89c18e23b7
-Version: 1.56.0
+Captured: 2026-09-15T02:03:59.444Z
+Repository: release/v2 at 9ee04d1bf4ba2d4195aaa9b392a6e800a4a1b7e1
+Version: 2.0.0
 
 ## Deterministic evidence
 
