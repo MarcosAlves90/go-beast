@@ -225,7 +225,9 @@ Use when preparing to commit, open a PR, or describe a release-facing change.
 3. Ensure commit messages follow Conventional Commits.
 4. Ensure the PR uses the repository template and includes a closing keyword
    when resolving an issue.
-5. Update release-facing docs and version metadata when the change requires it.
+5. Confirm the PR targets `release`; only the permanent `release` branch may
+   target `main` for promotion.
+6. Update release-facing docs and version metadata when the change requires it.
 
 ### Stop Conditions
 
