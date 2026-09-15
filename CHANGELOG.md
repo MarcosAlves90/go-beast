@@ -45,6 +45,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **v2 context-quality baseline:** add labelled bounded-retrieval cases for
   relevance recall, irrelevant exclusion, uncertainty capture, and provenance
   coverage in the `go-squirrel` context compiler.
+- **v2 task CLI contract:** add a help-text snapshot and migration assertions
+  for the stable JSON envelope and preserved v1 capabilities namespace.
 
 ## [1.56.0] - 2026-09-13
 

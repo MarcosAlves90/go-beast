@@ -127,6 +127,7 @@ go-beast/
 ├── tests/
 │   ├── helpers.sh             ← Shared shell assertions for integration tests
 │   ├── fixtures/adapters/     ← Harness-neutral adapter input fixtures
+│   ├── fixtures/task-cli-v2/  ← Stable task CLI text contract snapshots
 │   ├── unit/                  ← Deterministic Node unit tests for P0 modules
 │   ├── live/                  ← Live-agent regression matrix inventory
 │   ├── claude-code/           ← Claude Code real-session integration tests

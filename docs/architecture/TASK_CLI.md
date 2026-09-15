@@ -50,4 +50,7 @@ workflow contract.
 JSON output has a stable `schema_version`, `command`, and `task_id` envelope so
 scripts can consume it without parsing human text. Text output remains concise
 for interactive use. Delegated command failures propagate as non-zero exits and
-are never converted into successful task records.
+are never converted into successful task records. The help text is protected by
+the snapshot at `tests/fixtures/task-cli-v2/help.txt`; the corresponding
+regression also checks the JSON envelope and a v1 `capabilities validate`
+namespace for migration compatibility.

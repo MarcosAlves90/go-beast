@@ -1,0 +1,13 @@
+Usage: go-beast <init|doctor|plan|run|status|explain|resume|audit> [options]
+
+  init --id TASK [--agent NAME] [--profile NAME]   Initialize a project-local task
+  plan --task TASK [--kind KIND] [--surface SURFACE]  Compile a delivery plan
+  run --task TASK [--plan PATH] [--adapter NAME]    Start the workflow engine
+  status --task TASK                              Inspect workflow state
+  explain capability ID                           Explain registry metadata
+  resume --task TASK                              Recover interrupted workflow state
+  audit --task TASK                               Audit structural task evidence
+  doctor                                           Existing v1 doctor namespace remains available
+  --root PATH --format text|json                  Select project root and output format
+
+Compatibility namespaces remain available: capabilities, conformance, context, delivery, doctor, evidence, integration, workflow
