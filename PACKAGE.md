@@ -78,6 +78,7 @@ go-beast/
 │       ├── ADR-007-transactional-installation.md ← Transactional install, integrity, and rollback decision
 │       ├── GO_BEAST_V2_ROADMAP.md ← Prioritized v2 implementation slices and release gates
 │       ├── V2_VALIDATION_BASELINE.md ← Measured v2 deterministic/live validation baseline
+│       ├── V2_EVALUATION_REPORT.md ← Versioned deterministic and agent-runtime evaluation evidence
 │       ├── task-artifacts/       ← v2 ADR, stack, diagram, and interface contracts
 │       │   ├── ADR.md
 │       │   ├── STACK.md

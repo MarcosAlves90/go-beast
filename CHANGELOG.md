@@ -39,6 +39,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **v2 task CLI:** add task-oriented `init`, `plan`, `run`, `status`, `explain`,
   `resume`, and `audit` commands with root-bounded state, JSON envelopes,
   workflow delegation, and v1 namespace compatibility.
+- **v2 evaluation evidence:** add a deterministic report generator that
+  separates offline measurements, live-agent inventory and execution status,
+  structural workflow checks, and explicit unmeasured LLM limitations.
 
 ## [1.56.0] - 2026-09-13
 

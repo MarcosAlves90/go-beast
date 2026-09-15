@@ -71,8 +71,18 @@ The current baseline uses deterministic shell integration suites and Node's
 built-in test runner; it does not define an instrumented coverage threshold.
 The existing `go-skill-eval` and `go-hook-eval` workflows are agent-dependent
 LLM evaluations and are not silently folded into `npm run verify`. See the
-[v2 validation baseline](architecture/V2_VALIDATION_BASELINE.md) for measured
-results and residual limitations.
+[v2 validation baseline](architecture/V2_VALIDATION_BASELINE.md) and its
+[evaluation evidence report](architecture/V2_EVALUATION_REPORT.md) for measured
+results and residual limitations. To regenerate the report with the offline
+gate measured, run:
+
+```bash
+node scripts/v2-validation-report.mjs \
+  --repo . \
+  --verify \
+  --format markdown \
+  --output docs/architecture/V2_EVALUATION_REPORT.md
+```
 
 The installation regression suite also covers permission preview, dry-run
 non-mutation, per-asset integrity metadata, tamper rejection, unmanaged-file

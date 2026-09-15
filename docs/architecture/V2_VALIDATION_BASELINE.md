@@ -4,7 +4,8 @@
 
 This report records what was measured for the v2 validation slice. It is a
 baseline, not a quality target: no coverage threshold or LLM score is inferred
-from these results.
+from these results. The machine-generated evidence projection is published in
+the [v2 evaluation report](V2_EVALUATION_REPORT.md).
 
 ## Taxonomy
 
@@ -43,6 +44,17 @@ The following results were captured on the repository's `release/v2` branch:
   set to `1`), so no harness result is represented as a pass.
 - `go-skill-eval` and `go-hook-eval`: **not measured** in this baseline; both
   require an agent workflow runtime and remain outside the offline gate.
+
+The report generator records these states explicitly instead of collapsing
+unrequested, skipped, failed, or timed-out execution into a pass:
+
+```bash
+node scripts/v2-validation-report.mjs \
+  --repo . \
+  --verify \
+  --format markdown \
+  --output docs/architecture/V2_EVALUATION_REPORT.md
+```
 
 ## Limitations
 
