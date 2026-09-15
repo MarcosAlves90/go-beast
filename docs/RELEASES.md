@@ -1,18 +1,19 @@
 # Release trains
 
 Release preparation is manual. Ordinary pull requests should not edit
-`package.json`, version markers, or released changelog sections. When a
-maintainer decides that `main` is ready, use the GitHub Actions **Prepare
-Release** workflow with `workflow_dispatch`.
+`package.json`, version markers, or released changelog sections. Feature work
+is integrated into the permanent `release` branch; when that branch is ready,
+use the GitHub Actions **Prepare Release** workflow with `workflow_dispatch`.
 
 ## Prepare a release
 
-1. Open **Actions → Prepare Release → Run workflow** against `main`.
+1. Open **Actions → Prepare Release → Run workflow** against `release`.
 2. Leave `version` empty for automatic SemVer calculation, or enter an explicit
    `x.y.z` override.
-3. Review the generated `release/next` pull request, especially the version and
-   `CHANGELOG.md` grouping.
-4. Merge the release PR after review.
+3. Review and merge the generated `release/prepare` → `release` pull request,
+   especially the version and `CHANGELOG.md` grouping.
+4. Review and merge the generated `release` → `main` promotion pull request.
+5. Keep `release` for the next integration cycle; it is never deleted.
 
 The workflow considers commits since the latest `v<major>.<minor>.<patch>` tag.
 Conventional Commit types determine both the SemVer bump and the changelog
@@ -31,8 +32,8 @@ Pull request labels can override these defaults:
 - `changelog:added`, `changelog:changed`, `changelog:fixed`,
   `changelog:removed`, or `changelog:security` overrides the section.
 
-The workflow is idempotent: rerunning it refreshes the same `release/next`
-branch and open release PR instead of creating duplicates.
+The workflow is idempotent: rerunning it refreshes the same `release/prepare`
+branch, preparation PR, and promotion PR instead of creating duplicates.
 
 ## Publish after merge
 

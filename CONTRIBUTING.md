@@ -84,6 +84,19 @@ Requirements:
 - Explain the problem, root cause, change, validation, risks, and follow-ups.
 - Review the full diff before opening the PR.
 
+## Branch flow
+
+`release` is the permanent integration branch. It must not be deleted or
+renamed.
+
+- Feature, fix, test, and documentation branches open pull requests against
+  `release`.
+- Only `release` opens the promotion pull request against `main`.
+- Direct pushes are disabled on both integration branches; merge through a
+  reviewed pull request.
+- The `Branch Flow` check validates the base and head branch combination
+  without executing code from the pull request.
+
 Commit messages must follow Conventional Commits:
 
 ```text
@@ -178,7 +191,7 @@ The validation command contract is:
 - `npm run test:live` — runs agent-dependent tests separately and is never part
   of `verify` or the required CI gate.
 
-CI runs only `npm run verify` on pull requests and pushes to `main`.
+CI runs `npm run verify` on pull requests and pushes to `release` and `main`.
 
 The existing granular `package.json` scripts remain available for focused
 diagnosis, compatibility, and selective live-test execution. Use them only to
@@ -192,9 +205,12 @@ release sections. Maintainers group merged work through the manual
 [release-train workflow](docs/RELEASES.md), which creates a reviewable release
 PR from Conventional Commits.
 
-Use **Actions → Prepare Release → Run workflow** on `main`. Leave the version
-input empty for automatic SemVer calculation or provide an explicit `x.y.z`
-override. Review and merge the generated `release/next` PR before publishing.
+Use **Actions → Prepare Release → Run workflow** on `release`. Leave the
+version input empty for automatic SemVer calculation or provide an explicit
+`x.y.z` override. Review and merge the generated `release/prepare` → `release`
+PR, then review and merge the generated `release` → `main` promotion PR before
+publishing. The `release` branch is permanent and is never deleted after
+promotion.
 
 See [docs/RELEASES.md](docs/RELEASES.md) for commit grouping, label overrides,
 idempotency, and the post-merge publication flow.

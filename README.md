@@ -84,6 +84,13 @@ the [installation guide](docs/GETTING_STARTED.md), [validation contract](docs/TE
 The pipeline catalog also lists one semantic alias for every skill. Aliases are
 documentation only; `go-*` names remain the official identifiers.
 
+## Branch flow
+
+The repository uses a permanent `release` integration branch. Feature, fix,
+test, and documentation branches merge into `release`; only `release` can be
+promoted to `main`. Both integration branches are protected, and the release
+branch is intentionally retained after promotion.
+
 ## Maintainer path
 
 ```bash
@@ -117,6 +124,9 @@ issues, pull requests, versioning, and the canonical validation flow.
 Use the manual [release-train workflow](docs/RELEASES.md) to calculate the
 version, generate `CHANGELOG.md`, and open a release PR. After that PR is merged,
 publish the prepared release from a clean checkout:
+
+Release preparation first merges `release/prepare` into the permanent `release`
+branch; the resulting `release` → `main` promotion PR is the release gate.
 
 ```bash
 npm run release:version:check

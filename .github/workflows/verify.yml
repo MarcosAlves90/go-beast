@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - release
 
 permissions:
   contents: read
@@ -31,6 +32,36 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node scripts/validate-pr-title.mjs "$PR_TITLE"
+
+  branch-flow:
+    name: Enforce branch flow
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate pull request base and head
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if [ "$BASE_REF" = "release" ]; then
+            if [ "$HEAD_REF" = "release" ]; then
+              echo "A pull request cannot target release from release." >&2
+              exit 1
+            fi
+            echo "Accepted: $HEAD_REF -> release"
+            exit 0
+          fi
+
+          if [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" = "release" ] && [ "$HEAD_REPO" = "$REPOSITORY" ]; then
+            echo "Accepted: release -> main"
+            exit 0
+          fi
+
+          echo "Only feature branches may target release; only the repository's release branch may target main." >&2
+          echo "Received: $HEAD_REPO:$HEAD_REF -> $BASE_REF" >&2
+          exit 1
 
   verify:
     runs-on: ubuntu-latest

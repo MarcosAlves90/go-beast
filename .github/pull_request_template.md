@@ -4,6 +4,9 @@
 - Use a GitHub closing keyword when applicable: `Closes #<issue>`, `Fixes #<issue>`, or `Resolves #<issue>`.
 - Closing issue(s):
 
+## Integration target
+- [ ] This PR targets `release`, or it is the promotion PR from `release` to `main`.
+
 ## Environment
 - Model and version:
 - Harness and version:
