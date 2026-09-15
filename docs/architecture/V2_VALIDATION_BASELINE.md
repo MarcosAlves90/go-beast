@@ -29,6 +29,10 @@ The following results were captured on the repository's `release/v2` branch:
 - Context compiler regression: **PASS**; bounded phase selection, local graph
   provenance, stale-record rejection, completion finalization, and workflow
   completion integration passed in `tests/plugin/test-context-compiler-v2.sh`.
+- Context-quality benchmark: **PASS**; 3/3 labelled retrieval cases passed
+  with macro recall 1.0, macro precision 1.0, irrelevant exclusion 1.0,
+  uncertainty capture 1.0, and provenance coverage 1.0. See the
+  [context-quality baseline](CONTEXT_QUALITY_BASELINE.md).
 - Adapter SDK regression: **PASS**; manifest validation, capability matrix,
   unsupported diagnostics, all three adapter fixtures, native configuration
   preservation, and registry provenance passed in

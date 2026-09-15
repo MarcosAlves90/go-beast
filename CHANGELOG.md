@@ -42,6 +42,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **v2 evaluation evidence:** add a deterministic report generator that
   separates offline measurements, live-agent inventory and execution status,
   structural workflow checks, and explicit unmeasured LLM limitations.
+- **v2 context-quality baseline:** add labelled bounded-retrieval cases for
+  relevance recall, irrelevant exclusion, uncertainty capture, and provenance
+  coverage in the `go-squirrel` context compiler.
 
 ## [1.56.0] - 2026-09-13
 
