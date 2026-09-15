@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 const args = process.argv.slice(2)
-if (!['workflow', 'delivery', 'conformance', 'integration', 'capabilities', 'doctor', 'evidence'].includes(args[0])) {
-  console.error('Usage: go-beast <workflow|delivery|conformance|integration|capabilities|doctor|evidence> <command> [options]')
+if (!['workflow', 'delivery', 'conformance', 'integration', 'capabilities', 'doctor', 'evidence', 'context'].includes(args[0])) {
+  console.error('Usage: go-beast <workflow|delivery|conformance|integration|capabilities|doctor|evidence|context> <command> [options]')
   process.exit(2)
 }
 
@@ -19,6 +19,9 @@ if (namespace === 'integration') {
   main(args.slice(1))
 } else if (namespace === 'evidence') {
   const { main } = await import('../scripts/evidence.mjs')
+  main(args.slice(1))
+} else if (namespace === 'context') {
+  const { main } = await import('../scripts/context-compiler.mjs')
   main(args.slice(1))
 } else if (namespace === 'conformance') {
   const { main } = await import('../scripts/conformance.mjs')

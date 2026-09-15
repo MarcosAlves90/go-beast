@@ -29,6 +29,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **v2 workflow engine:** add deterministic route planning, parallel `continue`,
   interruption recovery, bounded retry, digest-only checkpoints, explicit
   handoffs, and persisted migration from v1 workflow state.
+- **v2 context compiler:** add bounded, hash-verifiable phase packets sourced
+  from validated `go-squirrel` records, completion evidence, and workflow
+  integration through `go-beast context`.
 
 ## [1.56.0] - 2026-09-13
 

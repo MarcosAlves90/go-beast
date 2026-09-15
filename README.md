@@ -195,6 +195,28 @@ and unsupported adapter claims. With `--protocol`, it reuses the v1
 harness-neutral conformance rules, preserving compatibility while making
 provenance auditable.
 
+The v2 context compiler creates a bounded phase-entry packet from a validated
+`go-squirrel` knowledge base. It records the selected record hashes, workflow
+identity, validation evidence, decisions, open questions, and next reads:
+
+```bash
+go-beast context compile --kb-root knowledge \
+  --workflow-file workflows/feature.json --phase plan \
+  --task "Decide the implementation approach" \
+  --max-records 8 --max-tokens 2500 \
+  --output .go-beast/context-entry.json
+go-beast context verify --kb-root knowledge \
+  --packet .go-beast/context-entry.json
+go-beast context finalize --kb-root knowledge \
+  --packet .go-beast/context-entry.json \
+  --completion .go-beast/context-completion.json \
+  --output .go-beast/context-final.json
+go-beast workflow complete --file workflows/feature.json \
+  --phase plan --context .go-beast/context-final.json
+```
+
+See the [context compiler contract](docs/architecture/CONTEXT_COMPILER.md).
+
 Lifecycle adapters share one runtime policy for active-beast applicability,
 required artifacts, approvals, implementation unlock, and completion evidence.
 See [ADR-006](docs/architecture/ADR-006-runtime-policy-gate.md).

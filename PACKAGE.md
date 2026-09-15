@@ -38,6 +38,7 @@ go-beast/
 ├── go-beast.profile.schema.json ← Versioned v2 layered profile contract
 ├── go-beast.evidence.schema.json ← Versioned v2 append-only evidence ledger contract
 ├── go-beast.workflow.schema.json ← Structural contract for workflow manifests
+├── go-beast.context.schema.json ← Versioned v2 bounded phase context packet contract
 ├── release-certificate.json ← Signed-style release attestation for the latest cut
 ├── package.json           ← Package metadata and maintenance scripts
 ├── .github/
@@ -51,6 +52,7 @@ go-beast/
 │   ├── RELEASES.md             ← Release-train preparation and publication flow
 │   ├── architecture/DECLARATIVE_ORCHESTRATION.md ← Manifest orchestration contract
 │   ├── architecture/WORKFLOW_ENGINE.md ← Optional workflow engine contract and CLI
+│   ├── architecture/CONTEXT_COMPILER.md ← Bounded phase context compiler contract
 │   ├── GETTING_STARTED.md      ← Installation and agent setup
 │   ├── HARNESS.md              ← Harness integrations and adapter boundaries
 │   ├── PIPELINE.md             ← Skill pipeline, semantic alias catalog, and workflows
@@ -64,6 +66,7 @@ go-beast/
 │       ├── ADR-005-behavioral-conformance.md ← Harness-neutral conformance architecture decision
 │       ├── ADR-006-runtime-policy-gate.md ← Shared runtime policy gate architecture decision
 │       ├── ADR-008-workflow-engine-v2.md ← Resumable routes, parallel slices, provenance, and handoffs
+│       ├── ADR-009-context-compiler.md ← Hash-verifiable phase context handoff decision
 │       ├── ADR-007-transactional-installation.md ← Transactional install, integrity, and rollback decision
 │       ├── GO_BEAST_V2_ROADMAP.md ← Prioritized v2 implementation slices and release gates
 │       ├── V2_VALIDATION_BASELINE.md ← Measured v2 deterministic/live validation baseline
@@ -104,6 +107,7 @@ go-beast/
 │   ├── evidence.mjs            ← Append-only v2 provenance ledger and audit CLI
 │   ├── install-transaction.mjs  ← Install plan, integrity manifest, and rollback boundary
 │   ├── delivery.mjs            ← Strict delivery route planner and workflow-engine adapter
+│   ├── context-compiler.mjs    ← Bounded go-squirrel phase context compiler and verifier
 │   ├── conformance.mjs         ← Harness adapters and delivery trace conformance checker
 │   ├── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
 │   ├── transversal-rules.mjs  ← Generates and checks transversal rule surfaces

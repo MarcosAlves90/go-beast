@@ -26,11 +26,11 @@ function failCode(code, message, exitCode = 1) {
 function parseArgs() {
   const args = process.argv.slice(2)
   const command = args.shift() ?? 'help'
-  const options = { command, file: null, mode: null, phase: null, root: null, format: 'text', name: null, artifact: null, to: null, note: null, all: false }
+  const options = { command, file: null, mode: null, phase: null, root: null, format: 'text', name: null, artifact: null, context: null, to: null, note: null, all: false }
   while (args.length) {
     const arg = args.shift()
     if (arg === '--all') options.all = true
-    else if (['--file', '--mode', '--phase', '--root', '--format', '--name', '--artifact', '--to', '--note'].includes(arg)) {
+    else if (['--file', '--mode', '--phase', '--root', '--format', '--name', '--artifact', '--context', '--to', '--note'].includes(arg)) {
       const value = args.shift()
       if (!value) fail(`${arg} requires a value`, 2)
       options[arg.slice(2)] = value
@@ -498,6 +498,25 @@ function commandProvenance(root) {
   }
 }
 
+function contextCompletionSummary(root, manifest, phase, contextPath) {
+  const target = resolveSafePath(root, contextPath, 'context')
+  let packet
+  try { packet = JSON.parse(fs.readFileSync(target, 'utf8')) } catch (error) { fail(`context is not valid JSON: ${error.message}`, 2) }
+  assert(packet?.kind === 'context_packet' && packet.schema_version === 1, 'context packet schema is unsupported', 2)
+  assert(packet.workflow_id === manifest.id && packet.phase?.id === phase.id, 'context packet does not match the workflow phase', 2)
+  const completion = packet.completion
+  assert(completion && Array.isArray(completion.decisions) && Array.isArray(completion.open_questions) && Array.isArray(completion.validation_evidence) && Array.isArray(completion.provenance), 'context packet is not finalized', 2)
+  const validationStatus = completion.validation_evidence.length > 0 && completion.validation_evidence.every(evidence => evidence.status === 'PASS') ? 'PASS' : 'FAIL'
+  assert(validationStatus === 'PASS', 'context completion validation evidence is not PASS', 2)
+  return {
+    path: path.relative(root, target),
+    sha256: sha256File(target),
+    decisions_count: completion.decisions.length,
+    open_questions_count: completion.open_questions.length,
+    validation_status: validationStatus,
+  }
+}
+
 function attemptProblems(phase, record) {
   if (record.attempts >= phaseRetryLimit(phase)) return [`retry limit reached for phase: ${phase.id}`]
   return []
@@ -756,11 +775,13 @@ function main() {
       return
     }
     assert(record.status === 'running' || record.status === 'handoff_pending', `phase is not running: ${phase.id}`)
+    const context = options.context ? contextCompletionSummary(projectRoot, manifest, phase, options.context) : null
     warnings.push(...artifactProblems(projectRoot, phase.produces))
     if (violation(mode, warnings)) { process.exitCode = 1; return }
     record.status = 'completed'
     record.completed_at = new Date().toISOString()
-    state.history.push({ event: 'complete', phase: phase.id, at: record.completed_at })
+    if (context) record.context = context
+    state.history.push({ event: 'complete', phase: phase.id, at: record.completed_at, ...(context ? { context_path: context.path, context_sha256: context.sha256 } : {}) })
     state.updated_at = record.completed_at
     saveState(projectRoot, state, expectedRevision)
     console.log(`Phase completed: ${phase.id}`)

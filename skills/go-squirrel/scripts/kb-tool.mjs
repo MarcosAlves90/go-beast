@@ -3,6 +3,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const TOOL_VERSION = "1.1.0";
 const RECORD_EXTENSION = "md";
@@ -892,9 +893,13 @@ function main() {
   }
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(`[go-squirrel] ERROR: ${error.message}`);
-  process.exitCode = 1;
+if (process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href) {
+  try {
+    main();
+  } catch (error) {
+    console.error(`[go-squirrel] ERROR: ${error.message}`);
+    process.exitCode = 1;
+  }
 }
+
+export { checksum, collectRecords, parseSpec, resolveReference, selectRecords, validateRecord };

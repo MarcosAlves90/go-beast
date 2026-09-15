@@ -25,6 +25,9 @@ The following results were captured on the repository's `release/v2` branch:
 - Workflow engine regression: **PASS**; route compilation, parallel continue,
   checkpoint digests, handoff state, interruption recovery, retry attempts, and
   v1 state migration passed in `tests/plugin/test-workflow-engine-v2.sh`.
+- Context compiler regression: **PASS**; bounded phase selection, local graph
+  provenance, stale-record rejection, completion finalization, and workflow
+  completion integration passed in `tests/plugin/test-context-compiler-v2.sh`.
 - Adapter fixtures: **3/3 passed** for Claude Code, Codex, and Copilot,
   including v1 normalization and v2 exact adapter-source claims.
 - Live matrix inventory: **3/3 suites present**. Live-agent execution was not
