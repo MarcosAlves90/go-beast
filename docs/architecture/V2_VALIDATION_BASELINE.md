@@ -28,6 +28,10 @@ The following results were captured on the repository's `release/v2` branch:
 - Context compiler regression: **PASS**; bounded phase selection, local graph
   provenance, stale-record rejection, completion finalization, and workflow
   completion integration passed in `tests/plugin/test-context-compiler-v2.sh`.
+- Adapter SDK regression: **PASS**; manifest validation, capability matrix,
+  unsupported diagnostics, all three adapter fixtures, native configuration
+  preservation, and registry provenance passed in
+  `tests/plugin/test-adapter-sdk-v2.sh`.
 - Adapter fixtures: **3/3 passed** for Claude Code, Codex, and Copilot,
   including v1 normalization and v2 exact adapter-source claims.
 - Live matrix inventory: **3/3 suites present**. Live-agent execution was not

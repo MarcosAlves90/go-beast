@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://go-beast.dev/schemas/go-beast.adapters.schema.json",
+  "title": "go-beast v2 adapter manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "contract_version", "generated_from", "adapters"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "contract_version": {"const": 2},
+    "generated_from": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "adapters": {
+      "type": "array",
+      "minItems": 3,
+      "items": {"$ref": "#/$defs/adapter"}
+    }
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["native", "canonical", "supported"],
+      "properties": {
+        "native": {"type": "string", "minLength": 1},
+        "canonical": {
+          "enum": ["session-start", "user-prompt-submit", "stop", "pre-tool-use", "post-tool-use"]
+        },
+        "supported": {"type": "boolean"}
+      }
+    },
+    "degradation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability", "when", "behavior"],
+      "properties": {
+        "capability": {"type": "string", "minLength": 1},
+        "when": {"type": "string", "minLength": 1},
+        "behavior": {"type": "string", "minLength": 1}
+      }
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "harness",
+        "contract_version",
+        "capabilities",
+        "events",
+        "config_paths",
+        "install",
+        "degradation",
+        "compatibility",
+        "ownership",
+        "source"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^go-beast-[a-z0-9-]+$"},
+        "harness": {"enum": ["claude-code", "codex", "copilot"]},
+        "contract_version": {"const": 2},
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "configuration",
+              "hooks",
+              "install",
+              "lifecycle-events",
+              "prompt-context",
+              "skills",
+              "tool-events"
+            ]
+          }
+        },
+        "events": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["session_start", "user_prompt_submit", "stop", "pre_tool_use", "post_tool_use"],
+          "properties": {
+            "session_start": {"$ref": "#/$defs/event"},
+            "user_prompt_submit": {"$ref": "#/$defs/event"},
+            "stop": {"$ref": "#/$defs/event"},
+            "pre_tool_use": {"$ref": "#/$defs/event"},
+            "post_tool_use": {"$ref": "#/$defs/event"}
+          }
+        },
+        "config_paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "install": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["hook_dir", "config_path", "native_format", "preserves_unmanaged"],
+          "properties": {
+            "hook_dir": {"type": "string", "minLength": 1},
+            "config_path": {"type": "string", "minLength": 1},
+            "native_format": {"enum": ["claude", "copilot"]},
+            "preserves_unmanaged": {"const": true}
+          }
+        },
+        "degradation": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/degradation"}
+        },
+        "compatibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["contract_range", "min_node", "trace_version"],
+          "properties": {
+            "contract_range": {"type": "string", "minLength": 1},
+            "min_node": {"type": "string", "pattern": "^\\d+(?:\\.\\d+){0,2}$"},
+            "trace_version": {"const": 1}
+          }
+        },
+        "ownership": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["managed_by", "key_strategy", "preserves_unmanaged"],
+          "properties": {
+            "managed_by": {"const": "go-beast"},
+            "key_strategy": {"type": "string", "minLength": 1},
+            "preserves_unmanaged": {"const": true}
+          }
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+"
+        }
+      }
+    }
+  }
+}

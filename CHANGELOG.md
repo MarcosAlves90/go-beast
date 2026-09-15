@@ -32,6 +32,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **v2 context compiler:** add bounded, hash-verifiable phase packets sourced
   from validated `go-squirrel` records, completion evidence, and workflow
   integration through `go-beast context`.
+- **v2 adapter SDK:** add a schema-backed Claude Code, Codex, and Copilot
+  declaration with lifecycle/tool-event mappings, compatibility and ownership
+  metadata, degradation diagnostics, native-config preservation, and
+  conformance provenance.
 
 ## [1.56.0] - 2026-09-13
 

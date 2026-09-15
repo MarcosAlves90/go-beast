@@ -4,9 +4,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { loadAdapterManifest } from './adapters.mjs'
 
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const KINDS = new Set(['feature', 'bugfix', 'refactor', 'docs'])
-const SUPPORTED_HARNESSES = new Set(['claude-code', 'codex', 'copilot'])
+const ADAPTER_MANIFEST = loadAdapterManifest(REPO)
+const SUPPORTED_HARNESSES = new Set(ADAPTER_MANIFEST.adapters.map(adapter => adapter.harness))
 const RAW_EVENT_TYPES = new Map([
   ['skill', 'skill_invoked'],
   ['skill_invoked', 'skill_invoked'],
@@ -220,12 +223,16 @@ function normalizeTrace(rawTrace, requestedKind = null) {
 
   const kind = requestedKind ?? rawTrace.kind ?? 'feature'
   if (!KINDS.has(kind)) throw new Error(`unsupported task kind: ${kind}`)
+  const adapter = ADAPTER_MANIFEST.adapters.find(candidate => candidate.harness === rawTrace.harness)
   return {
     version: 1,
     kind,
     source: {
       harness: rawTrace.harness,
       adapter: 'go-beast-conformance',
+      adapter_id: adapter.id,
+      contract_version: adapter.contract_version,
+      capabilities: [...adapter.capabilities],
     },
     events: rawTrace.events.map(normalizeEvent),
   }

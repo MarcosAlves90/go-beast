@@ -10,13 +10,13 @@ import {
   AGENTS as HOOK_AGENTS,
   loadHookManifest,
 } from './hook-wire.mjs'
+import { loadAdapterManifest } from './adapters.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SCHEMA_VERSION = 2
 const CAPABILITY_KINDS = new Set(['skill', 'hook', 'workflow', 'profile', 'adapter'])
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/
 const ALL_SURFACES = [...new Set([...Object.keys(SKILL_AGENTS), ...Object.keys(HOOK_AGENTS)])].sort()
-const ADAPTERS = ['claude-code', 'codex', 'copilot']
 
 function fail(message) {
   throw new Error(message)
@@ -158,18 +158,20 @@ function buildProfileCapabilities(packageVersionValue) {
   }))
 }
 
-function buildAdapterCapabilities(packageVersionValue) {
-  return ADAPTERS.map(agent => capability({
-    id: `adapter-${agent}`,
+function buildAdapterCapabilities(packageVersionValue, repoRoot = REPO) {
+  return loadAdapterManifest(repoRoot).adapters.map(adapter => capability({
+    id: `adapter-${adapter.harness}`,
     kind: 'adapter',
     version: packageVersionValue,
     phase: 'adapter',
-    inputs: ['harness-event'],
-    outputs: ['normalized-agent-event'],
-    permissions: ['write-agent-config', 'write-hook-config'],
+    inputs: ['harness-event', ...adapter.capabilities.map(value => `adapter:${value}`)],
+    outputs: ['adapter-diagnostics', 'normalized-agent-event'],
+    permissions: adapter.capabilities.includes('configuration')
+      ? ['write-agent-config', 'write-hook-config']
+      : [],
     risk: 'high',
-    supports: supportMap([agent]),
-    source: 'scripts/hook-wire.mjs',
+    supports: supportMap([adapter.harness]),
+    source: 'scripts/adapters.mjs',
   }))
 }
 
@@ -181,7 +183,7 @@ function buildRegistry(repoRoot = REPO) {
     ...buildHookCapabilities(repoRoot, version),
     ...buildWorkflowCapabilities(repoRoot, version),
     ...buildProfileCapabilities(version),
-    ...buildAdapterCapabilities(version),
+    ...buildAdapterCapabilities(version, repoRoot),
   ].sort((left, right) => left.id.localeCompare(right.id))
 
   return {
@@ -189,6 +191,8 @@ function buildRegistry(repoRoot = REPO) {
     generated_from: [
       'go-beast.manifest.yaml',
       'hooks/manifest.json',
+      'adapters/manifest.json',
+      'scripts/adapters.mjs',
       'scripts/hook-wire.mjs',
       'scripts/integration-profile.mjs',
       'skills/',

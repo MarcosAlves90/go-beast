@@ -176,6 +176,22 @@ Validate an exported or externally supplied registry with
 `go-beast capabilities validate --input PATH`; malformed references and unsafe
 source paths fail closed.
 
+The v2 adapter SDK centralizes native harness declarations for Claude Code,
+Codex, and Copilot CLI. It exposes lifecycle/tool-event mappings, installation
+paths, compatibility, ownership, and explicit degradation behavior:
+
+```bash
+go-beast adapters validate --format text
+go-beast adapters list --format json
+go-beast adapters matrix --format json
+go-beast adapters diagnose --agent codex \
+  --capabilities hooks,tool-events --format json
+```
+
+Hook wiring and conformance consume this manifest while preserving unmanaged
+native configuration and the v1 normalized trace source field. See the
+[adapter SDK contract](docs/architecture/ADAPTER_SDK.md).
+
 The v2 evidence ledger records an append-only, hash-linked account of workflow
 events. It keeps command and artifact digests, source adapter identity, and the
 distinction between declared, observed, and verified evidence. It does not

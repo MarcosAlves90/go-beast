@@ -2,42 +2,32 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { fileURLToPath } from 'url'
+import { fileURLToPath, pathToFileURL } from 'url'
+import { loadAdapterManifest } from './adapters.mjs'
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const HOME = os.homedir()
 
-// Copilot CLI uses camelCase event names and a flat entry format (no `hooks` wrapper).
-// Event names differ from Claude Code / Codex PascalCase convention.
-const COPILOT_EVENT_MAP = {
-  SessionStart: 'sessionStart',
-  UserPromptSubmit: 'userPromptSubmitted',
-  Stop: 'agentStop',
-  PreToolUse: 'preToolUse',
-  PostToolUse: 'postToolUse',
+const ADAPTER_MANIFEST = loadAdapterManifest(REPO)
+const CANONICAL_EVENT_KEYS = {
+  SessionStart: 'session_start',
+  UserPromptSubmit: 'user_prompt_submit',
+  Stop: 'stop',
+  PreToolUse: 'pre_tool_use',
+  PostToolUse: 'post_tool_use',
 }
 
-const AGENTS = {
-  'claude-code': {
-    hookDir: home => path.join(home, '.claude', 'hooks'),
-    configPath: home => path.join(home, '.claude', 'settings.json'),
-    commandRoot: '~/.claude/hooks',
-    format: 'claude',
-  },
-  codex: {
-    hookDir: home => path.join(home, '.codex', 'hooks'),
-    configPath: home => path.join(home, '.codex', 'hooks.json'),
-    commandRoot: '~/.codex/hooks',
-    format: 'claude',
-  },
-  copilot: {
-    hookDir: home => path.join(home, '.copilot', 'hooks'),
-    // Single managed file inside the hooks dir — Copilot loads all *.json from this dir.
-    configPath: home => path.join(home, '.copilot', 'hooks', 'go-beast.json'),
-    commandRoot: '~/.copilot/hooks',
-    format: 'copilot',
-  },
+function expandHome(value, home) {
+  return value.startsWith('~/') ? path.join(home, value.slice(2)) : value
 }
+
+const AGENTS = Object.fromEntries(ADAPTER_MANIFEST.adapters.map(adapter => [adapter.harness, {
+  adapter,
+  hookDir: home => expandHome(adapter.install.hook_dir, home),
+  configPath: home => expandHome(adapter.install.config_path, home),
+  commandRoot: adapter.install.hook_dir,
+  format: adapter.install.native_format,
+}]))
 
 function loadHookManifest(repoRoot = REPO) {
   const manifestPath = path.join(repoRoot, 'hooks', 'manifest.json')
@@ -75,8 +65,10 @@ function commandFor(agentName, hookName) {
   return `bash ${agent.commandRoot}/${hookName}`
 }
 
-function copilotEventName(event) {
-  return COPILOT_EVENT_MAP[event] ?? event
+function nativeEventName(agentName, event) {
+  const adapter = AGENTS[agentName]?.adapter
+  const key = CANONICAL_EVENT_KEYS[event]
+  return adapter?.events?.[key]?.native ?? event
 }
 
 // Claude / Codex: { matcher?, hooks: [{ type, command, statusMessage? }] }
@@ -133,7 +125,7 @@ function hookConfigKey(event, matcher, command) {
 
 function specConfigKey(agentName, spec) {
   const event = AGENTS[agentName]?.format === 'copilot'
-    ? copilotEventName(spec.event)
+    ? nativeEventName(agentName, spec.event)
     : spec.event
   return hookConfigKey(event, spec.matcher, commandFor(agentName, spec.name))
 }
@@ -256,7 +248,7 @@ function wireAgentConfig({ repoRoot = REPO, home = HOME, agentName, hookNames = 
   for (const spec of selected) {
     const command = commandFor(agentName, spec.name)
     // Copilot uses camelCase event names; Claude Code / Codex use PascalCase.
-    const eventKey = isCopilot ? copilotEventName(spec.event) : spec.event
+    const eventKey = isCopilot ? nativeEventName(agentName, spec.event) : spec.event
     const key = hookConfigKey(eventKey, spec.matcher, command)
     if (existing.has(key)) continue
 
@@ -414,7 +406,7 @@ function main() {
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href) {
   try {
     main()
   } catch (error) {
