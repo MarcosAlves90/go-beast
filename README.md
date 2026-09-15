@@ -133,7 +133,10 @@ for its ownership boundary; operational skill instructions remain in each
 `SKILL.md`.
 
 An optional state-machine engine coordinates versioned pipeline manifests
-without executing skills directly. See [Workflow engine](docs/architecture/WORKFLOW_ENGINE.md).
+without executing skills directly. Its artifact contracts support composable
+validators for non-empty files, real Markdown headings, JSON Schema, supported
+YAML, and bounded patterns. See [Workflow engine](docs/architecture/WORKFLOW_ENGINE.md)
+for the manifest contract and validator configuration.
 
 For a stricter Superpowers-style delivery loop, use the delivery controller.
 It plans and starts disposable, artifact-gated routes with explicit approvals,

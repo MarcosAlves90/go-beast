@@ -9,6 +9,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **workflow:** add composable typed artifact validators for non-empty files,
+  Markdown headings, JSON Schema, supported YAML, and bounded patterns while
+  preserving legacy artifact contracts.
+
 ## [2.0.0] - 2026-09-15
 
 ### Added

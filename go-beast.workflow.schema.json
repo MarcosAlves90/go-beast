@@ -55,14 +55,60 @@
   "$defs": {
     "artifact": {
       "type": "object",
-      "required": ["path", "type", "non_empty"],
+      "required": ["path", "type"],
       "additionalProperties": false,
       "properties": {
         "path": { "type": "string", "minLength": 1 },
         "type": { "enum": ["file", "directory"] },
         "non_empty": { "type": "boolean" },
-        "sections": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        "sections": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "validators": { "type": "array", "items": { "$ref": "#/$defs/artifact-validator" } }
       }
+    },
+    "artifact-validator": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "non-empty" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "markdown-heading" },
+            "text": { "type": "string", "minLength": 1 },
+            "level": { "type": "integer", "minimum": 1, "maximum": 6 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "schema"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "json-schema" },
+            "schema": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "yaml-valid" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "pattern"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "contains-pattern" },
+            "pattern": { "type": "string", "minLength": 1, "maxLength": 256 },
+            "flags": { "type": "string", "pattern": "^[ims]*$" }
+          }
+        }
+      ]
     }
   }
 }

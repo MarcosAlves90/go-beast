@@ -26,6 +26,42 @@ attempts, `handoff.targets` declares allowed external agents, and `checkpoint`
 marks phases that benefit from durable provenance. Version 1 manifests remain
 valid and compile through the same route boundary.
 
+### Artifact validators
+
+Artifact descriptors retain the legacy `non_empty` and `sections` fields. New
+manifests may also declare multiple typed validators in `validators`; all
+declared validators must pass when the workflow runs in `strict` mode:
+
+```json
+{
+  "path": ".go-beast/report.md",
+  "type": "file",
+  "non_empty": true,
+  "validators": [
+    { "type": "markdown-heading", "text": "Report", "level": 1 },
+    { "type": "contains-pattern", "pattern": "Status: (PASS|WARN)" }
+  ]
+}
+```
+
+The built-in validator types are:
+
+- `non-empty` — rejects empty files and directories;
+- `markdown-heading` — matches an exact ATX heading, optionally at a specific
+  level, while ignoring fenced code blocks;
+- `json-schema` — parses the artifact as JSON and validates it against a
+  repository-relative schema file using the documented in-process subset;
+- `yaml-valid` — parses the artifact with go-beast's supported YAML subset;
+- `contains-pattern` — applies a bounded regular expression with only `i`,
+  `m`, and `s` flags to content up to 2 MiB.
+
+Validator paths cannot escape the repository, command execution is not
+available through this contract, and failures identify both the artifact and
+the validator. Backreferences, lookarounds, nested quantifiers, and patterns
+over 256 characters are rejected. The `json-schema` validator intentionally
+rejects unsupported keywords instead of silently claiming full Draft 2020-12
+compatibility.
+
 ## CLI
 
 After package installation, use:
