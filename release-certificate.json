@@ -8,8 +8,8 @@
   "surfaces": {
     "package.json": "b63263744dbbbab0ebb85b213789b1e661deadb85ce67edd331c6e2db98b59e1",
     "README.md": "6744b3c9259c2da46e9047f0178e8c0d3374a3b5dbf637daa2714b3f20b2d922",
-    "PACKAGE.md": "950bfe665ccea23aa054919f89da99f1eac36681e89669fb11abe6ad43e4b2a6",
-    "CHANGELOG.md": "341e854d2ad47fe631e3d9087d1f520fb429473725a9284b6e77a12afcbb6d9d",
+    "PACKAGE.md": "937535c62367e3bd586fb903740e8da0309425fa02bd3403254bace56579288c",
+    "CHANGELOG.md": "762bb8ebbc0a9595e78955c50914d837a3c1f17f0e306fd61b3915e41029ece9",
     "plugins/go-beast/.codex-plugin/plugin.json": "9c1c8e5f66a3cf20cc9b0304afe06910e9138da7229788856fb0967d60dce500",
     "plugins/go-beast/.claude-plugin/plugin.json": "bfbcc3524865281c4ee1ee3de9a880afbcffec870b8c789d202f2dbcafd7cd3b"
   }

@@ -30,6 +30,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **branding:** refresh go-beast banner
 - **branding:** replace go-beast banner
 - **cli:** lock v2 task command snapshots
+- **test:** record fresh Claude Code live evidence and refresh Codex go-mule retry evidence
 - **test:** record fresh Codex live evidence
 - **v2:** add deterministic validation baseline
 

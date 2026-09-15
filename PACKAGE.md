@@ -81,6 +81,7 @@ go-beast/
 │       ├── V2_EVALUATION_REPORT.md ← Versioned deterministic and agent-runtime evaluation evidence
 │       ├── CONTEXT_QUALITY_BASELINE.md ← Deterministic go-squirrel retrieval-quality baseline
 │       ├── V2_CODEX_LIVE_EVIDENCE.md ← Fresh-context Codex live observations and limitations
+│       ├── V2_CLAUDE_LIVE_EVIDENCE.md ← Fresh-context Claude Code live observations and limitations
 │       ├── task-artifacts/       ← v2 ADR, stack, diagram, and interface contracts
 │       │   ├── ADR.md
 │       │   ├── STACK.md
