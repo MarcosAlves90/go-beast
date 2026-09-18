@@ -1,6 +1,6 @@
 ---
 name: go-squirrel
-version: 1.1.0
+version: 1.2.0
 description: "Creates and maintains portable, agent-first knowledge bases for durable project context, decisions, procedures, references, and bounded task context across Markdown, JSON, and TOON projections, with a deterministic native Markdown authoring path."
 when_to_use: "Use when an AI agent needs durable context that must survive sessions, remain searchable, preserve provenance, and be portable across harnesses. Invoke after go-mole or go-hawk when a knowledge base is needed; invoke go-vole instead for an Obsidian vault or PKM system as the primary goal."
 ---
@@ -74,7 +74,7 @@ Use the common record envelope: identity, `record_type`, lifecycle `status`, aud
 
 ### 5. Connect and control
 
-Use `add` to create a record, `update` to revise it without erasing history, `link` to add a typed local edge, `archive` to make a record inactive but recoverable, and `export` or `convert` only after validating semantic equivalence. Every local reference must resolve within the KB root. Maintain both forward references and a generated reverse-link/backlink view in `MANIFEST.<ext>` or a report.
+Native Markdown helper commands: `init`, `add`, `update`, `manifest`, `context`, `validate`. Use `update --root <KB_ROOT> --record-file <patch>` with a partial JSON or Markdown patch identified by immutable `id`; omitted fields are preserved, new provenance/history entries are appended, and `updated_at` is refreshed before the merged record is revalidated and rendered. Semantic operations such as `link`, `search`, `status`, `archive`, `export`, and `convert` remain part of the portable KB standard and may be performed with ordinary host/file tooling; they are not native `kb-tool.mjs` commands. Every local reference must resolve within the KB root. Maintain both forward references and a generated reverse-link/backlink view in `MANIFEST.<ext>` or a report.
 
 ### 6. Retrieve task context
 
