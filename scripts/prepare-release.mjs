@@ -103,7 +103,8 @@ function commitsSince(tag) {
   return raw.split('\x1e')
     .filter(Boolean)
     .map(record => {
-      const [sha, subject, body = ''] = record.split('\x1f')
+      const [rawSha, subject, body = ''] = record.split('\x1f')
+      const sha = rawSha.trim()
       if (/^Merge /.test(subject)) return null
       const parsed = parseConventionalCommit(subject)
       if (!parsed) fail(`Commit ${sha.slice(0, 8)} is not a Conventional Commit: ${subject}`)
