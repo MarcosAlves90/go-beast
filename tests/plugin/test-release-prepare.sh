@@ -17,8 +17,27 @@ git -C "$FIXTURE" config user.name "Release Test"
 git -C "$FIXTURE" config user.email "release-test@example.com"
 git -C "$FIXTURE" -c tag.gpgSign=false tag v1.47.2
 git -C "$FIXTURE" commit --allow-empty -q -m "fix(test): exercise release preparation"
+git -C "$FIXTURE" commit --allow-empty -q -m "fix(test): exercise second release record"
 
-env -u GH_TOKEN -u GITHUB_TOKEN GITHUB_REPOSITORY=example/repo \
+FAKE_GH="$TEST_DIR/gh"
+cat > "$FAKE_GH" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+for arg in "$@"; do
+  case "$arg" in
+    *$'\n'*|*$'\r'*)
+      echo "gh argument contains a control character" >&2
+      exit 1
+      ;;
+  esac
+done
+
+printf '[]\n'
+EOF
+chmod +x "$FAKE_GH"
+
+GH_BIN="$FAKE_GH" GH_TOKEN=test GITHUB_REPOSITORY=example/repo \
   node "$FIXTURE/scripts/prepare-release.mjs" --dry-run > "$TEST_DIR/dry-run.json"
 assert_contains "$TEST_DIR/dry-run.json" '"dryRun": true' 'release preparation supports dry-run mode'
 assert_contains "$TEST_DIR/dry-run.json" '"bump": "patch"' 'fix commits calculate a patch bump'

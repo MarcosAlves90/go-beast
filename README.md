@@ -9,7 +9,7 @@ Each `go-<animal>` skill owns one phase, states its prerequisites, and produces
 concrete artifacts for the next phase. Skills are plain Markdown and work with
 Claude Code, Codex, Copilot, Cursor, Gemini, and other agents.
 
-**Version 2.0.0** · [Changelog](CHANGELOG.md)
+**Version 2.1.0** · [Changelog](CHANGELOG.md)
 
 ## Start here
 
@@ -125,7 +125,7 @@ Use the manual [release-train workflow](docs/RELEASES.md) to calculate the
 version, generate `CHANGELOG.md`, and open a release PR. After that PR is merged,
 publish the prepared release from a clean checkout:
 
-Release preparation first merges `release/prepare` into the permanent `release`
+Release preparation first merges `chore/release-prepare` into the permanent `release`
 branch; the resulting `release` → `main` promotion PR is the release gate.
 
 ```bash

@@ -18,7 +18,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_BRANCH: release
-      PREPARE_BRANCH: release/prepare
+      PREPARE_BRANCH: chore/release-prepare
     steps:
       - name: Check out release branch
         uses: actions/checkout@v4
@@ -37,9 +37,9 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           if [ -n "$RELEASE_VERSION" ]; then
-            npm run release:prepare -- --version "$RELEASE_VERSION" > release-summary.json
+            node scripts/prepare-release.mjs --version "$RELEASE_VERSION" > release-summary.json
           else
-            npm run release:prepare > release-summary.json
+            node scripts/prepare-release.mjs > release-summary.json
           fi
           next_version="$(node -p "JSON.parse(require('fs').readFileSync('release-summary.json', 'utf8')).nextVersion")"
           echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
