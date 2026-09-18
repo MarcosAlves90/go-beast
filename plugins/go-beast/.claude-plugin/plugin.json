@@ -1,6 +1,6 @@
 {
   "name": "go-beast",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "go-* lifecycle skills for discovery, delivery, testing, security, observability, and documentation.",
   "author": {
     "name": "MarcosAlves90",
