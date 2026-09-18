@@ -207,7 +207,7 @@ PR from Conventional Commits.
 
 Use **Actions → Prepare Release → Run workflow** on `release`. Leave the
 version input empty for automatic SemVer calculation or provide an explicit
-`x.y.z` override. Review and merge the generated `release/prepare` → `release`
+`x.y.z` override. Review and merge the generated `chore/release-prepare` → `release`
 PR, then review and merge the generated `release` → `main` promotion PR before
 publishing. The `release` branch is permanent and is never deleted after
 promotion.

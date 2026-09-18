@@ -10,7 +10,7 @@ use the GitHub Actions **Prepare Release** workflow with `workflow_dispatch`.
 1. Open **Actions → Prepare Release → Run workflow** against `release`.
 2. Leave `version` empty for automatic SemVer calculation, or enter an explicit
    `x.y.z` override.
-3. Review and merge the generated `release/prepare` → `release` pull request,
+3. Review and merge the generated `chore/release-prepare` → `release` pull request,
    especially the version and `CHANGELOG.md` grouping.
 4. Review and merge the generated `release` → `main` promotion pull request.
 5. Keep `release` for the next integration cycle; it is never deleted.
@@ -32,7 +32,7 @@ Pull request labels can override these defaults:
 - `changelog:added`, `changelog:changed`, `changelog:fixed`,
   `changelog:removed`, or `changelog:security` overrides the section.
 
-The workflow is idempotent: rerunning it refreshes the same `release/prepare`
+The workflow is idempotent: rerunning it refreshes the same `chore/release-prepare`
 branch, preparation PR, and promotion PR instead of creating duplicates.
 
 ## Publish after merge
