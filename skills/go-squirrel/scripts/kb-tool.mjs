@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const TOOL_VERSION = "1.1.0";
+const TOOL_VERSION = "1.2.0";
 const RECORD_EXTENSION = "md";
 const REQUIRED_FIELDS = [
   "kind",
@@ -37,15 +37,23 @@ const ENUMS = {
   epistemic_status: ["observed", "sourced", "inferred", "hypothesis", "unknown", "disputed"],
   priority: ["low", "normal", "high", "critical"],
 };
-const PROVENANCE_ORIGINS = ["human", "agent", "import", "tool", "external"];
+const PROVENANCE_ORIGINS = new Set(["human", "agent", "import", "tool", "external"]);
 const RECORD_FIELD_ORDER = [...REQUIRED_FIELDS, "history"];
+const RECORD_FIELDS = new Set(RECORD_FIELD_ORDER);
 const NESTED_FIELD_ORDER = ["origin", "actor", "source", "captured_at", "note"];
+const IMMUTABLE_UPDATE_FIELDS = new Set(["kind", "schema_version", "id", "created_at"]);
+const APPEND_ONLY_UPDATE_FIELDS = new Set(["provenance", "history"]);
+const ARRAY_FIELDS = ["tags", "aliases", "references", "sources", "retrieval_hints", "provenance", "history"];
+const REVIEW_REQUIRED_STATUSES = new Set(["draft", "stale", "archived"]);
+const REVIEW_REQUIRED_EPISTEMIC_STATUSES = new Set(["inferred", "hypothesis", "unknown", "disputed"]);
+const compareText = (left, right) => left.localeCompare(right);
 
 const HELP = `go-squirrel kb-tool ${TOOL_VERSION}
 
 Native, dependency-free Markdown KB operations:
   init      Create a fresh Markdown KB tree without overwriting files.
   add       Add one JSON or Markdown record and regenerate the manifest.
+  update    Apply a partial patch to an existing record and regenerate outputs.
   manifest  Regenerate deterministic checksums and backlink data.
   context   Emit a bounded task context packet from selected records.
   validate  Check records, references, provenance, and generated surfaces.
@@ -59,40 +67,36 @@ Examples:
     --title "Relay API" --purpose "Durable deployment context" --format md:plain
   node scripts/kb-tool.mjs add --root /tmp/relay-kb \
     --record-file /path/to/record.json
+  node scripts/kb-tool.mjs update --root /tmp/relay-kb \
+    --record-file /path/to/record-patch.json
   node scripts/kb-tool.mjs context --root /tmp/relay-kb \
     --task "Prepare a cache deployment" --records cache-decision,deployment-fact
   node scripts/kb-tool.mjs validate --root /tmp/relay-kb
 `;
 
+function parseOptionToken(token, argv) {
+  if (!token.startsWith("--")) throw new Error(`unexpected argument: ${token}`);
+  const equalsAt = token.indexOf("=");
+  const name = equalsAt === -1 ? token.slice(2) : token.slice(2, equalsAt);
+  const inlineValue = equalsAt === -1 ? undefined : token.slice(equalsAt + 1);
+  if (inlineValue !== undefined) return { name, value: inlineValue };
+  if (argv[0] !== undefined && !argv[0].startsWith("--")) return { name, value: argv.shift() };
+  return { name, value: true };
+}
+
+function addOption(options, name, value) {
+  const current = options[name];
+  if (current === undefined) options[name] = value;
+  else options[name] = Array.isArray(current) ? [...current, value] : [current, value];
+}
+
 function parseArgs(argv) {
   const command = argv.shift() ?? "help";
   const options = {};
-
   while (argv.length > 0) {
-    const token = argv.shift();
-    if (!token.startsWith("--")) {
-      throw new Error(`unexpected argument: ${token}`);
-    }
-
-    const equalsAt = token.indexOf("=");
-    const name = equalsAt === -1 ? token.slice(2) : token.slice(2, equalsAt);
-    let value = equalsAt === -1 ? undefined : token.slice(equalsAt + 1);
-    if (value === undefined && argv[0] !== undefined && !argv[0].startsWith("--")) {
-      value = argv.shift();
-    }
-    if (value === undefined) {
-      value = true;
-    }
-
-    if (options[name] === undefined) {
-      options[name] = value;
-    } else if (Array.isArray(options[name])) {
-      options[name].push(value);
-    } else {
-      options[name] = [options[name], value];
-    }
+    const { name, value } = parseOptionToken(argv.shift(), argv);
+    addOption(options, name, value);
   }
-
   return { command, options };
 }
 
@@ -124,7 +128,7 @@ function assertSafeRelative(value, description) {
     value.startsWith("/") ||
     /^[A-Za-z]:[\\/]/.test(value) ||
     value.includes("\\") ||
-    value.split("/").some((segment) => segment === "..")
+    value.split("/").includes("..")
   ) {
     throw new Error(`${description} is not a safe root-relative path: ${String(value)}`);
   }
@@ -150,8 +154,8 @@ function yamlValue(value) {
 }
 
 function orderedKeys(value, preferredOrder = NESTED_FIELD_ORDER) {
-  const preferred = preferredOrder.filter((key) => Object.prototype.hasOwnProperty.call(value, key));
-  const remaining = Object.keys(value).filter((key) => !preferred.includes(key)).sort();
+  const preferred = preferredOrder.filter((key) => Object.hasOwn(value, key));
+  const remaining = Object.keys(value).filter((key) => !preferred.includes(key)).sort(compareText);
   return [...preferred, ...remaining];
 }
 
@@ -192,10 +196,10 @@ function renderFrontmatter(metadata, { nested = [] } = {}) {
 function renderRecord(record, style = "plain") {
   const metadata = {};
   for (const key of RECORD_FIELD_ORDER) {
-    if (Object.prototype.hasOwnProperty.call(record, key)) metadata[key] = record[key];
+    if (Object.hasOwn(record, key)) metadata[key] = record[key];
   }
-  for (const key of Object.keys(record).sort()) {
-    if (!Object.prototype.hasOwnProperty.call(metadata, key)) metadata[key] = record[key];
+  for (const key of Object.keys(record).sort(compareText)) {
+    if (!Object.hasOwn(metadata, key)) metadata[key] = record[key];
   }
 
   const frontmatter = renderFrontmatter(metadata, { nested: ["provenance", "history"] });
@@ -203,7 +207,7 @@ function renderRecord(record, style = "plain") {
   const referenceLines = references.length === 0
     ? ["- None"]
     : references.map((reference) => {
-        const label = String(reference).replaceAll("|", "\\|");
+        const label = String(reference).replaceAll("|", String.raw`\|`);
         return style === "obsidian" ? `- [[${reference}|${label}]]` : `- [${label}](${reference})`;
       });
   const sources = Array.isArray(record.sources) ? record.sources : [];
@@ -233,35 +237,37 @@ function renderRecord(record, style = "plain") {
   ].join("\n");
 }
 
+function consumeFlowCharacter(state, character) {
+  if (state.escaped) {
+    state.current += character;
+    state.escaped = false;
+    return false;
+  }
+  if (state.quote === '"' && character === "\\") {
+    state.current += character;
+    state.escaped = true;
+    return false;
+  }
+  const isQuote = character === '"' || character === "'";
+  if (isQuote && (state.quote === null || state.quote === character)) {
+    state.quote = state.quote === null ? character : null;
+    state.current += character;
+    return false;
+  }
+  if (character === "," && state.quote === null) return true;
+  state.current += character;
+  return false;
+}
+
 function splitFlowItems(value) {
   const items = [];
-  let current = "";
-  let quote = null;
-  let escaped = false;
+  const state = { current: "", quote: null, escaped: false };
   for (const character of value) {
-    if (escaped) {
-      current += character;
-      escaped = false;
-      continue;
-    }
-    if (quote === '"' && character === "\\") {
-      current += character;
-      escaped = true;
-      continue;
-    }
-    if ((character === '"' || character === "'") && (quote === null || quote === character)) {
-      quote = quote === null ? character : null;
-      current += character;
-      continue;
-    }
-    if (character === "," && quote === null) {
-      items.push(current.trim());
-      current = "";
-      continue;
-    }
-    current += character;
+    if (!consumeFlowCharacter(state, character)) continue;
+    items.push(state.current.trim());
+    state.current = "";
   }
-  if (current.trim() !== "" || value.trim() !== "") items.push(current.trim());
+  if (state.current.trim() !== "" || value.trim() !== "") items.push(state.current.trim());
   return items;
 }
 
@@ -287,6 +293,56 @@ function parseScalar(raw) {
   return value;
 }
 
+const FRONTMATTER_KEY_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+function parseFrontmatterField(line) {
+  const colonAt = line.indexOf(":");
+  if (colonAt <= 0) return null;
+  const key = line.slice(0, colonAt);
+  if (!FRONTMATTER_KEY_PATTERN.test(key)) return null;
+  return { key, rawValue: line.slice(colonAt + 1).trimStart() };
+}
+
+function listItemContent(line) {
+  if (typeof line !== "string") return null;
+  const trimmed = line.trimStart();
+  if (!trimmed.startsWith("-")) return null;
+  const afterDash = trimmed.slice(1);
+  if (afterDash.length === 0 || afterDash[0].trim() !== "") return null;
+  return afterDash.trimStart();
+}
+
+function leadingWhitespaceCount(line) {
+  return line.length - line.trimStart().length;
+}
+
+function parseFrontmatterListItem(lines, index) {
+  const content = listItemContent(lines[index]);
+  const field = parseFrontmatterField(content);
+  if (!field) return { value: parseScalar(content), nextIndex: index + 1 };
+
+  const item = { [field.key]: parseScalar(field.rawValue) };
+  let nextIndex = index + 1;
+  while (nextIndex < lines.length && leadingWhitespaceCount(lines[nextIndex]) >= 4) {
+    const nested = parseFrontmatterField(lines[nextIndex].trimStart());
+    if (!nested) break;
+    item[nested.key] = parseScalar(nested.rawValue);
+    nextIndex += 1;
+  }
+  return { value: item, nextIndex };
+}
+
+function parseFrontmatterList(lines, index) {
+  const values = [];
+  let nextIndex = index;
+  while (nextIndex < lines.length && listItemContent(lines[nextIndex]) !== null) {
+    const parsed = parseFrontmatterListItem(lines, nextIndex);
+    values.push(parsed.value);
+    nextIndex = parsed.nextIndex;
+  }
+  return { values, nextIndex };
+}
+
 function parseFrontmatter(document) {
   if (!document.startsWith("---\n")) throw new Error("Markdown record is missing opening frontmatter");
   const closing = document.indexOf("\n---", 4);
@@ -295,43 +351,27 @@ function parseFrontmatter(document) {
   const result = {};
 
   for (let index = 0; index < lines.length;) {
-    const match = lines[index].match(/^([A-Za-z0-9_-]+):(?:\s*(.*))?$/);
-    if (!match) {
+    const line = lines[index];
+    const field = line === line.trimStart() ? parseFrontmatterField(line) : null;
+    if (!field) {
       index += 1;
       continue;
     }
-    const [, key, rawValue] = match;
-    if (rawValue !== undefined && rawValue.trim() !== "") {
-      result[key] = parseScalar(rawValue);
+    if (field.rawValue.trim() !== "") {
+      result[field.key] = parseScalar(field.rawValue);
       index += 1;
       continue;
     }
 
-    if (lines[index + 1]?.match(/^\s+-\s+/)) {
-      const values = [];
-      index += 1;
-      while (index < lines.length && lines[index].match(/^\s+-\s+/)) {
-        const itemMatch = lines[index].match(/^\s+-\s+([A-Za-z0-9_-]+):\s*(.*)$/);
-        if (!itemMatch) {
-          values.push(parseScalar(lines[index].replace(/^\s+-\s+/, "")));
-          index += 1;
-          continue;
-        }
-        const item = { [itemMatch[1]]: parseScalar(itemMatch[2]) };
-        index += 1;
-        while (index < lines.length) {
-          const nestedMatch = lines[index].match(/^\s{4,}([A-Za-z0-9_-]+):\s*(.*)$/);
-          if (!nestedMatch) break;
-          item[nestedMatch[1]] = parseScalar(nestedMatch[2]);
-          index += 1;
-        }
-        values.push(item);
-      }
-      result[key] = values;
+    const listStart = index + 1;
+    if (listItemContent(lines[listStart]) !== null) {
+      const parsed = parseFrontmatterList(lines, listStart);
+      result[field.key] = parsed.values;
+      index = parsed.nextIndex;
       continue;
     }
 
-    result[key] = [];
+    result[field.key] = [];
     index += 1;
   }
 
@@ -375,7 +415,7 @@ function resolveReference(reference, entries) {
 }
 
 function normaliseRecord(record, entries) {
-  const clone = JSON.parse(JSON.stringify(record));
+  const clone = structuredClone(record);
   if (!Array.isArray(clone.references)) return clone;
   clone.references = clone.references.map((reference) => {
     const target = resolveReference(reference, entries);
@@ -384,13 +424,56 @@ function normaliseRecord(record, entries) {
   return clone;
 }
 
+function assertUpdatePatch(current, patch) {
+  if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
+    throw new Error("record update must be a JSON or Markdown object");
+  }
+  if (!safeRecordId(patch.id)) throw new Error("record id must be kebab-case");
+  if (patch.id !== current.id) throw new Error(`record id is immutable: ${current.id}`);
+  for (const field of Object.keys(patch)) {
+    if (!RECORD_FIELDS.has(field)) throw new Error(`unknown record update field: ${field}`);
+  }
+}
+
+function assertImmutableUpdateFields(current, patch) {
+  for (const field of IMMUTABLE_UPDATE_FIELDS) {
+    if (!Object.hasOwn(patch, field)) continue;
+    if (JSON.stringify(patch[field]) !== JSON.stringify(current[field])) {
+      throw new Error(`record ${field} is immutable`);
+    }
+  }
+}
+
+function mergeAppendOnlyField(merged, field, value) {
+  if (!Array.isArray(value)) throw new Error(`${field} must be an array`);
+  if (merged[field] !== undefined && !Array.isArray(merged[field])) {
+    throw new Error(`existing ${field} must be an array`);
+  }
+  return [...(merged[field] ?? []), ...structuredClone(value)];
+}
+
+function mergeRecordUpdate(current, patch, timestamp = now()) {
+  assertUpdatePatch(current, patch);
+  assertImmutableUpdateFields(current, patch);
+
+  const merged = structuredClone(current);
+  for (const [field, value] of Object.entries(patch)) {
+    if (IMMUTABLE_UPDATE_FIELDS.has(field) || field === "updated_at") continue;
+    merged[field] = APPEND_ONLY_UPDATE_FIELDS.has(field)
+      ? mergeAppendOnlyField(merged, field, value)
+      : structuredClone(value);
+  }
+  merged.updated_at = timestamp;
+  return merged;
+}
+
 function collectRecords(root) {
   const recordsRoot = path.join(root, "records");
   if (!fs.existsSync(recordsRoot)) return { items: [], byId: new Map(), byPath: new Map() };
   const items = [];
   const byId = new Map();
   const byPath = new Map();
-  const filenames = fs.readdirSync(recordsRoot).filter((name) => name.endsWith(`.${RECORD_EXTENSION}`)).sort();
+  const filenames = fs.readdirSync(recordsRoot).filter((name) => name.endsWith(`.${RECORD_EXTENSION}`)).sort(compareText);
 
   for (const filename of filenames) {
     const filePath = path.join(recordsRoot, filename);
@@ -404,66 +487,127 @@ function collectRecords(root) {
   return { items, byId, byPath };
 }
 
-function validateRecord(record, entries, relativePath) {
-  const errors = [];
-  const warnings = [];
+function isObjectRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isIsoDateTime(value) {
+  return typeof value === "string" && !Number.isNaN(Date.parse(value));
+}
+
+function validateRequiredFields(record, relativePath, errors) {
   for (const field of REQUIRED_FIELDS) {
-    if (record[field] === undefined || record[field] === null) errors.push(`${relativePath}: missing ${field}`);
+    const missing = record[field] === undefined || (record[field] === null && field !== "verified_at");
+    if (missing) errors.push(`${relativePath}: missing ${field}`);
   }
+}
+
+function validateRecordIdentity(record, relativePath, errors) {
   if (record.kind !== "record") errors.push(`${relativePath}: kind must be record`);
   if (!safeRecordId(record.id)) errors.push(`${relativePath}: id must be kebab-case`);
   if (record.schema_version !== "1.0") errors.push(`${relativePath}: schema_version must be 1.0`);
+}
 
+function validateEnumFields(record, relativePath, errors) {
   for (const [field, allowed] of Object.entries(ENUMS)) {
     if (record[field] !== undefined && !allowed.includes(record[field])) {
       errors.push(`${relativePath}: ${field} must be one of ${allowed.join(", ")}`);
     }
   }
+}
 
-  for (const field of ["tags", "aliases", "references", "sources", "retrieval_hints", "provenance"]) {
-    if (record[field] !== undefined && !Array.isArray(record[field])) errors.push(`${relativePath}: ${field} must be an array`);
+function validateArrayFields(record, relativePath, errors) {
+  for (const field of ARRAY_FIELDS) {
+    if (record[field] !== undefined && !Array.isArray(record[field])) {
+      errors.push(`${relativePath}: ${field} must be an array`);
+    }
   }
+}
+
+function validateScalarFields(record, relativePath, errors) {
   if (typeof record.confidence !== "number" || record.confidence < 0 || record.confidence > 1) {
     errors.push(`${relativePath}: confidence must be a number from 0 to 1`);
   }
   for (const field of ["created_at", "updated_at"]) {
-    if (typeof record[field] !== "string" || Number.isNaN(Date.parse(record[field]))) {
-      errors.push(`${relativePath}: ${field} must be an ISO date-time`);
-    }
+    if (!isIsoDateTime(record[field])) errors.push(`${relativePath}: ${field} must be an ISO date-time`);
   }
-  if (record.verified_at !== null && (typeof record.verified_at !== "string" || Number.isNaN(Date.parse(record.verified_at)))) {
+  if (record.verified_at !== null && !isIsoDateTime(record.verified_at)) {
     errors.push(`${relativePath}: verified_at must be null or an ISO date-time`);
   }
+}
+
+function validateProvenance(record, relativePath, errors) {
   if (!Array.isArray(record.provenance) || record.provenance.length === 0) {
     errors.push(`${relativePath}: provenance must contain at least one entry`);
-  } else {
-    for (const [index, provenance] of record.provenance.entries()) {
-      if (!provenance || typeof provenance !== "object") {
-        errors.push(`${relativePath}: provenance[${index}] must be an object`);
-        continue;
-      }
-      if (!PROVENANCE_ORIGINS.includes(provenance.origin)) errors.push(`${relativePath}: provenance[${index}].origin is invalid`);
-      if (typeof provenance.captured_at !== "string" || Number.isNaN(Date.parse(provenance.captured_at))) {
-        errors.push(`${relativePath}: provenance[${index}].captured_at must be an ISO date-time`);
-      }
+    return;
+  }
+  for (const [index, provenance] of record.provenance.entries()) {
+    if (!isObjectRecord(provenance)) {
+      errors.push(`${relativePath}: provenance[${index}] must be an object`);
+      continue;
+    }
+    if (!PROVENANCE_ORIGINS.has(provenance.origin)) errors.push(`${relativePath}: provenance[${index}].origin is invalid`);
+    if (!isIsoDateTime(provenance.captured_at)) {
+      errors.push(`${relativePath}: provenance[${index}].captured_at must be an ISO date-time`);
     }
   }
+}
 
-  if (Array.isArray(record.references)) {
-    for (const reference of record.references) {
-      try {
-        assertSafeRelative(reference, `${relativePath} reference`);
-      } catch (error) {
-        errors.push(error.message);
-        continue;
-      }
-      if (!resolveReference(reference, entries)) errors.push(`${relativePath}: unresolved reference ${reference}`);
+function validateHistory(record, relativePath, errors) {
+  if (!Array.isArray(record.history)) return;
+  for (const [index, history] of record.history.entries()) {
+    if (!isObjectRecord(history)) {
+      errors.push(`${relativePath}: history[${index}] must be an object`);
+      continue;
+    }
+    if (!Number.isInteger(history.version) || history.version < 1) {
+      errors.push(`${relativePath}: history[${index}].version must be a positive integer`);
+    }
+    if (!isIsoDateTime(history.changed_at)) {
+      errors.push(`${relativePath}: history[${index}].changed_at must be an ISO date-time`);
+    }
+    if (typeof history.change !== "string" || history.change.length === 0) {
+      errors.push(`${relativePath}: history[${index}].change must be a non-empty string`);
+    }
+    if (history.reason !== undefined && (typeof history.reason !== "string" || history.reason.length === 0)) {
+      errors.push(`${relativePath}: history[${index}].reason must be a non-empty string when present`);
     }
   }
-  if (["draft", "stale", "archived"].includes(record.status) || ["inferred", "hypothesis", "unknown", "disputed"].includes(record.epistemic_status)) {
-    warnings.push(`${relativePath}: treat as bounded or review-required context (${record.status}/${record.epistemic_status})`);
+}
+
+function validateReferences(record, entries, relativePath, errors) {
+  if (!Array.isArray(record.references)) return;
+  for (const reference of record.references) {
+    try {
+      assertSafeRelative(reference, `${relativePath} reference`);
+    } catch (error) {
+      errors.push(error.message);
+      continue;
+    }
+    if (!resolveReference(reference, entries)) errors.push(`${relativePath}: unresolved reference ${reference}`);
   }
-  return { errors, warnings };
+}
+
+function reviewWarning(record, relativePath) {
+  const requiresReview = REVIEW_REQUIRED_STATUSES.has(record.status)
+    || REVIEW_REQUIRED_EPISTEMIC_STATUSES.has(record.epistemic_status);
+  return requiresReview
+    ? `${relativePath}: treat as bounded or review-required context (${record.status}/${record.epistemic_status})`
+    : null;
+}
+
+function validateRecord(record, entries, relativePath) {
+  const errors = [];
+  validateRequiredFields(record, relativePath, errors);
+  validateRecordIdentity(record, relativePath, errors);
+  validateEnumFields(record, relativePath, errors);
+  validateArrayFields(record, relativePath, errors);
+  validateScalarFields(record, relativePath, errors);
+  validateProvenance(record, relativePath, errors);
+  validateHistory(record, relativePath, errors);
+  validateReferences(record, entries, relativePath, errors);
+  const warning = reviewWarning(record, relativePath);
+  return { errors, warnings: warning ? [warning] : [] };
 }
 
 function parseSpec(root) {
@@ -509,7 +653,7 @@ function renderSpec({ kbId, title, purpose, style, createdAt }) {
     "",
     "## Native operations",
     "",
-    "Use the bundled `go-squirrel/scripts/kb-tool.mjs` with a normal terminal invocation. The helper refuses unsafe references, duplicate IDs, and invalid records; it does not overwrite existing records.",
+    "Use the bundled `go-squirrel/scripts/kb-tool.mjs` with a normal terminal invocation. The helper refuses unsafe references and invalid records; add rejects duplicate IDs while update intentionally revises an existing record after validating a merged patch.",
     "",
     "## Safety boundary",
     "",
@@ -612,9 +756,11 @@ function backlinkData(entries) {
       else unresolved.push(`${source.record.id} -> ${reference}`);
     }
   }
-  for (const values of incoming.values()) values.sort();
-  const orphans = [...incoming.entries()].filter(([, sources]) => sources.length === 0).map(([id]) => id).sort();
-  return { incoming, unresolved: unresolved.sort(), orphans };
+  for (const values of incoming.values()) values.sort(compareText);
+  const orphans = [...incoming.entries()].filter(([, sources]) => sources.length === 0).map(([id]) => id);
+  orphans.sort(compareText);
+  unresolved.sort(compareText);
+  return { incoming, unresolved, orphans };
 }
 
 function checksum(filePath) {
@@ -622,7 +768,7 @@ function checksum(filePath) {
 }
 
 function markdownCell(value) {
-  return String(value).replaceAll("|", "\\|").replaceAll("\n", " ");
+  return String(value).replaceAll("|", String.raw`\|`).replaceAll("\n", " ");
 }
 
 function renderManifest(root, entries, generatedAt = now()) {
@@ -726,6 +872,40 @@ function runAdd(options) {
   console.log(JSON.stringify({ command: "add", id: record.id, path: path.relative(root, target), manifest: path.relative(root, manifest.manifestPath) }, null, 2));
 }
 
+function runUpdate(options) {
+  const root = resolveRoot(option(options, "root", { required: true }));
+  const sourcePath = path.resolve(option(options, "record-file", { required: true }));
+  const spec = parseSpec(root);
+  if (spec.format !== "md") throw new Error("update currently writes Markdown KBs only");
+  const patch = readRecord(sourcePath);
+  if (!patch || typeof patch !== "object" || Array.isArray(patch)) throw new Error("record update must be a JSON or Markdown object");
+  if (!safeRecordId(patch.id)) throw new Error("record id must be kebab-case");
+
+  const entries = collectRecords(root);
+  const current = entries.byId.get(patch.id);
+  if (!current) throw new Error(`record id does not exist: ${patch.id}`);
+
+  const record = normaliseRecord(mergeRecordUpdate(current.record, patch), entries);
+  const candidate = { record, path: current.path, filePath: current.filePath };
+  const candidateEntries = {
+    items: entries.items.map((item) => item === current ? candidate : item),
+    byId: new Map(entries.byId),
+    byPath: new Map(entries.byPath),
+  };
+  candidateEntries.byId.set(record.id, candidate);
+  candidateEntries.byPath.set(current.path, candidate);
+
+  const result = validateRecord(record, candidateEntries, current.path);
+  if (result.errors.length > 0) throw new Error(result.errors.join("; "));
+
+  const realRoot = fs.realpathSync(root);
+  const realTarget = fs.realpathSync(current.filePath);
+  assertInside(realRoot, realTarget, "record target");
+  fs.writeFileSync(realTarget, renderRecord(record, spec.style), "utf8");
+  const manifest = writeManifest(root);
+  console.log(JSON.stringify({ command: "update", id: record.id, path: current.path, manifest: path.relative(root, manifest.manifestPath) }, null, 2));
+}
+
 function runManifest(options) {
   const root = resolveRoot(option(options, "root", { required: true }));
   parseSpec(root);
@@ -799,71 +979,106 @@ function runContext(options) {
       lines.push(`### ${item.record.id} — ${item.record.title}`, "", `- Path: ${item.path}`, `- Reason: selected for the task by explicit ID or bounded query`, `- Status: ${item.record.status}`, `- Confidence: ${item.record.confidence}`, `- Summary: ${item.record.summary}`, "", `> ${String(item.record.content).replaceAll("\n", " ").slice(0, 500)}`, "");
     }
   }
-  lines.push("## Unresolved or conflicting claims", "");
-  lines.push(unresolved.length === 0 ? "- None observed in the selected graph." : unresolved.map((reference) => `- Unresolved reference: ${reference}`).join("\n"));
-  lines.push("", "## Next reads/actions", "", "- Verify the selected sources before treating inferred or draft claims as facts.", "- Re-run `validate` after material updates.", "");
+  lines.push(
+    "## Unresolved or conflicting claims",
+    "",
+    unresolved.length === 0 ? "- None observed in the selected graph." : unresolved.map((reference) => `- Unresolved reference: ${reference}`).join("\n"),
+    "",
+    "## Next reads/actions",
+    "",
+    "- Verify the selected sources before treating inferred or draft claims as facts.",
+    "- Re-run `validate` after material updates.",
+    "",
+  );
   fs.writeFileSync(outputPath, lines.join("\n"), "utf8");
   console.log(JSON.stringify({ command: "context", path: path.relative(root, outputPath), selected: selected.map((item) => item.record.id), budget_records: maxRecords }, null, 2));
+}
+
+function validateStoredRecords(entries) {
+  const errors = [];
+  const warnings = [];
+  const ids = new Set();
+  for (const item of entries.items) {
+    if (ids.has(item.record.id)) errors.push(`duplicate record id: ${item.record.id}`);
+    ids.add(item.record.id);
+    const result = validateRecord(item.record, entries, item.path);
+    errors.push(...result.errors);
+    warnings.push(...result.warnings);
+  }
+  return { errors, warnings };
+}
+
+function validateGeneratedSurfaces(root, entries) {
+  const errors = [];
+  for (const requiredFile of ["KB_SPEC.md", "INDEX.md", "MANIFEST.md"]) {
+    if (!fs.existsSync(path.join(root, requiredFile))) errors.push(`missing generated surface: ${requiredFile}`);
+  }
+
+  const manifestPath = path.join(root, "MANIFEST.md");
+  const manifestText = fs.existsSync(manifestPath) ? fs.readFileSync(manifestPath, "utf8") : "";
+  for (const item of entries.items) {
+    if (!manifestText.includes(item.record.id) || !manifestText.includes(checksum(item.filePath))) {
+      errors.push(`manifest is stale for ${item.record.id}`);
+    }
+  }
+  return errors;
+}
+
+function renderValidationReport(entries, errors, warnings) {
+  const status = errors.length === 0 ? "PASS" : "FAIL";
+  return {
+    status,
+    text: [
+      "# KB validation",
+      "",
+      `Status: ${status}${warnings.length > 0 && status === "PASS" ? " WITH WARNINGS" : ""}`,
+      `Generated at: ${now()}`,
+      `Records checked: ${entries.items.length}`,
+      `Errors: ${errors.length}`,
+      `Warnings: ${warnings.length}`,
+      "",
+      "## Checks",
+      "",
+      "- Required surfaces: checked",
+      "- Record envelope and controlled fields: checked",
+      "- Provenance and confidence bounds: checked",
+      "- Safe and resolvable local references: checked",
+      "- Manifest checksums and backlink graph: checked",
+      "- Bounded context contract: checked by the native context command",
+      "",
+      "## Findings",
+      "",
+      ...(errors.length === 0 ? ["- No validation errors."] : errors.map((error) => `- ERROR: ${error}`)),
+      ...(warnings.length === 0 ? [] : warnings.map((warning) => `- WARNING: ${warning}`)),
+      "",
+      "## Limitations",
+      "",
+      "- This helper validates the Markdown projection and accepts JSON record input; JSON and TOON output conversion remains governed by KB_STANDARD.md.",
+      "- Semantic search quality depends on the host agent's search tooling; this command only performs bounded ID or term selection.",
+      "",
+    ].join("\n"),
+  };
 }
 
 function runValidate(options) {
   const root = resolveRoot(option(options, "root", { required: true }));
   parseSpec(root);
   const entries = collectRecords(root);
-  const errors = [];
-  const warnings = [];
-  const ids = new Map();
-  for (const item of entries.items) {
-    if (ids.has(item.record.id)) errors.push(`duplicate record id: ${item.record.id}`);
-    ids.set(item.record.id, item.path);
-    const result = validateRecord(item.record, entries, item.path);
-    errors.push(...result.errors);
-    warnings.push(...result.warnings);
-  }
-  for (const requiredFile of ["KB_SPEC.md", "INDEX.md", "MANIFEST.md"]) {
-    if (!fs.existsSync(path.join(root, requiredFile))) errors.push(`missing generated surface: ${requiredFile}`);
-  }
-  const manifestText = fs.existsSync(path.join(root, "MANIFEST.md")) ? fs.readFileSync(path.join(root, "MANIFEST.md"), "utf8") : "";
-  for (const item of entries.items) {
-    if (!manifestText.includes(item.record.id) || !manifestText.includes(checksum(item.filePath))) {
-      errors.push(`manifest is stale for ${item.record.id}`);
-    }
-  }
-  const graph = backlinkData(entries);
-  warnings.push(...graph.orphans.map((id) => `orphan record: ${id}`));
-  const status = errors.length === 0 ? "PASS" : "FAIL";
-  const report = [
-    "# KB validation",
-    "",
-    `Status: ${status}${warnings.length > 0 && status === "PASS" ? " WITH WARNINGS" : ""}`,
-    `Generated at: ${now()}`,
-    `Records checked: ${entries.items.length}`,
-    `Errors: ${errors.length}`,
-    `Warnings: ${warnings.length}`,
-    "",
-    "## Checks",
-    "",
-    "- Required surfaces: checked",
-    "- Record envelope and controlled fields: checked",
-    "- Provenance and confidence bounds: checked",
-    "- Safe and resolvable local references: checked",
-    "- Manifest checksums and backlink graph: checked",
-    "- Bounded context contract: checked by the native context command",
-    "",
-    "## Findings",
-    "",
-    ...(errors.length === 0 ? ["- No validation errors."] : errors.map((error) => `- ERROR: ${error}`)),
-    ...(warnings.length === 0 ? [] : warnings.map((warning) => `- WARNING: ${warning}`)),
-    "",
-    "## Limitations",
-    "",
-    "- This helper validates the Markdown projection and accepts JSON record input; JSON and TOON output conversion remains governed by KB_STANDARD.md.",
-    "- Semantic search quality depends on the host agent's search tooling; this command only performs bounded ID or term selection.",
-    "",
-  ].join("\n");
-  fs.writeFileSync(path.join(root, "KB_VALIDATION.md"), report, "utf8");
-  console.log(JSON.stringify({ command: "validate", status, records: entries.items.length, errors: errors.length, warnings: warnings.length, report: "KB_VALIDATION.md" }, null, 2));
-  if (errors.length > 0) process.exitCode = 1;
+  const validation = validateStoredRecords(entries);
+  validation.errors.push(...validateGeneratedSurfaces(root, entries));
+  validation.warnings.push(...backlinkData(entries).orphans.map((id) => `orphan record: ${id}`));
+
+  const report = renderValidationReport(entries, validation.errors, validation.warnings);
+  fs.writeFileSync(path.join(root, "KB_VALIDATION.md"), report.text, "utf8");
+  console.log(JSON.stringify({
+    command: "validate",
+    status: report.status,
+    records: entries.items.length,
+    errors: validation.errors.length,
+    warnings: validation.warnings.length,
+    report: "KB_VALIDATION.md",
+  }, null, 2));
+  if (validation.errors.length > 0) process.exitCode = 1;
 }
 
 function main() {
@@ -878,6 +1093,9 @@ function main() {
       break;
     case "add":
       runAdd(options);
+      break;
+    case "update":
+      runUpdate(options);
       break;
     case "manifest":
       runManifest(options);

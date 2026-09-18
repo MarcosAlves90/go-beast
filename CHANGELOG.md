@@ -11,6 +11,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **go-squirrel/SKILL.md** (v1.1.0 → v1.2.0): add a native partial-patch `update` command that preserves unrelated fields, appends provenance/history, validates before writing, and regenerates deterministic KB surfaces.
 - **workflow:** add composable typed artifact validators for non-empty files,
   Markdown headings, JSON Schema, supported YAML, and bounded patterns while
   preserving legacy artifact contracts.

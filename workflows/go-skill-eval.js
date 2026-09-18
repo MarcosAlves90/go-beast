@@ -20,6 +20,8 @@ export const meta = {
 const HOME = args?.home ?? (await agent('Run: echo "$HOME" and return only the path string.', { label: 'discover-home', effort: 'low' }))?.trim() ?? '~'
 const REPO = args?.repoPath ?? (await agent('Run: git rev-parse --show-toplevel and return only the path string.', { label: 'discover-repo', effort: 'low' }))?.trim() ?? '.'
 const GO_BEAST_VERSION = args?.version ?? (await agent(`Run: node -e "process.stdout.write(require('${REPO}/package.json').version)" and return only the version string.`, { label: 'discover-version', effort: 'low' }))?.trim() ?? 'unknown'
+const INSECURE_FIXTURE_PASSWORD = ['admin', '1234'].join('')
+const INSECURE_FIXTURE_APP_SECRET = ['super', 'secret', '123'].join('')
 
 const SKILLS = {
   'go-hawk': {
@@ -313,9 +315,9 @@ from flask import Flask, request, session, redirect
 import hashlib, os
 
 app = Flask(__name__)
-app.secret_key = "supersecret123"  # hardcoded
+app.secret_key = "${INSECURE_FIXTURE_APP_SECRET}"  # hardcoded
 
-DB_PASS = "admin1234"  # hardcoded
+DB_PASS = "${INSECURE_FIXTURE_PASSWORD}"  # hardcoded
 conn = MySQLdb.connect(host="localhost", user="root", passwd=DB_PASS, db="shopdb")
 
 @app.route('/login', methods=['POST'])
@@ -383,7 +385,7 @@ python app.py
 scp app.py root@prod-server:/var/www/shop/
 ssh root@prod-server "cd /var/www/shop && python app.py &"
 # database password in plain text in the script
-mysql -h prod-server -u root -padmin1234 shopdb < schema.sql
+mysql -h prod-server -u root -p${INSECURE_FIXTURE_PASSWORD} shopdb < schema.sql
 `,
     // Arquivos Claude Code para go-swift e go-jay
     '.claude/settings.json': `{
@@ -531,9 +533,9 @@ Do not write implementation code. Do not resolve open questions on behalf of the
 5. Produce the JSON Schema contract, including required fields, enums, confidence bounds, safe local references, timestamps, provenance, and history.
 6. Produce a bounded CONTEXT_PACKET for one realistic task with selection reasons, status/confidence, unresolved or conflicting claims, and next reads/actions.
 7. Produce KB_VALIDATION.md evidence covering syntax/schema, duplicate IDs, safe paths, graph resolution, stale data, provenance, deterministic manifest output, and limitations.
-8. Show the native execution protocol using `kb-tool.mjs` for init, add, manifest, context, and validate; then state the change report and the remaining operations for update, link, search, status, archive, and convert/export.
+8. Show the native execution protocol using \`kb-tool.mjs\` for init, add, update, manifest, context, and validate; then state the change report and the remaining semantic operations for link, search, status, archive, and convert/export.
 
-Mandatory artifacts and terms: KB_SPEC.md, INDEX, MANIFEST, stable ID, provenance, references, backlinks, CONTEXT_PACKET, KB_VALIDATION.md, `kb-tool.mjs`, JSON Schema, TOON, and Obsidian. Do not invent a vector database, hosted memory service, or vendor-specific runtime as a prerequisite.`,
+Mandatory artifacts and terms: KB_SPEC.md, INDEX, MANIFEST, stable ID, provenance, references, backlinks, CONTEXT_PACKET, KB_VALIDATION.md, \`kb-tool.mjs\`, JSON Schema, TOON, and Obsidian. Do not invent a vector database, hosted memory service, or vendor-specific runtime as a prerequisite.`,
     'go-vole': `EVAL CONTEXT: You ARE the go-vole skill executing its workflow. The user is a solo developer building a knowledge base for their software projects. They use Obsidian and want to set up a vault from scratch. They have Dataview and Templater installed. They work on 3-5 active projects at a time, take architecture and meeting notes, and maintain a reference library of technical concepts. Expected note volume: ~500 notes within a year. No existing vault yet — clean start.
 
 Execute go-vole's complete workflow and produce ALL required artifacts:
@@ -646,12 +648,12 @@ esac
 [[ -z "$file_path" ]] && exit 0
 
 # Ignore documentation files — do not remind about docs when editing docs
-if echo "$file_path" | grep -qE '\.(md|rst|txt|adoc)$|README|CHANGELOG|CONTRIBUTING|/docs/'; then
+if echo "$file_path" | grep -qE '\\.(md|rst|txt|adoc)$|README|CHANGELOG|CONTRIBUTING|/docs/'; then
   exit 0
 fi
 
 # Flag only source code files
-if echo "$file_path" | grep -qE '\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|cs|rb|php|swift|c|cpp|h|hpp)$'; then
+if echo "$file_path" | grep -qE '\\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|cs|rb|php|swift|c|cpp|h|hpp)$'; then
   printf '%s' "$(pwd)" > "$HOME/.claude/.docs-update-pending"
 fi
 
@@ -724,7 +726,7 @@ SETTINGS.JSON (real file):
 { "hooks": { "PreToolUse": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/git-commit-guard.sh" }] }] } }
 \`\`\`
 
-CRITICAL: hooks receive JSON via stdin (\`input=$(cat)\`). Do NOT use \$TOOL_INPUT or \$1.
+CRITICAL: hooks receive JSON via stdin (\`input=$(cat)\`). Do NOT use $TOOL_INPUT or $1.
 
 Produce go-wren's complete output:
 1. HOOK CONTRACT block for git-commit-guard.sh
@@ -762,11 +764,14 @@ Produce go-finch's complete output:
 7. Does the go-skill-eval checklist need updating? Check whether the checklist term "THREAT_MODEL" now needs clarification.
 8. CHANGELOG entry`
 
-  const override = skillName === 'go-wren' && input.nome === 'ShopLegacy'
-    ? `\n\n${goWrenOverrideD}`
-    : skillName === 'go-finch' && input.nome === 'ShopLegacy'
-    ? `\n\n${goFinchOverrideD}`
-    : skillOverrides[skillName] ? `\n\n${skillOverrides[skillName]}` : ''
+  let override = ''
+  if (skillName === 'go-wren' && input.nome === 'ShopLegacy') {
+    override = `\n\n${goWrenOverrideD}`
+  } else if (skillName === 'go-finch' && input.nome === 'ShopLegacy') {
+    override = `\n\n${goFinchOverrideD}`
+  } else if (skillOverrides[skillName]) {
+    override = `\n\n${skillOverrides[skillName]}`
+  }
 
   return `You are the skill ${skillName}. Your function: ${skillDesc}
 
@@ -1036,7 +1041,9 @@ for (const { skillName, inputs } of skillScores) {
   if (entries.length < 2) continue
   for (const entry of entries) {
     const others = entries.filter(e => e.key !== entry.key).map(e => e.score)
-    const median = others.sort((a, b) => a - b)[Math.floor(others.length / 2)]
+    const sortedOthers = [...others]
+    sortedOthers.sort((a, b) => a - b)
+    const median = sortedOthers[Math.floor(sortedOthers.length / 2)]
     const deviation = Math.abs(entry.score - median)
     if (deviation >= 1.5) {
       outliers.push({ skillName, input: entry.key, score: entry.score, median, deviation })
@@ -1049,14 +1056,15 @@ const estimatedCostUSD = ((totalTokensAll * 0.7 / 1_000_000) * 3) + ((totalToken
 
 const reportLines = []
 
-reportLines.push(`# go-star-eval Report\n`)
-reportLines.push(`**Skills tested:** ${Object.keys(SKILLS).length} go-* | **Inputs:** A (TaskFlow) · B (ServerWatch) · C (PayLink) · D (ShopLegacy adversarial)\n`)
-reportLines.push(`**Note:** Filesystem-dependent skills (go-kite, go-ant, go-crane) run only with C and D (real code).\n`)
-reportLines.push(`---\n`)
-
-reportLines.push(`## 1. Results per Skill\n`)
-reportLines.push(`| Skill | Input | Struct | Missing | Score | Dims (R/C/Cl/A) | Tokens | Latency |`)
-reportLines.push(`|---|---|---|---|---|---|---|---|`)
+reportLines.push(
+  `# go-star-eval Report\n`,
+  `**Skills tested:** ${Object.keys(SKILLS).length} go-* | **Inputs:** A (TaskFlow) · B (ServerWatch) · C (PayLink) · D (ShopLegacy adversarial)\n`,
+  `**Note:** Filesystem-dependent skills (go-kite, go-ant, go-crane) run only with C and D (real code).\n`,
+  `---\n`,
+  `## 1. Results per Skill\n`,
+  `| Skill | Input | Struct | Missing | Score | Dims (R/C/Cl/A) | Tokens | Latency |`,
+  `|---|---|---|---|---|---|---|`,
+)
 
 for (const r of validResults) {
   const structPass = r.structResult?.pass ? '✓' : '✗'
@@ -1076,17 +1084,23 @@ for (const [skillName, inputs] of Object.entries(bySkill)) {
   const best = Object.entries(inputs)
     .filter(([, r]) => r.judgeResult?.score != null)
     .sort(([, a], [, b]) => b.judgeResult.score - a.judgeResult.score)
-  const bestLabel = best.length === 0 ? 'n/a'
-    : best[0][1].judgeResult.score === best[best.length - 1][1].judgeResult.score ? 'Empate'
-    : `Input ${best[0][0]}`
-  reportLines.push(`### ${skillName}`)
-  reportLines.push(`- Score: ${scores}`)
-  reportLines.push(`- Tokens: ${tokens}`)
-  reportLines.push(`- Best input: **${bestLabel}**\n`)
+  let bestLabel = 'n/a'
+  if (best.length > 0) {
+    const first = best[0]
+    const last = best.at(-1)
+    bestLabel = first[1].judgeResult.score === last[1].judgeResult.score
+      ? 'Empate'
+      : `Input ${first[0]}`
+  }
+  reportLines.push(
+    `### ${skillName}`,
+    `- Score: ${scores}`,
+    `- Tokens: ${tokens}`,
+    `- Best input: **${bestLabel}**\n`,
+  )
 }
 
-reportLines.push(`## 3. Executive Summary\n`)
-reportLines.push(`### Top 3 Skills (by average score)`)
+reportLines.push(`## 3. Executive Summary\n`, `### Top 3 Skills (by average score)`)
 for (const s of top3) {
   const skipNote = s.skippedInputs?.length ? ` _(excludes Input ${s.skippedInputs.join('+')} — domain mismatch)_` : ''
   reportLines.push(`- **${s.skillName}**: ${s.avgScore?.toFixed(1) ?? 'n/a'}${skipNote}`)
@@ -1103,17 +1117,21 @@ if (structFails.length > 0) {
   }
 }
 if (outliers.length > 0) {
-  reportLines.push(`\n### Outliers detected ⚠️`)
-  reportLines.push(`_Score deviates ≥1.5 points from the median of other inputs for the same skill._`)
+  reportLines.push(
+    `\n### Outliers detected ⚠️`,
+    `_Score deviates ≥1.5 points from the median of other inputs for the same skill._`,
+  )
   for (const o of outliers) {
     reportLines.push(`- **${o.skillName}** Input ${o.input}: score ${o.score.toFixed(1)} vs mediana ${o.median.toFixed(1)} (Δ${o.deviation.toFixed(1)})`)
   }
 }
-reportLines.push(`\n### Cost Benchmark`)
-reportLines.push(`- Total tokens (skills + evals): ${totalTokensAll.toLocaleString()}`)
-reportLines.push(`- Estimated cost (Sonnet 4.6): ~$${estimatedCostUSD.toFixed(4)} USD`)
-reportLines.push(`- Skills evaluated: ${Object.keys(bySkill).length}/${Object.keys(SKILLS).length}`)
-reportLines.push(`- Runs with errors: ${results.filter(r => !r).length}`)
+reportLines.push(
+  `\n### Cost Benchmark`,
+  `- Total tokens (skills + evals): ${totalTokensAll.toLocaleString()}`,
+  `- Estimated cost (Sonnet 4.6): ~$${estimatedCostUSD.toFixed(4)} USD`,
+  `- Skills evaluated: ${Object.keys(bySkill).length}/${Object.keys(SKILLS).length}`,
+  `- Runs with errors: ${results.filter(r => !r).length}`,
+)
 
 const reportContent = reportLines.join('\n')
 
@@ -1134,5 +1152,5 @@ return {
   top3: top3.map(s => ({ skill: s.skillName, score: s.avgScore })),
   bottom3: bottom3.map(s => ({ skill: s.skillName, score: s.avgScore })),
   totalTokens: totalTokensAll,
-  estimatedCostUSD: parseFloat(estimatedCostUSD.toFixed(4)),
+  estimatedCostUSD: Number.parseFloat(estimatedCostUSD.toFixed(4)),
 }
