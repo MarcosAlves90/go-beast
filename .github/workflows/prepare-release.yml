@@ -18,7 +18,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_BRANCH: release
-      PREPARE_BRANCH: release/prepare
+      PREPARE_BRANCH: chore/release-prepare
     steps:
       - name: Check out release branch
         uses: actions/checkout@v4

@@ -125,7 +125,7 @@ Use the manual [release-train workflow](docs/RELEASES.md) to calculate the
 version, generate `CHANGELOG.md`, and open a release PR. After that PR is merged,
 publish the prepared release from a clean checkout:
 
-Release preparation first merges `release/prepare` into the permanent `release`
+Release preparation first merges `chore/release-prepare` into the permanent `release`
 branch; the resulting `release` → `main` promotion PR is the release gate.
 
 ```bash
