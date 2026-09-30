@@ -7,8 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
+	"unicode/utf16"
+	"unsafe"
 )
 
 func TestExplicitRootSymlinkIsAccepted(t *testing.T) {
@@ -198,6 +201,9 @@ func TestRemovePreservesConcurrentEditBetweenFingerprintAndRename(t *testing.T) 
 }
 
 func TestRecoveryMoveDoesNotFollowSwappedTargetAncestor(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows denies renaming the open directory used by this symlink-swap fixture")
+	}
 	root := filepath.Join(t.TempDir(), "home")
 	target := filepath.Join(root, "skills", "go-beast", "owned")
 	attackerTarget := filepath.Join(root, "attacker", "go-beast", "owned")
@@ -247,6 +253,9 @@ func TestRecoveryMoveDoesNotFollowSwappedTargetAncestor(t *testing.T) {
 }
 
 func TestRecoveryMoveDoesNotFollowSwappedRecoveryAncestor(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows denies renaming the open recovery directory used by this symlink-swap fixture")
+	}
 	root := filepath.Join(t.TempDir(), "home")
 	target := filepath.Join(root, "skills", "go-beast", "owned")
 	if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
@@ -489,7 +498,7 @@ func TestSnapshotAndFingerprintUseStableTreeDigest(t *testing.T) {
 	if fingerprint.State != got.Snapshot.State || fingerprint.Mode == nil || *fingerprint.Mode != got.Snapshot.Mode {
 		t.Fatalf("snapshot fingerprint mismatch: before=%#v snapshot=%#v", fingerprint, got)
 	}
-	if link, err := os.Readlink(filepath.Join(backup, "link")); err != nil || link != "nested/a.txt" {
+	if link, err := os.Readlink(filepath.Join(backup, "link")); err != nil || filepath.ToSlash(link) != "nested/a.txt" {
 		t.Fatalf("snapshot did not preserve symlink: %q, %v", link, err)
 	}
 }
@@ -526,6 +535,15 @@ func TestOwnershipAndTransactionDigestsRemainDistinct(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	linkInfo, err := os.Lstat(filepath.Join(tree, "link"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	linkTarget, err := os.Readlink(filepath.Join(tree, "link"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	linkMode := strconv.FormatUint(uint64(modeNumber(linkInfo.Mode())), 8)
 	hash := func(value string) string {
 		sum := sha256.Sum256([]byte(value))
 		return hex.EncodeToString(sum[:])
@@ -535,7 +553,7 @@ func TestOwnershipAndTransactionDigestsRemainDistinct(t *testing.T) {
 		return hex.EncodeToString(sum[:])
 	}
 	ownershipRows := "a/f.txt\x00file\x00" + fileHash("one") + "\n" +
-		"link\x00symlink\x00" + hash("symlink:a/f.txt") + "\n" +
+		"link\x00symlink\x00" + hash("symlink:"+linkTarget) + "\n" +
 		"z.txt\x00file\x00" + fileHash("zee") + "\n"
 	if inspect.SHA256 != hash(ownershipRows) {
 		t.Fatalf("inspect digest differs from sourceDigest format: got %s want %s", inspect.SHA256, hash(ownershipRows))
@@ -543,7 +561,7 @@ func TestOwnershipAndTransactionDigestsRemainDistinct(t *testing.T) {
 	fingerprintRows := ".\x00directory\x00751\n" +
 		"a\x00directory\x00700\n" +
 		"a/f.txt\x00file\x00640\x00one\n" +
-		"link\x00symlink\x00755\x00a/f.txt\n" +
+		"link\x00symlink\x00" + linkMode + "\x00" + linkTarget + "\n" +
 		"z.txt\x00file\x00600\x00zee\n"
 	rootHandle, err := os.OpenRoot(root)
 	if err != nil {
@@ -817,6 +835,30 @@ func TestWindowsRecoveryMoveWorksAndDoesNotOverwrite(t *testing.T) {
 		t.Fatalf("recovery entry was not moved intact: %q, %v", contents, err)
 	}
 
+	directory := filepath.Join(root, "skills", "directory")
+	if err := os.MkdirAll(filepath.Join(directory, "nested"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(directory, "nested", "SKILL.md"), []byte("directory-managed"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	before, err = runRequest(request{Operation: "inspect", Root: root, Path: "skills/directory"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err = runRequest(request{Operation: "remove", Root: root, Path: "skills/directory", ExpectedSHA256: before.SHA256}, nil)
+	if err != nil || got.Status != "removed" || len(got.RecoveryPaths) != 1 {
+		t.Fatalf("Windows directory recovery move should succeed, got %#v, %v", got, err)
+	}
+	recoveredDirectory := filepath.Join(root, filepath.FromSlash(got.RecoveryPaths[0]))
+	if info, statErr := os.Stat(recoveredDirectory); statErr != nil || !info.IsDir() {
+		t.Fatalf("directory recovery entry was not moved intact: %v, %v", info, statErr)
+	}
+	contents, err = os.ReadFile(filepath.Join(recoveredDirectory, "nested", "SKILL.md"))
+	if err != nil || string(contents) != "directory-managed" {
+		t.Fatalf("recovered directory contents changed: %q, %v", contents, err)
+	}
+
 	target = filepath.Join(root, "skills", "collision")
 	if err := os.WriteFile(target, []byte("source"), 0o600); err != nil {
 		t.Fatal(err)
@@ -844,5 +886,44 @@ func TestWindowsRecoveryMoveWorksAndDoesNotOverwrite(t *testing.T) {
 	contents, err = os.ReadFile(target)
 	if err != nil || string(contents) != "source" {
 		t.Fatalf("source changed after no-replace collision: %q, %v", contents, err)
+	}
+}
+
+func TestBuildWindowsFileRenameInfoUsesFullNoReplaceBuffer(t *testing.T) {
+	const destinationDirectory = uintptr(42)
+	info, err := buildWindowsFileRenameInfo("entry", destinationDirectory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.ReplaceIfExists != 0 {
+		t.Fatalf("rename must not replace an existing entry, got ReplaceIfExists=%d", info.ReplaceIfExists)
+	}
+	if info.RootDirectory != destinationDirectory {
+		t.Fatalf("rename should be relative to destination handle %d, got %d", destinationDirectory, info.RootDirectory)
+	}
+	expectedName := utf16.Encode([]rune("entry"))
+	if info.FileNameLength != uint32(len(expectedName)*2) {
+		t.Fatalf("unexpected UTF-16 filename length: got %d want %d", info.FileNameLength, len(expectedName)*2)
+	}
+	for index, character := range expectedName {
+		if info.FileName[index] != character {
+			t.Fatalf("unexpected UTF-16 filename unit at %d: got %d want %d", index, info.FileName[index], character)
+		}
+	}
+	if info.FileName[len(expectedName)] != 0 {
+		t.Fatal("rename filename buffer must be NUL-terminated after the declared byte length")
+	}
+	type renameInfoHeader struct {
+		ReplaceIfExists byte
+		RootDirectory   uintptr
+		FileNameLength  uint32
+		FileName        [1]uint16
+	}
+	minimumSize := unsafe.Sizeof(renameInfoHeader{}) + uintptr(info.FileNameLength)
+	if got := unsafe.Sizeof(info); got < minimumSize {
+		t.Fatalf("FILE_RENAME_INFO buffer is too small: got %d bytes, need at least %d", got, minimumSize)
+	}
+	if _, err := buildWindowsFileRenameInfo(strings.Repeat("a", len(info.FileName)), destinationDirectory); err == nil {
+		t.Fatal("expected an overlong recovery leaf name to be rejected")
 	}
 }

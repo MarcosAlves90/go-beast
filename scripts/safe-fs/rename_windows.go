@@ -3,13 +3,11 @@
 package main
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"os"
 	"runtime"
 	"syscall"
-	"unicode/utf16"
 	"unsafe"
 )
 
@@ -151,23 +149,17 @@ func renameNoReplace(sourceParent *os.Root, sourceName string, destinationContai
 		return errors.New("recovery source changed while opening")
 	}
 
-	destinationName16 := utf16.Encode([]rune(destinationName))
-	if len(destinationName16) > (int(^uint32(0))-20)/2 {
-		return errors.New("recovery destination name is too long")
-	}
-	information := make([]byte, 20+2*len(destinationName16))
-	binary.LittleEndian.PutUint64(information[8:16], uint64(destinationDirectory.Fd()))
-	binary.LittleEndian.PutUint32(information[16:20], uint32(2*len(destinationName16)))
-	for index, character := range destinationName16 {
-		binary.LittleEndian.PutUint16(information[20+2*index:], character)
+	information, err := buildWindowsFileRenameInfo(destinationName, destinationDirectory.Fd())
+	if err != nil {
+		return err
 	}
 	result, _, callErr := setFileInformationProc.Call(
 		sourceFile.Fd(),
 		fileRenameInfo,
-		uintptr(unsafe.Pointer(&information[0])),
-		uintptr(len(information)),
+		uintptr(unsafe.Pointer(&information)),
+		unsafe.Sizeof(information),
 	)
-	runtime.KeepAlive(information)
+	runtime.KeepAlive(&information)
 	if result == 0 {
 		if callErr != syscall.Errno(0) {
 			return callErr
