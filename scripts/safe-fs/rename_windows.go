@@ -17,8 +17,6 @@ const (
 	fileSynchronousIO       = 0x00000020
 	fileDirectory           = 0x00000001
 	fileReadAttributes      = 0x00000080
-	fileAddFile             = 0x00000002
-	fileAddSubdirectory     = 0x00000004
 	accessDelete            = 0x00010000
 	objCaseInsensitive      = 0x00000040
 	fileRenameInfo          = 3
@@ -112,14 +110,14 @@ func renameNoReplace(sourceParent *os.Root, sourceName string, destinationContai
 	if destinationInfo.Mode()&os.ModeSymlink != 0 || !destinationInfo.IsDir() || !os.SameFile(expectedDestinationInfo, destinationInfo) {
 		return errors.New("recovery destination directory changed before move")
 	}
-	destinationDirectory, err := openWindowsRootRelative(destinationContainer, destinationDirectoryName, fileAddFile|fileAddSubdirectory|fileReadAttributes|syscall.SYNCHRONIZE, fileDirectory|fileOpenReparsePoint)
+	destinationDirectory, err := openWindowsRootRelative(destinationContainer, destinationDirectoryName, windowsRenameRootDirectoryAccess, fileDirectory|fileOpenReparsePoint)
 	if err != nil {
-		return err
+		return fmt.Errorf("open recovery destination directory for relative rename: %w", err)
 	}
 	defer destinationDirectory.Close()
 	openedDestinationInfo, err := destinationDirectory.Stat()
 	if err != nil {
-		return err
+		return fmt.Errorf("stat opened recovery destination directory: %w", err)
 	}
 	if !os.SameFile(expectedDestinationInfo, openedDestinationInfo) {
 		return errors.New("recovery destination directory changed while opening")
@@ -134,7 +132,7 @@ func renameNoReplace(sourceParent *os.Root, sourceName string, destinationContai
 
 	sourceFile, err := openWindowsRootRelative(sourceParent, sourceName, accessDelete|fileReadAttributes|syscall.SYNCHRONIZE, fileOpenReparsePoint)
 	if err != nil {
-		return err
+		return fmt.Errorf("open recovery source for rename: %w", err)
 	}
 	defer sourceFile.Close()
 	expectedSourceInfo, err := sourceParent.Lstat(sourceName)
@@ -162,7 +160,7 @@ func renameNoReplace(sourceParent *os.Root, sourceName string, destinationContai
 	runtime.KeepAlive(&information)
 	if result == 0 {
 		if callErr != syscall.Errno(0) {
-			return callErr
+			return fmt.Errorf("SetFileInformationByHandle(FileRenameInfo): %w", callErr)
 		}
 		return errors.New("SetFileInformationByHandle failed without an error code")
 	}

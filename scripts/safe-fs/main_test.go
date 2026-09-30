@@ -535,15 +535,22 @@ func TestOwnershipAndTransactionDigestsRemainDistinct(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	linkInfo, err := os.Lstat(filepath.Join(tree, "link"))
-	if err != nil {
-		t.Fatal(err)
-	}
 	linkTarget, err := os.Readlink(filepath.Join(tree, "link"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	linkMode := strconv.FormatUint(uint64(modeNumber(linkInfo.Mode())), 8)
+	modeFor := func(path string) string {
+		info, err := os.Lstat(path)
+		if err != nil {
+			t.Fatalf("lstat %q: %v", path, err)
+		}
+		return strconv.FormatUint(uint64(modeNumber(info.Mode())), 8)
+	}
+	rootMode := modeFor(tree)
+	directoryMode := modeFor(filepath.Join(tree, "a"))
+	fileMode := modeFor(filepath.Join(tree, "a", "f.txt"))
+	linkMode := modeFor(filepath.Join(tree, "link"))
+	zeeMode := modeFor(filepath.Join(tree, "z.txt"))
 	hash := func(value string) string {
 		sum := sha256.Sum256([]byte(value))
 		return hex.EncodeToString(sum[:])
@@ -558,11 +565,11 @@ func TestOwnershipAndTransactionDigestsRemainDistinct(t *testing.T) {
 	if inspect.SHA256 != hash(ownershipRows) {
 		t.Fatalf("inspect digest differs from sourceDigest format: got %s want %s", inspect.SHA256, hash(ownershipRows))
 	}
-	fingerprintRows := ".\x00directory\x00751\n" +
-		"a\x00directory\x00700\n" +
-		"a/f.txt\x00file\x00640\x00one\n" +
+	fingerprintRows := ".\x00directory\x00" + rootMode + "\n" +
+		"a\x00directory\x00" + directoryMode + "\n" +
+		"a/f.txt\x00file\x00" + fileMode + "\x00one\n" +
 		"link\x00symlink\x00" + linkMode + "\x00" + linkTarget + "\n" +
-		"z.txt\x00file\x00600\x00zee\n"
+		"z.txt\x00file\x00" + zeeMode + "\x00zee\n"
 	rootHandle, err := os.OpenRoot(root)
 	if err != nil {
 		t.Fatal(err)
@@ -582,7 +589,7 @@ func TestOwnershipAndTransactionDigestsRemainDistinct(t *testing.T) {
 	if fingerprint.SHA256 != hash(fingerprintRows) {
 		t.Fatalf("fingerprint digest differs from targetFingerprint format: got %s want %s", fingerprint.SHA256, hash(fingerprintRows))
 	}
-	if err := os.Chmod(filepath.Join(tree, "a", "f.txt"), 0o600); err != nil {
+	if err := os.Chmod(filepath.Join(tree, "a", "f.txt"), 0o400); err != nil {
 		t.Fatal(err)
 	}
 	inspectAfter, err := runRequest(request{Operation: "inspect", Root: root, Path: "skills/owned"}, nil)
@@ -898,6 +905,9 @@ func TestBuildWindowsFileRenameInfoUsesFullNoReplaceBuffer(t *testing.T) {
 	if info.ReplaceIfExists != 0 {
 		t.Fatalf("rename must not replace an existing entry, got ReplaceIfExists=%d", info.ReplaceIfExists)
 	}
+	if info.Flags != 0 {
+		t.Fatalf("rename flags must remain zero for the no-replace FileRenameInfo class, got %#x", info.Flags)
+	}
 	if info.RootDirectory != destinationDirectory {
 		t.Fatalf("rename should be relative to destination handle %d, got %d", destinationDirectory, info.RootDirectory)
 	}
@@ -914,10 +924,21 @@ func TestBuildWindowsFileRenameInfoUsesFullNoReplaceBuffer(t *testing.T) {
 		t.Fatal("rename filename buffer must be NUL-terminated after the declared byte length")
 	}
 	type renameInfoHeader struct {
+		Flags           uint32
 		ReplaceIfExists byte
+		Padding         [3]byte
 		RootDirectory   uintptr
 		FileNameLength  uint32
 		FileName        [1]uint16
+	}
+	var header renameInfoHeader
+	if unsafe.Offsetof(info.RootDirectory) != unsafe.Offsetof(header.RootDirectory) ||
+		unsafe.Offsetof(info.FileNameLength) != unsafe.Offsetof(header.FileNameLength) ||
+		unsafe.Offsetof(info.FileName) != unsafe.Offsetof(header.FileName) {
+		t.Fatalf("FILE_RENAME_INFO offsets do not match the Win32 ABI: root=%d/%d length=%d/%d name=%d/%d",
+			unsafe.Offsetof(info.RootDirectory), unsafe.Offsetof(header.RootDirectory),
+			unsafe.Offsetof(info.FileNameLength), unsafe.Offsetof(header.FileNameLength),
+			unsafe.Offsetof(info.FileName), unsafe.Offsetof(header.FileName))
 	}
 	minimumSize := unsafe.Sizeof(renameInfoHeader{}) + uintptr(info.FileNameLength)
 	if got := unsafe.Sizeof(info); got < minimumSize {
@@ -925,5 +946,12 @@ func TestBuildWindowsFileRenameInfoUsesFullNoReplaceBuffer(t *testing.T) {
 	}
 	if _, err := buildWindowsFileRenameInfo(strings.Repeat("a", len(info.FileName)), destinationDirectory); err == nil {
 		t.Fatal("expected an overlong recovery leaf name to be rejected")
+	}
+}
+
+func TestWindowsRenameRootDirectoryAccessIncludesRelativeRenameRights(t *testing.T) {
+	const requiredAccess = uint32(0x00000020 | 0x00000080 | 0x00100000)
+	if got := windowsRenameRootDirectoryAccess & requiredAccess; got != requiredAccess {
+		t.Fatalf("relative rename RootDirectory access omits FILE_TRAVERSE, FILE_READ_ATTRIBUTES, or SYNCHRONIZE: got %#x need %#x", got, requiredAccess)
 	}
 }

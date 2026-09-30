@@ -7,8 +7,13 @@ import (
 
 const windowsRenameNameCapacity = 260
 
+// FILE_TRAVERSE | FILE_READ_ATTRIBUTES | SYNCHRONIZE for relative rename resolution.
+const windowsRenameRootDirectoryAccess uint32 = 0x00000020 | 0x00000080 | 0x00100000
+
 type windowsFileRenameInfo struct {
+	Flags           uint32
 	ReplaceIfExists byte
+	Padding         [3]byte
 	RootDirectory   uintptr
 	FileNameLength  uint32
 	FileName        [windowsRenameNameCapacity]uint16
