@@ -37,7 +37,7 @@ then
 fi
 
 mkdir -p "$EFFECTIVE_HOME/.codex"
-HOME="$EFFECTIVE_HOME" node "$REPO_ROOT/scripts/install.mjs" --all > /dev/null
+HOME="$EFFECTIVE_HOME" USERPROFILE="$EFFECTIVE_HOME" HERMES_HOME="$EFFECTIVE_HOME/.hermes" node "$REPO_ROOT/scripts/install.mjs" --all > /dev/null
 rm "$EFFECTIVE_HOME/.codex/skills/go-hawk"
 mkdir -p "$EFFECTIVE_HOME/.codex/skills/go-hawk"
 run_integration "$EFFECTIVE_HOME" status --agent codex --format json > "$EFFECTIVE_HOME/status.json"
@@ -58,7 +58,7 @@ if (!dependent.dependencies.missing.includes('go-hawk')) {
 NODE
 
 mkdir -p "$HOOK_HOME/.codex"
-HOME="$HOOK_HOME" node "$REPO_ROOT/scripts/install.mjs" --all > /dev/null
+HOME="$HOOK_HOME" USERPROFILE="$HOOK_HOME" HERMES_HOME="$HOOK_HOME/.hermes" node "$REPO_ROOT/scripts/install.mjs" --all > /dev/null
 run_integration "$HOOK_HOME" disable --agent codex --kind hook --name code-verify-flag.sh --cascade --format json > "$HOOK_HOME/disable.json"
 node - "$HOOK_HOME/.go-beast/config.json" "$HOOK_HOME/disable.json" "$HOOK_HOME/.codex/hooks.json" <<'NODE'
 const fs = require('fs')

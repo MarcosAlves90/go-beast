@@ -21,10 +21,10 @@ const testSuites = [
   ['installation tests', 'tests/install'],
 ]
 
-function run(label, command, args) {
+function run(label, command, args, cwd = repoRoot) {
   console.log(`\n==> ${label}`)
   const result = spawnSync(command, args, {
-    cwd: repoRoot,
+    cwd,
     stdio: 'inherit',
     shell: false,
   })
@@ -96,7 +96,9 @@ function runTests() {
     const status = runDirectorySuite(label, directory)
     if (status !== 0) return status
   }
-  return 0
+  const helperTestStatus = run('Hermes safe filesystem unit tests', 'go', ['test', './...'], path.join(repoRoot, 'scripts', 'safe-fs'))
+  if (helperTestStatus !== 0) return helperTestStatus
+  return run('Hermes safe filesystem binary bundle check', process.execPath, ['scripts/safe-fs/build.mjs', '--check'])
 }
 
 function runUnitTests() {

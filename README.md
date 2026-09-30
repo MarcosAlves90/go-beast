@@ -7,7 +7,7 @@
 go-beast gives coding agents a structured path from discovery to delivery.
 Each `go-<animal>` skill owns one phase, states its prerequisites, and produces
 concrete artifacts for the next phase. Skills are plain Markdown and work with
-Claude Code, Codex, Copilot, Cursor, Gemini, and other agents.
+Claude Code, Codex, Copilot, Cursor, Gemini, Hermes Agent, and other agents.
 
 **Version 2.1.0** · [Changelog](CHANGELOG.md)
 
@@ -68,6 +68,8 @@ mutations without writing files.
 - A lifecycle pipeline from discovery and architecture through testing, security,
   CI/CD, and documentation.
 - Optional Claude Code, Codex, and Copilot CLI hooks and workflows.
+- Skill-only Hermes Agent support with bundled no-follow filesystem helpers for Windows,
+  macOS, and Linux on x64/arm64. Displaced copies are retained for recovery.
 - A plugin adapter under `plugins/go-beast/`; canonical skills remain under
   `skills/`.
 

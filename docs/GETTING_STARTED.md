@@ -36,18 +36,28 @@ node <repo-dir>/scripts/install.mjs --rollback
 ```
 
 `--bootstrap` installs the stricter discovery-first instructions. `--uninstall`
-removes links that point back to the checkout.
+removes links that point back to the checkout and unchanged go-beast-owned
+Hermes skill copies. Modified Hermes skill copies are preserved.
+
+Hermes filesystem operations use bundled no-follow helpers for Windows, macOS,
+and Linux on x64 and arm64; installing or using go-beast does not require Go.
+The helper permits a symlink at the Hermes-home root, rejects symlinked
+descendants, and fails closed if its platform binary is unavailable. Previous
+or partial copies are retained under `$HERMES_HOME/.go-beast-recovery/`; review
+the reported recovery location before removing those files manually.
 
 `--permission-preview` reports the managed paths and required write locations
 without mutating them. `--dry-run` evaluates the same selection and mutation
-plan without creating links, configuration, or transaction state. A committed
-installation records per-asset SHA-256, size, file count, source, kind, and
-agent metadata in `~/.go-beast/install-manifest.json`. `--verify-integrity`
-checks that manifest before any installation mutation and fails closed when an
-asset has changed. Each mutating installation also persists a transaction under
+plan without creating links, copies, configuration, or transaction state. A
+committed installation records per-asset SHA-256, size, file count, source,
+kind, and agent metadata in `~/.go-beast/install-manifest.json`.
+`--verify-integrity` checks that manifest before any installation mutation and
+fails closed when an asset has changed. Each mutating installation also persists a transaction under
 `~/.go-beast/install-transactions/`; `--rollback` restores the latest recorded
-state. Files and directories not owned by go-beast remain unmanaged and are
-preserved.
+state and preserves/reports targets edited since installation. Files and
+directories not owned by go-beast remain unmanaged and are preserved.
+With Hermes, rollback selects a transaction compatible with the currently
+resolved `HERMES_HOME` and skips transactions belonging to other Hermes homes.
 
 The installer records the selected integration policy in
 `~/.go-beast/config.json`. You can change individual skills and hooks later
@@ -78,6 +88,13 @@ conflicts, ownership, and whether an enabled asset is blocked. Skill dependency
 rules come from `go-beast.manifest.yaml`; hook dependencies are derived from
 the shared hook wiring contract. Disabling a dependency warns about affected
 dependents, while `--cascade` disables known dependent assets as well.
+
+Hermes Agent is supported for canonical skills only. Skills are copied into
+`$HERMES_HOME/skills/go-beast/`; set `HERMES_HOME` to target a named profile.
+The default home is `~/.hermes` on macOS/Linux and `%LOCALAPPDATA%\hermes` on
+native Windows. Hermes can edit installed skills, so sync preserves any copy
+whose contents changed since go-beast installed it. No Hermes hooks, plugins,
+workflows, global instructions, or settings are configured.
 
 `export` writes a validated, agent-specific JSON profile containing the desired
 skill and hook policies. `import` replaces that agent policy and supports
@@ -122,7 +139,8 @@ swap fails.
 The installer writes only the selected agent integrations and preserves
 existing configuration. Claude Code uses `~/.claude/settings.json`; Codex uses
 `~/.codex/hooks.json` or inline `[hooks]` configuration; Copilot CLI uses JSON
-files under `~/.copilot/hooks/`.
+files under `~/.copilot/hooks/`. Hermes Agent receives managed skill copies
+only; it has no automatic lifecycle-hook or plugin wiring in go-beast.
 
 The local install manifest is an integrity and recovery aid, not a signed
 release attestation. Trust the release archive and its published checksums when

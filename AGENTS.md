@@ -94,6 +94,9 @@ tables in `~/.codex/config.toml`. Copilot CLI loads `~/.copilot/hooks/*.json`
 and uses camelCase event names (`sessionStart`, `userPromptSubmitted`,
 `agentStop`, `preToolUse`, `postToolUse`) with a flat entry format; the
 hook-wire script writes `~/.copilot/hooks/go-beast.json` automatically.
+Hermes Agent is supported by the installer and integration CLI for managed
+skill copies only; it does not receive hooks, plugins, workflows, or global
+instructions.
 
 ## What this repo is
 
@@ -258,7 +261,8 @@ go-beast/
 │       ├── README.md                   ← Adapter scope and maintenance notes
 │       └── skills/                     ← Symlinks to canonical `skills/go-*` directories
 ├── scripts/
-│   ├── hook-wire.mjs      ← Shared hook manifest wiring helper for config and symlinks
+│   ├── agent-paths.mjs   ← Cross-platform agent-home resolution, including Hermes HERMES_HOME
+│   ├── hook-wire.mjs    ← Shared hook manifest wiring helper for config and symlinks
 │   ├── install.mjs        ← Cross-platform installer (Node.js 18+, no deps)
 │   └── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
 ├── tests/

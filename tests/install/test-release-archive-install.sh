@@ -27,7 +27,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir -p "$TEST_HOME/.claude" "$TEST_HOME/.codex"
+mkdir -p "$TEST_HOME/.claude" "$TEST_HOME/.codex" "$TEST_HOME/.hermes"
 
 tar -czf "$ARCHIVE_PATH" \
   --exclude='go-beast/.git' \
@@ -70,6 +70,8 @@ printf '1\n' | env \
   GO_BEAST_RELEASE_LATEST_API_URL="http://127.0.0.1:$SERVER_PORT/latest.json" \
   GO_BEAST_RELEASES_API_URL="http://127.0.0.1:$SERVER_PORT/releases.json" \
   HOME="$TEST_HOME" \
+  USERPROFILE="$TEST_HOME" \
+  HERMES_HOME="$TEST_HOME/.hermes" \
   bash "$REPO_ROOT/scripts/install.sh" \
   --interactive \
   --all \
@@ -106,6 +108,8 @@ assert_contains \
 
 test -f "$INSTALL_ROOT/scripts/install.mjs"
 echo "[PASS] archive bootstrap extracted persistent install root"
+test -f "$TEST_HOME/.hermes/skills/go-beast/go-fox/SKILL.md"
+echo "[PASS] release archive includes the matching Hermes filesystem helper"
 
 SECOND_WORKDIR="$(mktemp -d)"
 ARCHIVE_PATH_2="$ARCHIVE_DIR/go-beast-release-archive-v2.tar.gz"
@@ -135,6 +139,8 @@ printf '2\n1\n' | env \
   GO_BEAST_RELEASE_LATEST_API_URL="http://127.0.0.1:$SERVER_PORT/latest.json" \
   GO_BEAST_RELEASES_API_URL="http://127.0.0.1:$SERVER_PORT/releases.json" \
   HOME="$TEST_HOME" \
+  USERPROFILE="$TEST_HOME" \
+  HERMES_HOME="$TEST_HOME/.hermes" \
   node "$REPO_ROOT/scripts/install-from-release-archive.mjs" \
   --interactive \
   --all \
@@ -156,5 +162,10 @@ assert_contains \
   "$TEST_HOME/.claude/skills/go-hawk/SKILL.md" \
   '^description: Conducts structured discovery interviews, produces a versioned \.go-beast/REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification\.$' \
   "archive bootstrap updates installed content after rerun"
+
+assert_contains \
+  "$TEST_HOME/.hermes/skills/go-beast/go-hawk/SKILL.md" \
+  '^description: Conducts structured discovery interviews, produces a versioned \.go-beast/REQUIREMENTS\.md, identifies unknowns and risks, and generates a go-beast handoff plan for a software project with update verification\.$' \
+  "archive bootstrap updates Hermes copies through the bundled helper"
 
 echo "STATUS: PASSED"

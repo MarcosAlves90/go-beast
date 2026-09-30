@@ -8,6 +8,7 @@ import path from 'path'
 import os   from 'os'
 import readline from 'readline'
 import { fileURLToPath } from 'url'
+import { resolveHermesHome } from './agent-paths.mjs'
 import { hooksForAgent, loadHookManifest, syncAgentHooks, wireAgentConfig } from './hook-wire.mjs'
 import { configureAgent } from './integration-profile.mjs'
 import {
@@ -22,6 +23,7 @@ import {
 const DEFAULT_REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const REPO   = path.resolve(process.env.GO_BEAST_INSTALL_ROOT || DEFAULT_REPO)
 const HOME   = os.homedir()
+const HERMES_HOME = resolveHermesHome({ home: HOME })
 const IS_WIN = process.platform === 'win32'
 const W      = process.stdout.columns || 60
 const j      = (...p) => path.join(...p)
@@ -101,7 +103,8 @@ const AGENTS = [
   { name: 'claude-code', detect: j(HOME,'.claude'),           skills: j(HOME,'.claude','skills'),           hooks: j(HOME,'.claude','hooks'), workflows: j(HOME,'.claude','workflows'), globalMd: j(HOME,'.claude','CLAUDE.md'), hookConfig: j(HOME,'.claude','settings.json'), hookConfigHint: '~/.claude/settings.json or run go-swift' },
   { name: 'cursor',      detect: j(HOME,'.cursor'),           skills: j(HOME,'.cursor','skills'),           globalMd: j(HOME,'.cursor','rules') },
   { name: 'gemini',      detect: j(HOME,'.gemini'),           skills: j(HOME,'.gemini','skills'),           globalMd: j(HOME,'.gemini','GEMINI.md') },
-  { name: 'cline',       detect: j(HOME,'.cline'),            skills: j(HOME,'.cline','skills'),            globalMd: j(HOME,'.cline','AGENTS.md') },
+  { name: 'hermes',      detect: HERMES_HOME,                 home: HERMES_HOME, skills: j(HERMES_HOME,'skills','go-beast'), skillInstallMode: 'copy' },
+  { name: 'cline',       detect: j(HOME,'.cline'),            skills: j(HOME,'.cline','skills'),           globalMd: j(HOME,'.cline','AGENTS.md') },
   { name: 'copilot',     detect: j(HOME,'.copilot'),          skills: j(HOME,'.copilot','skills'),          hooks: j(HOME,'.copilot','hooks'), globalMd: j(HOME,'.copilot','instructions','go-beast.md'), hookConfig: j(HOME,'.copilot','hooks','go-beast.json'), hookConfigHint: '~/.copilot/hooks/go-beast.json (wired automatically)' },
   { name: 'codex',       detect: j(HOME,'.codex'),            skills: j(HOME,'.codex','skills'),            hooks: j(HOME,'.codex','hooks'), globalMd: j(HOME,'.codex','AGENTS.md'), hookConfig: j(HOME,'.codex','hooks.json'), hookConfigAlt: j(HOME,'.codex','config.toml'), hookConfigHint: '~/.codex/hooks.json or inline [hooks] in ~/.codex/config.toml, then review with /hooks' },
   { name: 'agents',      detect: j(HOME,'.agents'),           skills: j(HOME,'.agents','skills'),           globalMd: j(HOME,'.agents','AGENTS.md') },
@@ -253,7 +256,8 @@ function cleanStale(dir) {
 function uninstall() {
   section('Uninstall')
   let total = 0
-  const dirs = AGENTS.flatMap(a => [a.skills, a.hooks, a.workflows].filter(Boolean))
+  let failures = 0
+  const dirs = AGENTS.flatMap(a => [a.skillInstallMode === 'copy' ? null : a.skills, a.hooks, a.workflows].filter(Boolean))
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) continue
     for (const entry of fs.readdirSync(dir)) {
@@ -265,8 +269,42 @@ function uninstall() {
       } catch {}
     }
   }
+  const profilePath = j(HOME, '.go-beast', 'config.json')
+  let hasHermesCopyProfile = false
+  try {
+    const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'))
+    hasHermesCopyProfile = Boolean(
+      profile.agents?.hermes?.managedSkillCopies
+      || profile.agents?.hermes?.managedSkillCopiesByHome,
+    )
+  } catch {}
+  if (hasHermesCopyProfile && fs.existsSync(HERMES_HOME)) {
+    const result = configureAgent({
+      home: HOME,
+      repoRoot: REPO,
+      agentName: 'hermes',
+      skillNames: [],
+      skillsMode: 'selected',
+    })
+    for (const item of result.skills ?? []) {
+      if (item.action === 'remove' && item.status === 'disabled') {
+        ln(row(icon.ok, item.name, 'removed managed Hermes copy'))
+        total++
+      } else if (item.status === 'unmanaged') {
+        ln(row(icon.warn, item.name, 'preserved unmanaged Hermes skill'))
+      } else if (item.status === 'error') {
+        ln(row(icon.err, item.name, `removal failed: ${item.note ?? 'unknown error'}`))
+        failures++
+      }
+    }
+  }
   ln()
-  ln(total === 0 ? row(icon.skip, 'Nothing to remove.') : row(icon.ok, `${total} symlink(s) removed.`))
+  if (failures) {
+    ln(row(icon.err, `Uninstall incomplete: ${failures} managed Hermes skill(s) could not be removed.`))
+    process.exitCode = 1
+  } else {
+    ln(total === 0 ? row(icon.skip, 'Nothing to remove.') : row(icon.ok, `${total} managed asset(s) removed.`))
+  }
 }
 
 // ── Prompt ────────────────────────────────────────────────────────────────────
@@ -338,7 +376,7 @@ function printResults(results) {
   for (const r of refreshed) ln(row(r.ico, r.name, r.note))
   for (const r of warnings) ln(row(r.ico, r.name, r.note))
   if (skipped.length > 0)
-    ln(`  ${icon.skip} ${dim(`${skipped.length} already linked`)}`)
+    ln(`  ${icon.skip} ${dim(`${skipped.length} already installed`)}`)
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -350,8 +388,12 @@ async function main() {
   const permissionPreview = flags.has('--permission-preview')
   const verifyIntegrity = flags.has('--verify-integrity')
   if (flags.has('--rollback')) {
-    const result = rollbackLastInstall({ home: HOME })
+    const result = rollbackLastInstall({ home: HOME, allowedRoots: [HERMES_HOME] })
     ln(`Install rollback: ${result.id} restored ${result.restored} target(s)`)
+    for (const target of result.preserved ?? []) ln(row(icon.warn, target, 'changed since install — preserved'))
+    for (const recovery of result.recoveryPaths ?? []) {
+      ln(row(icon.warn, recovery.target, `previous copy retained at ${recovery.path}`))
+    }
     rl.close()
     return
   }
@@ -462,6 +504,7 @@ async function main() {
     transaction = createInstallTransaction({
       home: HOME,
       targets: transactionTargets,
+      allowedRoots: selAgents.filter(agent => agent.home).map(agent => agent.home),
       metadata: { repository: REPO, package_version: packageVersion() },
     })
     const integrityManifest = buildIntegrityManifest({
@@ -474,7 +517,8 @@ async function main() {
 
   if (selSkills.length) {
     for (const agent of selAgents) {
-      ln(); ln(`  ${icon.link} ${bold('skills')} ${dim('→')} ${cyan(agent.name)}`)
+      if (agent.skillInstallMode === 'copy') continue
+      ln(); ln(`  ${bold('skills')} ${dim('→')} ${cyan(agent.name)}`)
       cleanStale(agent.skills)
       const results = []
       for (const skill of selSkills) linkItem(j(CANONICAL_SKILLS_DIR, skill), agent.skills, results, replaceConflicts)
@@ -532,6 +576,25 @@ async function main() {
       hookNames: selectedAgentHooks,
       hooksMode: installAll ? 'all' : 'selected',
     })
+    if (agent.skillInstallMode === 'copy') {
+      ln(); ln(`  ${icon.link} ${bold('skills (copies)')} ${dim('→')} ${cyan(agent.name)}`)
+      const results = (configured.skills ?? []).map(item => {
+        const ico = item.status === 'error' ? icon.err
+          : item.status === 'unmanaged' ? icon.warn
+            : item.action === 'create' ? icon.new
+              : ['update', 'remove'].includes(item.action) ? icon.ok
+                : icon.skip
+        const note = item.note ?? (item.action === 'create' ? 'copied' : item.action === 'update' ? 'refreshed' : undefined)
+        return { ico, name: item.name, note }
+      })
+      printResults(results)
+      for (const result of results) {
+        if (result.ico === icon.new) counts.new++
+        if (result.ico === icon.ok) counts.refreshed++
+        if (result.ico === icon.skip) counts.skip++
+        if (result.ico === icon.warn || result.ico === icon.err) counts.warn++
+      }
+    }
     if (installFailures([...(configured.skills ?? []), ...(configured.hooks ?? [])]).length) throw new Error(`profile reconciliation failed for ${agent.name}`)
   }
 
@@ -576,7 +639,7 @@ async function main() {
     ...(hookAgents.length && selHooks.length ? [`hooks      ${bold(String(selHooks.length))}  ${dim(hookAgents.map(a => a.name).join(', '))}`] : []),
     ...(cc && selWorkflows.length ? [`workflows  ${bold(String(selWorkflows.length))}`] : []),
     '---',
-    `${green(String(counts.new))} new  ${cyan(String(counts.refreshed))} refreshed  ${gray(String(counts.skip))} already linked  ${counts.warn ? yellow(String(counts.warn)) + ' warnings' : dim('0 warnings')}`,
+    `${green(String(counts.new))} new  ${cyan(String(counts.refreshed))} refreshed  ${gray(String(counts.skip))} already installed  ${counts.warn ? yellow(String(counts.warn)) + ' warnings' : dim('0 warnings')}`,
   ])
 
   ln()
