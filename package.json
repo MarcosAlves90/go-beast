@@ -16,6 +16,8 @@
     "delivery": "node bin/go-beast.mjs delivery",
     "conformance": "node bin/go-beast.mjs conformance",
     "conformance:verify": "node bin/go-beast.mjs conformance verify",
+    "safe-fs:build": "node scripts/safe-fs/build.mjs",
+    "safe-fs:check": "node scripts/safe-fs/build.mjs --check",
     "rules:generate": "node scripts/transversal-rules.mjs generate",
     "rules:check": "node scripts/transversal-rules.mjs check",
     "release:version:check": "node scripts/release-version.mjs check",

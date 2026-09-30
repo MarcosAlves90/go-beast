@@ -64,6 +64,8 @@ INSTALL_OUTPUT="$(printf '1\n' | env \
   GO_BEAST_RELEASE_LATEST_API_URL="http://127.0.0.1:$SERVER_PORT/latest.json" \
   GO_BEAST_RELEASES_API_URL="http://127.0.0.1:$SERVER_PORT/releases.json" \
   HOME="$TEST_HOME" \
+  USERPROFILE="$TEST_HOME" \
+  HERMES_HOME="$TEST_HOME/.hermes" \
   bash "$REPO_ROOT/scripts/install.sh" \
   --interactive \
   --all 2>&1)"

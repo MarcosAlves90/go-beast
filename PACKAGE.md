@@ -12,7 +12,8 @@ scope:   full-stack software development lifecycle
 ---
 
 Agent-specific adapters, plugin manifests, hook integrations, and live harness
-tests are optional layers around the core `skills/go-*` directories.
+tests are optional layers around the core `skills/go-*` directories. Hermes
+Agent has skill-only installer and integration-profile support.
 
 Canonical release version source: `package.json`
 Release certificate: `release-certificate.json`
@@ -107,6 +108,8 @@ go-beast/
 │   ├── go-workflow-eval.js    ← Workflow eval pipeline for Workflow scripts
 │   └── go-deep-analysis.js    ← Deep multi-dimensional codebase analysis workflow
 ├── scripts/
+│   ├── agent-paths.mjs       ← Cross-platform agent-home resolution, including Hermes HERMES_HOME
+│   ├── safe-fs.mjs            ← Fail-closed Node wrapper for bundled Hermes rooted filesystem operations
 │   ├── eval-output.mjs   ← Shared JSON output helper for eval workflows
 │   ├── hook-wire.mjs          ← Shared hook manifest wiring helper for config and symlinks
 │   ├── integration-profile.mjs ← Per-agent profile resolver, diagnostics, portability, and presets
@@ -125,9 +128,19 @@ go-beast/
 │   ├── conformance.mjs         ← Harness adapters and delivery trace conformance checker
 │   ├── sync-plugin-skills.mjs ← Refreshes the plugin adapter skill symlinks
 │   ├── transversal-rules.mjs  ← Generates and checks transversal rule surfaces
+│   ├── safe-fs/
+│   │   ├── go.mod              ← Standard-library-only helper module
+│   │   ├── main.go             ← Rooted no-follow Hermes filesystem helper
+│   │   ├── main_test.go        ← Race, recovery, and root-confinement tests
+│   │   ├── build.mjs           ← Builds/verifies six OS/architecture helper bundles
+│   │   └── bin/                ← Windows/macOS/Linux x64 and arm64 helper executables
 │   └── workflow.mjs           ← Optional workflow state-machine coordinator
 ├── tests/
-│   ├── helpers.sh             ← Shared shell assertions for integration tests
+│   ├── install/test-hermes-install.sh ← Hermes copy install, rollback, and uninstall checks
+│   ├── plugin/test-hermes-integration.sh ← Hermes profile CLI copy ownership regression
+│   ├── unit/hermes-agent-paths.test.mjs ← macOS/Linux/Windows Hermes home path resolution
+│   ├── unit/hermes-safe-fs.test.mjs ← Safe helper platform mapping and rooted target path checks
+│   ├── helpers.sh             ← Shared shell assertions for repo integration tests
 │   ├── fixtures/adapters/     ← Harness-neutral adapter input fixtures
 │   ├── fixtures/task-cli-v2/  ← Stable task CLI text contract snapshots
 │   ├── unit/                  ← Deterministic Node unit tests for P0 modules

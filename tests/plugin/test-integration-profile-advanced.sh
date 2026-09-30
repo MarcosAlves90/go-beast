@@ -43,7 +43,7 @@ test -L "$MIGRATION_HOME/.codex/skills/go-hawk"
 test ! -e "$MIGRATION_HOME/.codex/skills/go-bear"
 
 mkdir -p "$TEST_HOME/.codex"
-HOME="$TEST_HOME" node "$REPO_ROOT/scripts/install.mjs" --all > "$TEST_HOME/install.log"
+HOME="$TEST_HOME" USERPROFILE="$TEST_HOME" HERMES_HOME="$TEST_HOME/.hermes" node "$REPO_ROOT/scripts/install.mjs" --all > "$TEST_HOME/install.log"
 
 dependency_output="$TEST_HOME/dependency.json"
 run_integration disable --agent codex --kind skill --name go-hawk --format json > "$dependency_output"

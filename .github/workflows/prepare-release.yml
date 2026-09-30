@@ -31,6 +31,11 @@ jobs:
         with:
           node-version: 20
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.27.1
+
       - name: Generate release surfaces
         id: generate
         env:
@@ -41,6 +46,7 @@ jobs:
           else
             node scripts/prepare-release.mjs > release-summary.json
           fi
+          node scripts/safe-fs/build.mjs
           next_version="$(node -p "JSON.parse(require('fs').readFileSync('release-summary.json', 'utf8')).nextVersion")"
           echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
           rm release-summary.json
@@ -51,7 +57,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -C "$PREPARE_BRANCH"
-          git add CHANGELOG.md package.json README.md PACKAGE.md plugins/go-beast/.codex-plugin/plugin.json plugins/go-beast/.claude-plugin/plugin.json release-certificate.json
+          git add CHANGELOG.md package.json README.md PACKAGE.md plugins/go-beast/.codex-plugin/plugin.json plugins/go-beast/.claude-plugin/plugin.json release-certificate.json scripts/safe-fs/bin/
           git commit -m "chore(release): prepare release" || {
             echo "No release changes were generated" >&2
             exit 1

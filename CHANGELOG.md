@@ -9,6 +9,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Hermes Agent:** add cross-platform, skill-only installer and integration-profile support. Bundle rooted no-follow filesystem helpers for Windows, macOS, and Linux on x64 and arm64; runtime installation still requires only Node.js 18+. Edited or unmanaged copies remain preserved, and displaced copies are retained under the Hermes home recovery directory and reported. Lifecycle hooks and Hermes configuration remain untouched.
+
+### Fixed
+
+- **Hermes Agent:** use opened directory handles and atomic no-replace recovery moves; report every retained copy and mark failed snapshot restores as `rollback_failed`.
+- **Hermes Agent:** open Windows recovery destinations with the required directory rights and preserve recovery paths when post-move or post-restore verification fails.
+- **Hermes Agent:** fail closed when persisted rollback records lack a valid installed-state fingerprint needed to verify ownership.
+
 ## [2.1.0] - 2026-09-18
 
 ### Added

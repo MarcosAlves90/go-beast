@@ -5,6 +5,9 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { resolveHermesHome } from './agent-paths.mjs'
+import { sourceDigest } from './install-transaction.mjs'
+import { relativePathWithinRoot, runSafeFs } from './safe-fs.mjs'
 import { parseYaml } from './transversal-rules.mjs'
 import {
   AGENTS as HOOK_AGENTS,
@@ -20,6 +23,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const HOME = os.homedir()
 const PROFILE_VERSION = 1
 const PROFILE_RELATIVE_PATH = path.join('.go-beast', 'config.json')
+const DIGEST_PATTERN = /^[a-f0-9]{64}$/
 
 const SKILL_AGENTS = {
   'claude-code': { skillsDir: home => path.join(home, '.claude', 'skills') },
@@ -29,6 +33,10 @@ const SKILL_AGENTS = {
   copilot: { skillsDir: home => path.join(home, '.copilot', 'skills') },
   codex: { skillsDir: home => path.join(home, '.codex', 'skills') },
   agents: { skillsDir: home => path.join(home, '.agents', 'skills') },
+  hermes: {
+    skillsDir: home => path.join(resolveHermesHome({ home }), 'skills', 'go-beast'),
+    copySkills: true,
+  },
 }
 
 const PRESET_NAME_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/
@@ -190,8 +198,33 @@ function targetDirectory(home, agentName, kind) {
   return hookAgent(agentName).hookDir(home)
 }
 
+function assertNoSymlinkedAncestors(root, target) {
+  const resolvedRoot = path.resolve(root)
+  const resolvedTarget = path.resolve(target)
+  const relative = path.relative(resolvedRoot, resolvedTarget)
+  if (relative === '' || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+    throw new Error(`Hermes skill target is outside its home: ${resolvedTarget}`)
+  }
+
+  let current = resolvedRoot
+  for (const component of relative.split(path.sep).slice(0, -1)) {
+    current = path.join(current, component)
+    let stat
+    try { stat = fs.lstatSync(current) } catch (error) {
+      if (error?.code === 'ENOENT') return
+      throw error
+    }
+    if (stat.isSymbolicLink()) throw new Error(`refusing Hermes skill path through symlinked ancestor: ${current}`)
+    if (!stat.isDirectory()) throw new Error(`refusing Hermes skill path through non-directory ancestor: ${current}`)
+  }
+}
+
 function targetPath(home, agentName, kind, name) {
-  return path.join(targetDirectory(home, agentName, kind), name)
+  const target = path.join(targetDirectory(home, agentName, kind), name)
+  if (agentName === 'hermes' && kind === 'skill') {
+    assertNoSymlinkedAncestors(resolveHermesHome({ home }), target)
+  }
+  return target
 }
 
 function linkTarget(target) {
@@ -222,6 +255,143 @@ function inspectTarget(target, source) {
     return { state: 'managed', installed: true, ownership: 'managed' }
   }
   return { state: 'unmanaged', installed: true, ownership: 'unmanaged' }
+}
+
+function inspectHermesSkillCopy(target, source, record, hermesHome) {
+  assertNoSymlinkedAncestors(hermesHome, target)
+  const inspection = runSafeFs({
+    operation: 'inspect',
+    root: hermesHome,
+    path: relativePathWithinRoot(hermesHome, target),
+  })
+  if (inspection.state === 'absent') return { state: 'missing', installed: false, ownership: 'absent' }
+  if (inspection.state !== 'directory') {
+    return { state: 'unmanaged', installed: true, ownership: 'unmanaged' }
+  }
+  if (!record || !DIGEST_PATTERN.test(record.source_sha256 ?? '') || !DIGEST_PATTERN.test(record.installed_sha256 ?? '')) {
+    return { state: 'unmanaged', installed: true, ownership: 'unmanaged' }
+  }
+
+  const installedSha256 = inspection.sha256
+  if (installedSha256 !== record.installed_sha256) {
+    return { state: 'unmanaged', installed: true, ownership: 'unmanaged' }
+  }
+  return {
+    state: 'managed',
+    installed: true,
+    ownership: 'managed',
+    updateAvailable: sourceDigest(source).sha256 !== record.source_sha256,
+  }
+}
+
+function inspectAgentTarget({ home, repoRoot, agentName, kind, name, profile }) {
+  const target = targetPath(home, agentName, kind, name)
+  const source = sourcePath(repoRoot, kind, name)
+  if (agentName === 'hermes' && kind === 'skill') {
+    const record = hermesCopyRecordsForHome(profile, home)[name]
+    return inspectHermesSkillCopy(target, source, record, resolveHermesHome({ home }))
+  }
+  return inspectTarget(target, source)
+}
+
+function hermesHomeKey(home) {
+  const resolved = path.resolve(resolveHermesHome({ home }))
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved
+}
+
+function ensureHermesSkillPolicies(agentProfile, home) {
+  const key = hermesHomeKey(home)
+  if (agentProfile.skillsByHome === undefined) {
+    const legacyPolicy = agentProfile.skills
+    agentProfile.skillsByHome = {}
+    if (legacyPolicy !== undefined) agentProfile.skillsByHome[key] = legacyPolicy
+  }
+  const policies = agentProfile.skillsByHome
+  if (!policies || typeof policies !== 'object' || Array.isArray(policies)) {
+    throw new Error('profile field agents.hermes.skillsByHome must be an object')
+  }
+  if (agentProfile.skillsHome === key && agentProfile.skills !== undefined) {
+    policies[key] = agentProfile.skills
+  }
+  return { key, policies }
+}
+
+function persistHermesSkillPolicy(agentProfile, home) {
+  const { key, policies } = ensureHermesSkillPolicies(agentProfile, home)
+  policies[key] = agentProfile.skills
+  agentProfile.skillsHome = key
+}
+
+function hermesCopyRecordsForHome(profile, home) {
+  const agentProfile = profile?.agents?.hermes
+  if (!agentProfile) return {}
+  const key = hermesHomeKey(home)
+  if (agentProfile.managedSkillCopiesHome === key) {
+    return agentProfile.managedSkillCopies ?? {}
+  }
+  const recordsByHome = agentProfile.managedSkillCopiesByHome
+  if (recordsByHome !== undefined) {
+    if (!recordsByHome || typeof recordsByHome !== 'object' || Array.isArray(recordsByHome)) {
+      throw new Error('profile field agents.hermes.managedSkillCopiesByHome must be an object')
+    }
+    return recordsByHome[key] ?? {}
+  }
+  return agentProfile.managedSkillCopies ?? {}
+}
+
+function ensureHermesCopyRecords(agentProfile, home) {
+  const key = hermesHomeKey(home)
+  if (agentProfile.managedSkillCopiesByHome === undefined) {
+    const legacyRecords = agentProfile.managedSkillCopies
+    agentProfile.managedSkillCopiesByHome = {}
+    if (legacyRecords !== undefined) agentProfile.managedSkillCopiesByHome[key] = legacyRecords
+  }
+  const recordsByHome = agentProfile.managedSkillCopiesByHome
+  if (!recordsByHome || typeof recordsByHome !== 'object' || Array.isArray(recordsByHome)) {
+    throw new Error('profile field agents.hermes.managedSkillCopiesByHome must be an object')
+  }
+  const activeRecords = agentProfile.managedSkillCopiesHome === key
+    ? agentProfile.managedSkillCopies
+    : undefined
+  const records = activeRecords ?? recordsByHome[key] ?? {}
+  recordsByHome[key] = records
+  if (!records || typeof records !== 'object' || Array.isArray(records)) {
+    throw new Error(`profile field agents.hermes.managedSkillCopiesByHome.${key} must be an object`)
+  }
+  // Keep the original field as a view of the currently selected home for old profile readers.
+  agentProfile.managedSkillCopies = records
+  agentProfile.managedSkillCopiesHome = key
+  return records
+}
+
+function copyDirectoryAtomically(source, target, hermesHome, expectedInstalledSha256 = null) {
+  assertNoSymlinkedAncestors(hermesHome, target)
+  return runSafeFs({
+    operation: 'install',
+    root: hermesHome,
+    path: relativePathWithinRoot(hermesHome, target),
+    source,
+    expected_sha256: expectedInstalledSha256 ?? '',
+  })
+}
+
+function removeDirectoryAtomically(target, expectedInstalledSha256, hermesHome) {
+  assertNoSymlinkedAncestors(hermesHome, target)
+  return runSafeFs({
+    operation: 'remove',
+    root: hermesHome,
+    path: relativePathWithinRoot(hermesHome, target),
+    expected_sha256: expectedInstalledSha256,
+  })
+}
+
+function safeFsRecoveryNote(result, hermesHome) {
+  const relativePaths = [
+    ...(Array.isArray(result.recovery_paths) ? result.recovery_paths : []),
+    ...(result.recovery_path ? [result.recovery_path] : []),
+  ]
+  const paths = [...new Set(relativePaths)].map(recovery => path.join(hermesHome, recovery))
+  return paths.length ? `; recoverable copies at ${paths.join(', ')}` : ''
 }
 
 function normalizeList(value, allowed, field) {
@@ -289,13 +459,32 @@ function ensureAgentProfile({ profile, home, repoRoot, agentName }) {
   skillAgent(agentName)
   const names = skillNames(repoRoot)
   const current = profile.agents[agentName] ?? {}
-  const skills = normalizePolicy(
-    current.skills,
-    names,
-    `agents.${agentName}.skills`,
-  ) ?? adoptPolicy({ home, repoRoot, agentName, kind: 'skill', names })
+  let skills
+  let skillsByHome
+  if (agentName === 'hermes') {
+    const homePolicies = ensureHermesSkillPolicies(current, home)
+    skillsByHome = homePolicies.policies
+    skills = normalizePolicy(
+      skillsByHome[homePolicies.key],
+      names,
+      `agents.hermes.skillsByHome.${homePolicies.key}`,
+    ) ?? adoptPolicy({ home, repoRoot, agentName, kind: 'skill', names })
+    skillsByHome[homePolicies.key] = skills
+  } else {
+    skills = normalizePolicy(
+      current.skills,
+      names,
+      `agents.${agentName}.skills`,
+    ) ?? adoptPolicy({ home, repoRoot, agentName, kind: 'skill', names })
+  }
 
   const agentProfile = { ...current, skills }
+
+  if (agentName === 'hermes') {
+    agentProfile.skillsByHome = skillsByHome
+    agentProfile.skillsHome = hermesHomeKey(home)
+    ensureHermesCopyRecords(agentProfile, home)
+  }
 
   if (HOOK_AGENTS[agentName]) {
     const hooks = hookNames(repoRoot, agentName)
@@ -361,6 +550,7 @@ function reconcileImportedPolicy({
 }) {
   const agentProfile = ensureAgentProfile({ profile, home, repoRoot, agentName })
   agentProfile.skills = policy.skills
+  if (agentName === 'hermes') persistHermesSkillPolicy(agentProfile, home)
   const kinds = ['skill']
   if (policy.hooks) {
     agentProfile.hooks = policy.hooks
@@ -540,25 +730,22 @@ function dependencyDiagnostics({ repoRoot, kind, agentName, name, desired, avail
   }
 }
 
-function effectiveNames({ home, repoRoot, agentName, kind, names, desired }) {
+function effectiveNames({ home, repoRoot, agentName, kind, names, desired, profile }) {
   const configured = kind === 'hook'
     ? configCommands(readJson(hookAgent(agentName).configPath(home)), agentName)
     : null
   return new Set(names.filter(name => {
     if (!desired.has(name)) return false
-    const target = inspectTarget(
-      targetPath(home, agentName, kind, name),
-      sourcePath(repoRoot, kind, name),
-    )
+    const target = inspectAgentTarget({ home, repoRoot, agentName, kind, name, profile })
     if (target.state !== 'managed') return false
     return kind !== 'hook' || configured.has(commandFor(agentName, name))
   }))
 }
 
-function impactedDependents({ home, repoRoot, kind, agentName, names, desired, available, disabledName }) {
+function impactedDependents({ home, repoRoot, kind, agentName, names, desired, available, disabledName, profile }) {
   const after = new Set(desired)
   after.delete(disabledName)
-  const afterAvailable = effectiveNames({ home, repoRoot, agentName, kind, names, desired: after })
+  const afterAvailable = effectiveNames({ home, repoRoot, agentName, kind, names, desired: after, profile })
   const rules = dependencyRules(repoRoot, kind, agentName)
   const impacts = []
 
@@ -594,28 +781,35 @@ function impactedDependents({ home, repoRoot, kind, agentName, names, desired, a
   return impacts
 }
 
-function planLinks({ home, repoRoot, agentName, kind, names, desired }) {
+function planLinks({ home, repoRoot, agentName, kind, names, desired, profile }) {
   const operations = []
+  const copySkills = agentName === 'hermes' && kind === 'skill'
+  const copyRecords = copySkills ? hermesCopyRecordsForHome(profile, home) : {}
   for (const name of names) {
     const source = sourcePath(repoRoot, kind, name)
     const target = targetPath(home, agentName, kind, name)
-    const current = inspectTarget(target, source)
+    const current = inspectAgentTarget({ home, repoRoot, agentName, kind, name, profile })
     const enabled = desired.has(name)
+    const mode = copySkills ? 'copy' : undefined
 
     if (enabled && current.state === 'missing') {
-      operations.push({ name, action: 'create', source, target, status: 'pending' })
+      operations.push({ name, action: 'create', source, target, mode, status: 'pending' })
+    } else if (enabled && current.state === 'managed' && current.updateAvailable) {
+      operations.push({ name, action: 'update', source, target, mode, status: 'pending' })
     } else if (!enabled && current.state === 'managed') {
-      operations.push({ name, action: 'remove', source, target, status: 'pending' })
+      operations.push({ name, action: 'remove', source, target, mode, status: 'pending' })
+    } else if (!enabled && current.state === 'missing' && copySkills && copyRecords[name]) {
+      operations.push({ name, action: 'forget', source, target, mode, status: 'pending' })
     } else if (current.state === 'unmanaged') {
-      operations.push({ name, action: 'preserve', source, target, status: 'unmanaged' })
+      operations.push({ name, action: 'preserve', source, target, mode, status: 'unmanaged' })
     } else {
-      operations.push({ name, action: 'none', source, target, status: enabled ? 'enabled' : 'disabled' })
+      operations.push({ name, action: 'none', source, target, mode, status: enabled ? 'enabled' : 'disabled' })
     }
   }
   return operations
 }
 
-function executeLinkPlan(operations, dryRun) {
+function executeLinkPlan(operations, dryRun, { profile = null, home = HOME } = {}) {
   if (dryRun) {
     return operations.map(operation => ({
       ...operation,
@@ -626,6 +820,77 @@ function executeLinkPlan(operations, dryRun) {
   return operations.map(operation => {
     if (operation.status !== 'pending') return operation
     try {
+      if (operation.mode === 'copy') {
+        const agentProfile = profile?.agents?.hermes
+        if (!agentProfile) throw new Error('Hermes copy ownership profile is unavailable')
+        const records = ensureHermesCopyRecords(agentProfile, home)
+        const hermesHome = resolveHermesHome({ home })
+        const current = inspectHermesSkillCopy(operation.target, operation.source, records[operation.name], hermesHome)
+
+        if (operation.action === 'forget') {
+          delete records[operation.name]
+          return { ...operation, status: 'disabled' }
+        }
+        if (operation.action === 'create' && current.state !== 'missing') {
+          return { ...operation, status: 'unmanaged', note: 'target changed during sync; preserved' }
+        }
+        if (operation.action === 'update' && (current.state !== 'managed' || !current.updateAvailable)) {
+          return { ...operation, status: current.state === 'unmanaged' ? 'unmanaged' : 'enabled', note: 'target changed during sync; preserved' }
+        }
+        if (operation.action === 'remove' && current.state !== 'managed') {
+          return { ...operation, status: current.state === 'unmanaged' ? 'unmanaged' : 'disabled', note: 'target changed during sync; preserved' }
+        }
+
+        if (operation.action === 'remove') {
+          const removed = removeDirectoryAtomically(
+            operation.target,
+            records[operation.name].installed_sha256,
+            hermesHome,
+          )
+          if (removed.status === 'failed') {
+            return { ...operation, status: 'error', note: `removal failed: ${removed.error ?? 'filesystem helper failure'}${safeFsRecoveryNote(removed, hermesHome)}` }
+          }
+          if (removed.status === 'preserved') {
+            const recoveryNote = safeFsRecoveryNote(removed, hermesHome)
+            return { ...operation, status: 'unmanaged', note: `target changed during removal; preserved${recoveryNote}` }
+          }
+          delete records[operation.name]
+          const recoveryNote = safeFsRecoveryNote(removed, hermesHome)
+          const note = recoveryNote
+            ? `removed${recoveryNote}`
+            : undefined
+          return { ...operation, status: 'disabled', note }
+        }
+        if (operation.action === 'create' || operation.action === 'update') {
+          const sourceSha256 = sourceDigest(operation.source).sha256
+          const expectedInstalledSha256 = operation.action === 'update'
+            ? records[operation.name].installed_sha256
+            : null
+          const copied = copyDirectoryAtomically(
+            operation.source,
+            operation.target,
+            hermesHome,
+            expectedInstalledSha256,
+          )
+          if (copied.status === 'failed') {
+            return { ...operation, status: 'error', note: `copy failed: ${copied.error ?? 'filesystem helper failure'}${safeFsRecoveryNote(copied, hermesHome)}` }
+          }
+          if (copied.status === 'preserved') {
+            const recoveryNote = safeFsRecoveryNote(copied, hermesHome)
+            return { ...operation, status: 'unmanaged', note: `target changed during sync; preserved${recoveryNote}` }
+          }
+          const installedSha256 = copied.sha256
+          if (installedSha256 !== sourceSha256) throw new Error(`copied Hermes skill digest mismatch: ${operation.name}`)
+          records[operation.name] = { source_sha256: sourceSha256, installed_sha256: installedSha256 }
+          const recoveryNote = safeFsRecoveryNote(copied, hermesHome)
+          const note = recoveryNote
+            ? `previous copy retained${recoveryNote}`
+            : undefined
+          return { ...operation, status: 'enabled', note }
+        }
+        throw new Error(`unsupported Hermes copy operation: ${operation.action}`)
+      }
+
       if (operation.action === 'create') {
         fs.mkdirSync(path.dirname(operation.target), { recursive: true })
         const sourceStat = fs.statSync(operation.source)
@@ -696,8 +961,9 @@ function reconcileAgent({
       kind: 'skill',
       names: skillNamesForAgent,
       desired,
+      profile,
     })
-    result.skills = executeLinkPlan(plan, dryRun)
+    result.skills = executeLinkPlan(plan, dryRun, { profile, home })
   }
 
   if (kinds.includes('hook') && HOOK_AGENTS[agentName]) {
@@ -713,8 +979,9 @@ function reconcileAgent({
         kind: 'hook',
         names: hookNamesForAgent,
         desired,
+        profile,
       })
-      result.hooks = executeLinkPlan(plan, true)
+      result.hooks = executeLinkPlan(plan, true, { profile, home })
       result.config = planHookConfig({ home, repoRoot, agentName, selectedNames })
     } else {
       const synced = syncAgentHooks({
@@ -736,7 +1003,7 @@ function reconcileAgent({
   result.changed = [
     ...result.skills,
     ...result.hooks,
-  ].some(item => ['create', 'remove', 'new', 'replaced'].includes(item.action ?? item.status))
+  ].some(item => ['create', 'update', 'remove', 'forget', 'new', 'replaced'].includes(item.action ?? item.status))
     || Boolean(result.config?.changed || result.config?.add?.length || result.config?.remove?.length)
   return result
 }
@@ -764,6 +1031,7 @@ function configureAgent({
     selectedSkillNames ?? availableSkills,
     skillsMode,
   )
+  if (agentName === 'hermes') persistHermesSkillPolicy(agentProfile, home)
 
   const kinds = ['skill']
   if (HOOK_AGENTS[agentName] && selectedHookNames !== undefined) {
@@ -781,9 +1049,9 @@ function configureAgent({
   return { ...result, profilePath: filePath }
 }
 
-function mutationWarnings({ home, repoRoot, agentName, kind, name, policy, names, enabled }) {
+function mutationWarnings({ home, repoRoot, agentName, kind, name, policy, names, enabled, profile }) {
   const desired = desiredNames(policy, names)
-  const available = effectiveNames({ home, repoRoot, agentName, kind, names, desired })
+  const available = effectiveNames({ home, repoRoot, agentName, kind, names, desired, profile })
   if (enabled) {
     const after = new Set(desired)
     after.add(name)
@@ -794,6 +1062,7 @@ function mutationWarnings({ home, repoRoot, agentName, kind, name, policy, names
       kind,
       names,
       desired: after,
+      profile,
     })
     const diagnostics = dependencyDiagnostics({
       repoRoot,
@@ -822,6 +1091,7 @@ function mutationWarnings({ home, repoRoot, agentName, kind, name, policy, names
     desired,
     available,
     disabledName: name,
+    profile,
   }).map(impact => {
     const detail = impact.missing.length
       ? `missing ${impact.missing.join(', ')}`
@@ -858,6 +1128,7 @@ function mutate({
     policy,
     names,
     enabled: command === 'enable',
+    profile,
   })
 
   const update = (assetName, shouldEnable) => {
@@ -896,6 +1167,7 @@ function mutate({
         kind,
         names,
         desired: before,
+        profile,
       })
       const afterAvailable = effectiveNames({
         home,
@@ -904,6 +1176,7 @@ function mutate({
         kind,
         names,
         desired: after,
+        profile,
       })
 
       for (const candidate of names) {
@@ -933,6 +1206,7 @@ function mutate({
   }
 
   agentProfile[field] = policy
+  if (agentName === 'hermes' && kind === 'skill') persistHermesSkillPolicy(agentProfile, home)
   const result = reconcileAgent({
     home,
     repoRoot,
@@ -975,10 +1249,10 @@ function sync({
   return { command: 'sync', profilePath: filePath, ...result }
 }
 
-function statusAsset({ home, repoRoot, agentName, kind, name, desired, desiredNames, availableNames }) {
+function statusAsset({ home, repoRoot, agentName, kind, name, desired, desiredNames, availableNames, profile }) {
   const source = sourcePath(repoRoot, kind, name)
   const target = targetPath(home, agentName, kind, name)
-  const inspected = inspectTarget(target, source)
+  const inspected = inspectAgentTarget({ home, repoRoot, agentName, kind, name, profile })
   const dependencies = desired
     ? dependencyDiagnostics({
         repoRoot,
@@ -998,6 +1272,7 @@ function statusAsset({ home, repoRoot, agentName, kind, name, desired, desiredNa
     classification: desired ? 'missing' : 'disabled',
     dependencies,
   }
+  if (inspected.updateAvailable) base.updateAvailable = true
 
   if (inspected.state === 'unmanaged') {
     return {
@@ -1058,6 +1333,7 @@ function statusAgent({ home = HOME, repoRoot = REPO, agentName }) {
     kind: 'skill',
     names: skills,
     desired: desiredSkills,
+    profile,
   })
   const result = {
     agent: agentName,
@@ -1071,6 +1347,7 @@ function statusAgent({ home = HOME, repoRoot = REPO, agentName }) {
       desired: desiredSkills.has(name),
       desiredNames: desiredSkills,
       availableNames: availableSkills,
+      profile,
     })),
     hooks: [],
   }
@@ -1085,6 +1362,7 @@ function statusAgent({ home = HOME, repoRoot = REPO, agentName }) {
       kind: 'hook',
       names: hooks,
       desired: desiredHooks,
+      profile,
     })
     result.hooks = hooks.map(name => statusAsset({
       home,
@@ -1095,6 +1373,7 @@ function statusAgent({ home = HOME, repoRoot = REPO, agentName }) {
       desired: desiredHooks.has(name),
       desiredNames: desiredHooks,
       availableNames: availableHooks,
+      profile,
     }))
   }
   return result
@@ -1159,6 +1438,7 @@ function textResult(result) {
     for (const item of result[kind] ?? []) {
       const state = item.status ?? item.state ?? item.action
       if (state && state !== 'none') lines.push(`${kind.slice(0, -1)} ${item.name}: ${state}`)
+      if (result.agent === 'hermes' && item.note) lines.push(`  ${item.note}`)
     }
   }
   for (const warning of result.warnings ?? []) lines.push(`warning: ${warning}`)

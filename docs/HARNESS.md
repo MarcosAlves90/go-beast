@@ -30,6 +30,55 @@ the source of truth.
   `~/.codex/config.toml`
 - Copilot CLI: `~/.copilot/hooks/*.json`, with camelCase event names
 
+## Hermes Agent (skills only)
+
+The installer and integration CLI install canonical skills as copies under
+`$HERMES_HOME/skills/go-beast/<skill>`. Without `HERMES_HOME`, the default is
+`~/.hermes` on macOS and Linux, and `%LOCALAPPDATA%\hermes` on native Windows.
+The path override also selects the active Hermes profile.
+
+Copies are deliberate: Hermes can modify or delete installed skills, so a
+symlink could expose the canonical checkout to agent writes. Sync refreshes
+only copies that still match their recorded go-beast digest. User-edited or
+unmanaged skills are preserved and reported as unmanaged. Skill selections and
+copy ownership are tracked independently for each resolved Hermes home, so
+switching `HERMES_HOME` does not change another profile's state. Legacy
+unscoped records migrate to the active home on first use; copies in other homes
+remain untouched and are treated as unmanaged until explicitly installed.
+
+Hermes filesystem changes use bundled no-follow helpers for Windows, macOS, and
+Linux on x64 and arm64. Node.js 18+ is the only runtime prerequisite. Go 1.25+
+is needed for maintainer validation (`npm run verify`) and rebuilding
+(`npm run safe-fs:build`). Each operation is rooted at the opened Hermes home.
+The Hermes-home path itself may be a symlink, but symlinked descendants are
+rejected. A missing or unsupported helper fails closed without a path-based
+fallback.
+Displaced previous copies and partial copies are retained under
+`$HERMES_HOME/.go-beast-recovery/`; install and integration results report all
+recovery locations. Moves use opened source and recovery directory handles with
+native no-replace semantics, so a symlink swap cannot redirect a move or
+overwrite an existing recovery entry. On Windows, the destination is opened
+relative to the retained recovery-container handle with file and subdirectory
+creation rights, then checked against the reserved directory identity before
+rename. Post-move or post-restore fingerprint failures return `failed` with the
+retained recovery paths; a partial restore is also moved to recovery when
+possible. A failed snapshot restore is recorded as `rollback_failed`, not
+`rolled_back`. Review retained copies before removing them manually.
+Persisted pending or legacy transactions with a missing or malformed
+installed-state fingerprint also fail closed: the target is left untouched,
+the transaction is marked `rollback_failed`, and the missing ownership proof
+is reported.
+
+Hermes integration does not configure lifecycle hooks, plugins, workflows,
+global instructions, `config.yaml`, or `SOUL.md`. Use the existing profile CLI
+for skill selection and reconciliation:
+
+```bash
+go-beast integration status --agent hermes
+go-beast integration sync --agent hermes
+go-beast integration disable --agent hermes --kind skill --name go-bear
+```
+
 ## Per-agent integration profiles
 
 The installer and SessionStart reconciler use the shared profile at
