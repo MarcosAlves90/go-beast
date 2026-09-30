@@ -18,8 +18,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - **Hermes Agent:** use opened directory handles and atomic no-replace recovery moves; report every retained copy and mark failed snapshot restores as `rollback_failed`.
 - **Hermes Agent:** open Windows recovery destinations with the required directory rights and preserve recovery paths when post-move or post-restore verification fails.
 - **Hermes Agent:** fail closed when persisted rollback records lack a valid installed-state fingerprint needed to verify ownership.
-- **Hermes Agent:** pass a complete Windows `FILE_RENAME_INFO` buffer for no-replace recovery moves and make symlink fingerprint assertions portable across operating systems.
-- **Hermes Agent:** match the Win32 rename layout and relative-root access rights, and derive every fingerprint-test mode from the host filesystem.
+- **Hermes Agent:** use handle-relative NT rename information classes for Windows no-replace recovery moves and keep fingerprint assertions portable across operating systems.
+- **Hermes Agent:** open Windows relative-rename roots with traverse/read-attributes rights and derive all fingerprint-test modes from the host filesystem.
 
 ## [2.1.0] - 2026-09-18
 

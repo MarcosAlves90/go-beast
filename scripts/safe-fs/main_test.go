@@ -896,56 +896,80 @@ func TestWindowsRecoveryMoveWorksAndDoesNotOverwrite(t *testing.T) {
 	}
 }
 
-func TestBuildWindowsFileRenameInfoUsesFullNoReplaceBuffer(t *testing.T) {
+func TestBuildWindowsNtRenameInformationUsesNoReplaceAndRelativeHandle(t *testing.T) {
 	const destinationDirectory = uintptr(42)
-	info, err := buildWindowsFileRenameInfo("entry", destinationDirectory)
+	const destinationName = "entry"
+	name16 := utf16.Encode([]rune(destinationName))
+	legacy, err := buildWindowsNtRenameInformation(destinationName, destinationDirectory)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.ReplaceIfExists != 0 {
-		t.Fatalf("rename must not replace an existing entry, got ReplaceIfExists=%d", info.ReplaceIfExists)
+	if legacy.ReplaceIfExists != 0 || legacy.RootDirectory != destinationDirectory {
+		t.Fatalf("legacy rename info must retain no-replace semantics and target handle: %#v", legacy)
 	}
-	if info.Flags != 0 {
-		t.Fatalf("rename flags must remain zero for the no-replace FileRenameInfo class, got %#x", info.Flags)
+	if legacy.FileNameLength != uint32(len(name16)*2) || legacy.FileName[:len(name16)][0] != name16[0] {
+		t.Fatalf("unexpected legacy rename name or length: %#v", legacy)
 	}
-	if info.RootDirectory != destinationDirectory {
-		t.Fatalf("rename should be relative to destination handle %d, got %d", destinationDirectory, info.RootDirectory)
+	if legacy.FileName[len(name16)] != 0 {
+		t.Fatal("legacy rename filename buffer must terminate after the declared byte length")
 	}
-	expectedName := utf16.Encode([]rune("entry"))
-	if info.FileNameLength != uint32(len(expectedName)*2) {
-		t.Fatalf("unexpected UTF-16 filename length: got %d want %d", info.FileNameLength, len(expectedName)*2)
-	}
-	for index, character := range expectedName {
-		if info.FileName[index] != character {
-			t.Fatalf("unexpected UTF-16 filename unit at %d: got %d want %d", index, info.FileName[index], character)
-		}
-	}
-	if info.FileName[len(expectedName)] != 0 {
-		t.Fatal("rename filename buffer must be NUL-terminated after the declared byte length")
-	}
-	type renameInfoHeader struct {
-		Flags           uint32
+	type legacyHeader struct {
 		ReplaceIfExists byte
-		Padding         [3]byte
+		Padding         [7]byte
 		RootDirectory   uintptr
 		FileNameLength  uint32
 		FileName        [1]uint16
 	}
-	var header renameInfoHeader
-	if unsafe.Offsetof(info.RootDirectory) != unsafe.Offsetof(header.RootDirectory) ||
-		unsafe.Offsetof(info.FileNameLength) != unsafe.Offsetof(header.FileNameLength) ||
-		unsafe.Offsetof(info.FileName) != unsafe.Offsetof(header.FileName) {
-		t.Fatalf("FILE_RENAME_INFO offsets do not match the Win32 ABI: root=%d/%d length=%d/%d name=%d/%d",
-			unsafe.Offsetof(info.RootDirectory), unsafe.Offsetof(header.RootDirectory),
-			unsafe.Offsetof(info.FileNameLength), unsafe.Offsetof(header.FileNameLength),
-			unsafe.Offsetof(info.FileName), unsafe.Offsetof(header.FileName))
+	var legacyABI legacyHeader
+	if unsafe.Offsetof(legacy.RootDirectory) != unsafe.Offsetof(legacyABI.RootDirectory) ||
+		unsafe.Offsetof(legacy.FileNameLength) != unsafe.Offsetof(legacyABI.FileNameLength) ||
+		unsafe.Offsetof(legacy.FileName) != unsafe.Offsetof(legacyABI.FileName) {
+		t.Fatalf("legacy NT rename offsets do not match: root=%d/%d length=%d/%d name=%d/%d",
+			unsafe.Offsetof(legacy.RootDirectory), unsafe.Offsetof(legacyABI.RootDirectory),
+			unsafe.Offsetof(legacy.FileNameLength), unsafe.Offsetof(legacyABI.FileNameLength),
+			unsafe.Offsetof(legacy.FileName), unsafe.Offsetof(legacyABI.FileName))
 	}
-	minimumSize := unsafe.Sizeof(renameInfoHeader{}) + uintptr(info.FileNameLength)
-	if got := unsafe.Sizeof(info); got < minimumSize {
-		t.Fatalf("FILE_RENAME_INFO buffer is too small: got %d bytes, need at least %d", got, minimumSize)
+	if got, minimum := unsafe.Sizeof(legacy), unsafe.Sizeof(legacyABI)+uintptr(legacy.FileNameLength); got < minimum {
+		t.Fatalf("legacy NT rename buffer too small: got %d bytes, need %d", got, minimum)
 	}
-	if _, err := buildWindowsFileRenameInfo(strings.Repeat("a", len(info.FileName)), destinationDirectory); err == nil {
-		t.Fatal("expected an overlong recovery leaf name to be rejected")
+
+	extended, err := buildWindowsNtRenameInformationEx(destinationName, destinationDirectory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if extended.Flags != 0 || extended.RootDirectory != destinationDirectory || extended.FileNameLength != uint32(len(name16)*2) {
+		t.Fatalf("extended rename info must use flags=0, the destination handle, and the UTF-16 byte length: %#v", extended)
+	}
+	if extended.FileName[len(name16)] != 0 {
+		t.Fatal("extended rename filename buffer must terminate after the declared byte length")
+	}
+	type extendedHeader struct {
+		Flags          uint32
+		Padding        [4]byte
+		RootDirectory  uintptr
+		FileNameLength uint32
+		FileName       [1]uint16
+	}
+	var extendedABI extendedHeader
+	if unsafe.Offsetof(extended.RootDirectory) != unsafe.Offsetof(extendedABI.RootDirectory) ||
+		unsafe.Offsetof(extended.FileNameLength) != unsafe.Offsetof(extendedABI.FileNameLength) ||
+		unsafe.Offsetof(extended.FileName) != unsafe.Offsetof(extendedABI.FileName) {
+		t.Fatalf("extended NT rename offsets do not match: root=%d/%d length=%d/%d name=%d/%d",
+			unsafe.Offsetof(extended.RootDirectory), unsafe.Offsetof(extendedABI.RootDirectory),
+			unsafe.Offsetof(extended.FileNameLength), unsafe.Offsetof(extendedABI.FileNameLength),
+			unsafe.Offsetof(extended.FileName), unsafe.Offsetof(extendedABI.FileName))
+	}
+	if got, minimum := unsafe.Sizeof(extended), unsafe.Sizeof(extendedABI)+uintptr(extended.FileNameLength); got < minimum {
+		t.Fatalf("extended NT rename buffer too small: got %d bytes, need %d", got, minimum)
+	}
+	if windowsFileRenameInformationClass != 10 || windowsFileRenameInformationExClass != 65 {
+		t.Fatalf("unexpected NT rename information classes: legacy=%d extended=%d", windowsFileRenameInformationClass, windowsFileRenameInformationExClass)
+	}
+	if _, err := buildWindowsNtRenameInformation(strings.Repeat("a", len(legacy.FileName)), destinationDirectory); err == nil {
+		t.Fatal("expected an overlong legacy rename leaf to be rejected")
+	}
+	if _, err := buildWindowsNtRenameInformationEx(strings.Repeat("a", len(extended.FileName)), destinationDirectory); err == nil {
+		t.Fatal("expected an overlong extended rename leaf to be rejected")
 	}
 }
 

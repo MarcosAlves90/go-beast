@@ -19,7 +19,6 @@ const (
 	fileReadAttributes      = 0x00000080
 	accessDelete            = 0x00010000
 	objCaseInsensitive      = 0x00000040
-	fileRenameInfo          = 3
 )
 
 type ntUnicodeString struct {
@@ -45,11 +44,10 @@ type ntIOStatusBlock struct {
 }
 
 var (
-	ntdll                  = syscall.NewLazyDLL("ntdll.dll")
-	ntOpenFileProc         = ntdll.NewProc("NtOpenFile")
-	rtlNtStatusToDosError  = ntdll.NewProc("RtlNtStatusToDosError")
-	kernel32               = syscall.NewLazyDLL("kernel32.dll")
-	setFileInformationProc = kernel32.NewProc("SetFileInformationByHandle")
+	ntdll                    = syscall.NewLazyDLL("ntdll.dll")
+	ntOpenFileProc           = ntdll.NewProc("NtOpenFile")
+	ntSetInformationFileProc = ntdll.NewProc("NtSetInformationFile")
+	rtlNtStatusToDosError    = ntdll.NewProc("RtlNtStatusToDosError")
 )
 
 func openWindowsRootRelative(parent *os.Root, name string, desiredAccess, options uint32) (*os.File, error) {
@@ -147,22 +145,54 @@ func renameNoReplace(sourceParent *os.Root, sourceName string, destinationContai
 		return errors.New("recovery source changed while opening")
 	}
 
-	information, err := buildWindowsFileRenameInfo(destinationName, destinationDirectory.Fd())
+	return renameWindowsHandleRelativeNoReplace(sourceFile, destinationDirectory, destinationName)
+}
+
+func renameWindowsHandleRelativeNoReplace(source, destinationDirectory *os.File, destinationName string) error {
+	extended, err := buildWindowsNtRenameInformationEx(destinationName, destinationDirectory.Fd())
 	if err != nil {
 		return err
 	}
-	result, _, callErr := setFileInformationProc.Call(
-		sourceFile.Fd(),
-		fileRenameInfo,
-		uintptr(unsafe.Pointer(&information)),
-		unsafe.Sizeof(information),
+	var ioStatus ntIOStatusBlock
+	status, _, _ := ntSetInformationFileProc.Call(
+		source.Fd(),
+		uintptr(unsafe.Pointer(&ioStatus)),
+		uintptr(unsafe.Pointer(&extended)),
+		unsafe.Sizeof(extended),
+		uintptr(windowsFileRenameInformationExClass),
 	)
-	runtime.KeepAlive(&information)
-	if result == 0 {
-		if callErr != syscall.Errno(0) {
-			return fmt.Errorf("SetFileInformationByHandle(FileRenameInfo): %w", callErr)
-		}
-		return errors.New("SetFileInformationByHandle failed without an error code")
+	runtime.KeepAlive(&extended)
+	runtime.KeepAlive(&ioStatus)
+	if status == 0 {
+		return nil
 	}
-	return nil
+	extendedErr := windowsNTStatusError(status)
+
+	legacy, err := buildWindowsNtRenameInformation(destinationName, destinationDirectory.Fd())
+	if err != nil {
+		return err
+	}
+	ioStatus = ntIOStatusBlock{}
+	status, _, _ = ntSetInformationFileProc.Call(
+		source.Fd(),
+		uintptr(unsafe.Pointer(&ioStatus)),
+		uintptr(unsafe.Pointer(&legacy)),
+		unsafe.Sizeof(legacy),
+		uintptr(windowsFileRenameInformationClass),
+	)
+	runtime.KeepAlive(&legacy)
+	runtime.KeepAlive(&ioStatus)
+	if status == 0 {
+		return nil
+	}
+	legacyErr := windowsNTStatusError(status)
+	return fmt.Errorf("NtSetInformationFile(FileRenameInformationEx) failed: %v; FileRenameInformation fallback failed: %w", extendedErr, legacyErr)
+}
+
+func windowsNTStatusError(status uintptr) error {
+	windowsError, _, _ := rtlNtStatusToDosError.Call(status)
+	if windowsError == 0 {
+		return fmt.Errorf("NTSTATUS 0x%08x", uint32(status))
+	}
+	return fmt.Errorf("NTSTATUS 0x%08x: %w", uint32(status), syscall.Errno(windowsError))
 }
