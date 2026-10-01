@@ -8,7 +8,7 @@ import path from 'path'
 import os   from 'os'
 import readline from 'readline'
 import { fileURLToPath } from 'url'
-import { resolveHermesHome } from './agent-paths.mjs'
+import { resolveHermesProfileHome } from './agent-paths.mjs'
 import { hooksForAgent, loadHookManifest, syncAgentHooks, wireAgentConfig } from './hook-wire.mjs'
 import { configureAgent } from './integration-profile.mjs'
 import {
@@ -23,7 +23,25 @@ import {
 const DEFAULT_REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const REPO   = path.resolve(process.env.GO_BEAST_INSTALL_ROOT || DEFAULT_REPO)
 const HOME   = os.homedir()
-const HERMES_HOME = resolveHermesHome({ home: HOME })
+
+function requestedHermesProfile(argv) {
+  const index = argv.indexOf('--hermes-profile')
+  if (index < 0) return null
+  const name = argv[index + 1]
+  if (!name || name.startsWith('--')) throw new Error('--hermes-profile requires a name or default')
+  return name
+}
+
+const HERMES_PROFILE = requestedHermesProfile(process.argv.slice(2))
+const HERMES_HOME = resolveHermesProfileHome({ home: HOME, profile: HERMES_PROFILE })
+if (HERMES_PROFILE && HERMES_PROFILE !== 'default') {
+  const profileMarkers = ['config.yaml', '.env', 'SOUL.md', 'profile.yaml', 'auth.json', 'state.db']
+  if (!profileMarkers.some(marker => fs.existsSync(path.join(HERMES_HOME, marker)))) {
+    throw new Error(`Hermes profile does not exist or is not initialized: ${HERMES_PROFILE}`)
+  }
+}
+if (HERMES_PROFILE) process.env.HERMES_HOME = HERMES_HOME
+
 const IS_WIN = process.platform === 'win32'
 const W      = process.stdout.columns || 60
 const j      = (...p) => path.join(...p)
@@ -103,7 +121,7 @@ const AGENTS = [
   { name: 'claude-code', detect: j(HOME,'.claude'),           skills: j(HOME,'.claude','skills'),           hooks: j(HOME,'.claude','hooks'), workflows: j(HOME,'.claude','workflows'), globalMd: j(HOME,'.claude','CLAUDE.md'), hookConfig: j(HOME,'.claude','settings.json'), hookConfigHint: '~/.claude/settings.json or run go-swift' },
   { name: 'cursor',      detect: j(HOME,'.cursor'),           skills: j(HOME,'.cursor','skills'),           globalMd: j(HOME,'.cursor','rules') },
   { name: 'gemini',      detect: j(HOME,'.gemini'),           skills: j(HOME,'.gemini','skills'),           globalMd: j(HOME,'.gemini','GEMINI.md') },
-  { name: 'hermes',      detect: HERMES_HOME,                 home: HERMES_HOME, skills: j(HERMES_HOME,'skills','go-beast'), skillInstallMode: 'copy' },
+  { name: 'hermes',      detect: HERMES_HOME,                 home: HERMES_HOME, skills: j(HERMES_HOME,'skills','go-beast'), globalMd: j(HERMES_HOME,'SOUL.md'), skillInstallMode: 'copy' },
   { name: 'cline',       detect: j(HOME,'.cline'),            skills: j(HOME,'.cline','skills'),           globalMd: j(HOME,'.cline','AGENTS.md') },
   { name: 'copilot',     detect: j(HOME,'.copilot'),          skills: j(HOME,'.copilot','skills'),          hooks: j(HOME,'.copilot','hooks'), globalMd: j(HOME,'.copilot','instructions','go-beast.md'), hookConfig: j(HOME,'.copilot','hooks','go-beast.json'), hookConfigHint: '~/.copilot/hooks/go-beast.json (wired automatically)' },
   { name: 'codex',       detect: j(HOME,'.codex'),            skills: j(HOME,'.codex','skills'),            hooks: j(HOME,'.codex','hooks'), globalMd: j(HOME,'.codex','AGENTS.md'), hookConfig: j(HOME,'.codex','hooks.json'), hookConfigAlt: j(HOME,'.codex','config.toml'), hookConfigHint: '~/.codex/hooks.json or inline [hooks] in ~/.codex/config.toml, then review with /hooks' },
@@ -147,7 +165,7 @@ function installAssets({ selAgents, selSkills, hookAgents, selHooks, cc, selWork
   const assets = []
   for (const agent of selAgents) {
     for (const skill of selSkills) assets.push({ agent: agent.name, kind: 'skill', name: skill, source: j(CANONICAL_SKILLS_DIR, skill) })
-    if (agent.globalMd) assets.push({ agent: agent.name, kind: 'instructions', name: path.basename(globalSrc), source: globalSrc })
+    if (agent.globalMd) assets.push({ agent: agent.name, kind: 'instructions', name: agent.name === 'hermes' ? 'global' : path.basename(globalSrc), source: globalSrc })
   }
   for (const agent of hookAgents) {
     for (const hook of selHooks) assets.push({ agent: agent.name, kind: 'hook', name: hook, source: j(REPO, 'hooks', hook) })
@@ -575,6 +593,10 @@ async function main() {
       skillsMode: installAll ? 'all' : 'selected',
       hookNames: selectedAgentHooks,
       hooksMode: installAll ? 'all' : 'selected',
+      instructionsSource: agent.name === 'hermes' ? (useBootstrap ? 'bootstrap' : 'global') : undefined,
+      instructionsMode: agent.name === 'hermes' ? 'all' : undefined,
+      replaceUnmanagedInstructions: agent.name === 'hermes',
+      installTransaction: agent.name === 'hermes' ? transaction : null,
     })
     if (agent.skillInstallMode === 'copy') {
       ln(); ln(`  ${icon.link} ${bold('skills (copies)')} ${dim('→')} ${cyan(agent.name)}`)
@@ -595,7 +617,26 @@ async function main() {
         if (result.ico === icon.warn || result.ico === icon.err) counts.warn++
       }
     }
-    if (installFailures([...(configured.skills ?? []), ...(configured.hooks ?? [])]).length) throw new Error(`profile reconciliation failed for ${agent.name}`)
+    if (agent.name === 'hermes' && configured.instructions?.length) {
+      ln(); ln(`  ${icon.link} ${bold('global instructions')} ${dim('→')} ${cyan(agent.name)}`)
+      const results = configured.instructions.map(item => ({
+        ico: item.status === 'error' ? icon.err
+          : item.status === 'unmanaged' ? icon.warn
+            : item.action === 'create' ? icon.new
+              : ['update', 'replace', 'remove'].includes(item.action) ? icon.ok
+                : icon.skip,
+        name: item.name,
+        note: item.note,
+      }))
+      printResults(results)
+      for (const result of results) {
+        if (result.ico === icon.new) counts.new++
+        if (result.ico === icon.ok) counts.refreshed++
+        if (result.ico === icon.skip) counts.skip++
+        if (result.ico === icon.warn || result.ico === icon.err) counts.warn++
+      }
+    }
+    if (installFailures([...(configured.skills ?? []), ...(configured.hooks ?? []), ...(configured.instructions ?? [])]).length) throw new Error(`profile reconciliation failed for ${agent.name}`)
   }
 
   if (cc && selWorkflows.length) {
@@ -610,7 +651,7 @@ async function main() {
   if (fs.existsSync(globalSrc)) {
     ln(); ln(`  ${icon.link} ${bold('global instructions')}`)
     for (const agent of selAgents) {
-      if (!agent.globalMd) continue
+      if (!agent.globalMd || agent.name === 'hermes') continue
       fs.mkdirSync(path.dirname(agent.globalMd), { recursive: true })
       fs.copyFileSync(globalSrc, agent.globalMd)
       ln(row(icon.ok, cyan(agent.name), agent.globalMd.replace(HOME, '~')))

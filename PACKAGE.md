@@ -13,7 +13,9 @@ scope:   full-stack software development lifecycle
 
 Agent-specific adapters, plugin manifests, hook integrations, and live harness
 tests are optional layers around the core `skills/go-*` directories. Hermes
-Agent has skill-only installer and integration-profile support.
+Agent has profile-aware managed skill copies and can install the standard or
+bootstrap go-beast contract into the selected profile's own `SOUL.md`; it does
+not receive hooks, plugins, or workflows.
 
 Canonical release version source: `package.json`
 Release certificate: `release-certificate.json`
@@ -136,9 +138,9 @@ go-beast/
 │   │   └── bin/                ← Windows/macOS/Linux x64 and arm64 helper executables
 │   └── workflow.mjs           ← Optional workflow state-machine coordinator
 ├── tests/
-│   ├── install/test-hermes-install.sh ← Hermes copy install, rollback, and uninstall checks
-│   ├── plugin/test-hermes-integration.sh ← Hermes profile CLI copy ownership regression
-│   ├── unit/hermes-agent-paths.test.mjs ← macOS/Linux/Windows Hermes home path resolution
+│   ├── install/test-hermes-install.sh ← Hermes skill and SOUL install, profile isolation, rollback, and uninstall checks
+│   ├── plugin/test-hermes-integration.sh ← Hermes profile CLI skill/instruction ownership regression
+│   ├── unit/hermes-agent-paths.test.mjs ← macOS/Linux/Windows Hermes and profile path resolution
 │   ├── unit/hermes-safe-fs.test.mjs ← Safe helper platform mapping and rooted target path checks
 │   ├── helpers.sh             ← Shared shell assertions for repo integration tests
 │   ├── fixtures/adapters/     ← Harness-neutral adapter input fixtures

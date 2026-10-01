@@ -5,8 +5,8 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { resolveHermesHome } from './agent-paths.mjs'
-import { sourceDigest } from './install-transaction.mjs'
+import { resolveHermesHome, resolveHermesProfileHome } from './agent-paths.mjs'
+import { createInstallTransaction, sourceDigest } from './install-transaction.mjs'
 import { relativePathWithinRoot, runSafeFs } from './safe-fs.mjs'
 import { parseYaml } from './transversal-rules.mjs'
 import {
@@ -36,6 +36,17 @@ const SKILL_AGENTS = {
   hermes: {
     skillsDir: home => path.join(resolveHermesHome({ home }), 'skills', 'go-beast'),
     copySkills: true,
+  },
+}
+
+const GLOBAL_INSTRUCTION_AGENTS = {
+  hermes: {
+    name: 'global',
+    target: home => path.join(resolveHermesHome({ home }), 'SOUL.md'),
+    sources: {
+      global: 'AGENTS.global.md',
+      bootstrap: 'AGENTS.bootstrap.md',
+    },
   },
 }
 
@@ -158,6 +169,9 @@ function skillRules(repoRoot) {
 
 function dependencyRules(repoRoot, kind, agentName) {
   if (kind === 'skill') return skillRules(repoRoot)
+  if (kind === 'instructions') {
+    return Object.fromEntries(globalInstructionNames(agentName).map(name => [name, { dependencies: [], conflicts: [] }]))
+  }
   hookAgent(agentName)
   return Object.fromEntries(hooksForAgent(loadHookManifest(repoRoot), agentName).map(entry => [entry.name, {
     dependencies: entry.dependsOn.map(dependency => dependencyClause(dependency, [dependency])),
@@ -177,6 +191,23 @@ function hookAgent(agentName) {
   return agent
 }
 
+function globalInstructionAgent(agentName) {
+  const agent = GLOBAL_INSTRUCTION_AGENTS[agentName]
+  if (!agent) throw new Error(`Agent ${agentName} does not expose a supported global-instructions surface`)
+  return agent
+}
+
+function globalInstructionNames(agentName) {
+  return [globalInstructionAgent(agentName).name]
+}
+
+function globalInstructionSourcePath(repoRoot, agentName, source) {
+  const agent = globalInstructionAgent(agentName)
+  const fileName = agent.sources[source]
+  if (!fileName) throw new Error(`unsupported global-instructions source for ${agentName}: ${source}`)
+  return path.join(repoRoot, fileName)
+}
+
 function allNames(repoRoot, agentName, kind) {
   if (kind === 'skill') {
     skillAgent(agentName)
@@ -186,15 +217,22 @@ function allNames(repoRoot, agentName, kind) {
     hookAgent(agentName)
     return hookNames(repoRoot, agentName)
   }
+  if (kind === 'instructions') return globalInstructionNames(agentName)
   throw new Error(`Unsupported integration kind: ${kind}`)
 }
 
-function sourcePath(repoRoot, kind, name) {
-  return path.join(repoRoot, kind === 'skill' ? 'skills' : 'hooks', name)
+function sourcePath(repoRoot, kind, name, { agentName, instructionSource = 'global' } = {}) {
+  if (kind === 'skill') return path.join(repoRoot, 'skills', name)
+  if (kind === 'instructions') {
+    if (!globalInstructionNames(agentName).includes(name)) throw new Error(`Unknown instructions for ${agentName}: ${name}`)
+    return globalInstructionSourcePath(repoRoot, agentName, instructionSource)
+  }
+  return path.join(repoRoot, 'hooks', name)
 }
 
 function targetDirectory(home, agentName, kind) {
   if (kind === 'skill') return skillAgent(agentName).skillsDir(home)
+  if (kind === 'instructions') return path.dirname(globalInstructionAgent(agentName).target(home))
   return hookAgent(agentName).hookDir(home)
 }
 
@@ -220,6 +258,13 @@ function assertNoSymlinkedAncestors(root, target) {
 }
 
 function targetPath(home, agentName, kind, name) {
+  if (kind === 'instructions') {
+    const descriptor = globalInstructionAgent(agentName)
+    if (name !== descriptor.name) throw new Error(`Unknown instructions for ${agentName}: ${name}`)
+    const target = descriptor.target(home)
+    if (agentName === 'hermes') assertNoSymlinkedAncestors(resolveHermesHome({ home }), target)
+    return target
+  }
   const target = path.join(targetDirectory(home, agentName, kind), name)
   if (agentName === 'hermes' && kind === 'skill') {
     assertNoSymlinkedAncestors(resolveHermesHome({ home }), target)
@@ -285,8 +330,9 @@ function inspectHermesSkillCopy(target, source, record, hermesHome) {
 }
 
 function inspectAgentTarget({ home, repoRoot, agentName, kind, name, profile }) {
+  if (kind === 'instructions') return inspectGlobalInstruction({ home, repoRoot, agentName, name, profile })
   const target = targetPath(home, agentName, kind, name)
-  const source = sourcePath(repoRoot, kind, name)
+  const source = sourcePath(repoRoot, kind, name, { agentName })
   if (agentName === 'hermes' && kind === 'skill') {
     const record = hermesCopyRecordsForHome(profile, home)[name]
     return inspectHermesSkillCopy(target, source, record, resolveHermesHome({ home }))
@@ -297,6 +343,101 @@ function inspectAgentTarget({ home, repoRoot, agentName, kind, name, profile }) 
 function hermesHomeKey(home) {
   const resolved = path.resolve(resolveHermesHome({ home }))
   return process.platform === 'win32' ? resolved.toLowerCase() : resolved
+}
+
+function ensureHermesInstructionPolicies(agentProfile, home) {
+  const key = hermesHomeKey(home)
+  if (agentProfile.instructionsByHome === undefined) agentProfile.instructionsByHome = {}
+  const policies = agentProfile.instructionsByHome
+  if (!policies || typeof policies !== 'object' || Array.isArray(policies)) {
+    throw new Error('profile field agents.hermes.instructionsByHome must be an object')
+  }
+  const current = policies[key] ?? {}
+  if (!current || typeof current !== 'object' || Array.isArray(current)) {
+    throw new Error(`profile field agents.hermes.instructionsByHome.${key} must be an object`)
+  }
+  const source = current.source ?? 'global'
+  if (!['global', 'bootstrap'].includes(source)) {
+    throw new Error(`profile field agents.hermes.instructionsByHome.${key}.source must be global or bootstrap`)
+  }
+  const policy = normalizePolicy(
+    current.policy ?? { mode: 'selected', enabled: [] },
+    globalInstructionNames('hermes'),
+    `agents.hermes.instructionsByHome.${key}.policy`,
+  )
+  policies[key] = { ...current, policy, source }
+  return { key, policies, current: policies[key] }
+}
+
+function persistHermesInstructionProfile(agentProfile, home, instructionProfile) {
+  const { key, policies } = ensureHermesInstructionPolicies(agentProfile, home)
+  policies[key] = instructionProfile
+}
+
+function hermesInstructionProfileForHome(agentProfile, home) {
+  return ensureHermesInstructionPolicies(agentProfile, home).current
+}
+
+function hermesInstructionRecordsForHome(profile, home) {
+  const agentProfile = profile?.agents?.hermes
+  if (!agentProfile) return {}
+  const key = hermesHomeKey(home)
+  const recordsByHome = agentProfile.managedInstructionsByHome
+  if (recordsByHome === undefined) return {}
+  if (!recordsByHome || typeof recordsByHome !== 'object' || Array.isArray(recordsByHome)) {
+    throw new Error('profile field agents.hermes.managedInstructionsByHome must be an object')
+  }
+  const records = recordsByHome[key] ?? {}
+  if (!records || typeof records !== 'object' || Array.isArray(records)) {
+    throw new Error(`profile field agents.hermes.managedInstructionsByHome.${key} must be an object`)
+  }
+  return records
+}
+
+function ensureHermesInstructionRecords(agentProfile, home) {
+  const key = hermesHomeKey(home)
+  if (agentProfile.managedInstructionsByHome === undefined) agentProfile.managedInstructionsByHome = {}
+  const recordsByHome = agentProfile.managedInstructionsByHome
+  if (!recordsByHome || typeof recordsByHome !== 'object' || Array.isArray(recordsByHome)) {
+    throw new Error('profile field agents.hermes.managedInstructionsByHome must be an object')
+  }
+  const records = recordsByHome[key] ?? {}
+  if (!records || typeof records !== 'object' || Array.isArray(records)) {
+    throw new Error(`profile field agents.hermes.managedInstructionsByHome.${key} must be an object`)
+  }
+  recordsByHome[key] = records
+  return records
+}
+
+function inspectGlobalInstruction({ home, repoRoot, agentName, name, profile }) {
+  const target = targetPath(home, agentName, 'instructions', name)
+  let stat
+  try { stat = fs.lstatSync(target) } catch (error) {
+    if (error?.code === 'ENOENT') return { state: 'missing', installed: false, ownership: 'absent' }
+    throw error
+  }
+  if (stat.isSymbolicLink() || !stat.isFile()) {
+    return { state: 'unmanaged', installed: true, ownership: 'unmanaged' }
+  }
+
+  const record = hermesInstructionRecordsForHome(profile, home)[name]
+  if (!record || !DIGEST_PATTERN.test(record.source_sha256 ?? '') || !DIGEST_PATTERN.test(record.installed_sha256 ?? '')) {
+    return { state: 'unmanaged', installed: true, ownership: 'unmanaged' }
+  }
+  const installedSha256 = sourceDigest(target).sha256
+  if (installedSha256 !== record.installed_sha256) {
+    return { state: 'unmanaged', installed: true, ownership: 'unmanaged' }
+  }
+
+  const instructionProfile = hermesInstructionProfileForHome(profile.agents.hermes, home)
+  const source = globalInstructionSourcePath(repoRoot, agentName, instructionProfile.source)
+  return {
+    state: 'managed',
+    installed: true,
+    ownership: 'managed',
+    updateAvailable: sourceDigest(source).sha256 !== record.source_sha256,
+    source: instructionProfile.source,
+  }
 }
 
 function ensureHermesSkillPolicies(agentProfile, home) {
@@ -461,6 +602,7 @@ function ensureAgentProfile({ profile, home, repoRoot, agentName }) {
   const current = profile.agents[agentName] ?? {}
   let skills
   let skillsByHome
+  let instructionsByHome
   if (agentName === 'hermes') {
     const homePolicies = ensureHermesSkillPolicies(current, home)
     skillsByHome = homePolicies.policies
@@ -470,6 +612,7 @@ function ensureAgentProfile({ profile, home, repoRoot, agentName }) {
       `agents.hermes.skillsByHome.${homePolicies.key}`,
     ) ?? adoptPolicy({ home, repoRoot, agentName, kind: 'skill', names })
     skillsByHome[homePolicies.key] = skills
+    instructionsByHome = ensureHermesInstructionPolicies(current, home).policies
   } else {
     skills = normalizePolicy(
       current.skills,
@@ -484,6 +627,8 @@ function ensureAgentProfile({ profile, home, repoRoot, agentName }) {
     agentProfile.skillsByHome = skillsByHome
     agentProfile.skillsHome = hermesHomeKey(home)
     ensureHermesCopyRecords(agentProfile, home)
+    agentProfile.instructionsByHome = instructionsByHome
+    ensureHermesInstructionRecords(agentProfile, home)
   }
 
   if (HOOK_AGENTS[agentName]) {
@@ -508,6 +653,13 @@ function profileDocument({ profile, home, repoRoot, agentName }) {
     skills: cloneJson(agentProfile.skills),
   }
   if (HOOK_AGENTS[agentName]) document.hooks = cloneJson(agentProfile.hooks)
+  if (GLOBAL_INSTRUCTION_AGENTS[agentName]) {
+    const instructionProfile = hermesInstructionProfileForHome(agentProfile, home)
+    document.instructions = {
+      policy: cloneJson(instructionProfile.policy),
+      source: instructionProfile.source,
+    }
+  }
   return document
 }
 
@@ -536,6 +688,21 @@ function normalizeProfileDocument({ document, repoRoot, agentName }) {
   } else if (document.hooks !== undefined) {
     throw new Error(`import.hooks is not supported for ${agentName}`)
   }
+  if (GLOBAL_INSTRUCTION_AGENTS[agentName]) {
+    if (document.instructions !== undefined) {
+      const instructionPolicy = normalizePolicy(
+        document.instructions.policy,
+        globalInstructionNames(agentName),
+        'import.instructions.policy',
+      )
+      if (!instructionPolicy) throw new Error('import.instructions.policy is required')
+      const source = document.instructions.source
+      if (!['global', 'bootstrap'].includes(source)) throw new Error('import.instructions.source must be global or bootstrap')
+      normalized.instructions = { policy: instructionPolicy, source }
+    }
+  } else if (document.instructions !== undefined) {
+    throw new Error(`import.instructions is not supported for ${agentName}`)
+  }
   return normalized
 }
 
@@ -556,7 +723,11 @@ function reconcileImportedPolicy({
     agentProfile.hooks = policy.hooks
     kinds.push('hook')
   }
-  const result = reconcileAgent({ home, repoRoot, agentName, profile, kinds, dryRun })
+  if (policy.instructions) {
+    persistHermesInstructionProfile(agentProfile, home, policy.instructions)
+    kinds.push('instructions')
+  }
+  const result = reconcileAgent({ home, repoRoot, agentName, profile, kinds, dryRun, replaceUnmanagedInstructions: true })
   if (!dryRun) writeJsonAtomic(filePath, profile)
   return { ...result, profilePath: filePath }
 }
@@ -909,6 +1080,133 @@ function executeLinkPlan(operations, dryRun, { profile = null, home = HOME } = {
   })
 }
 
+function planGlobalInstructions({ home, repoRoot, agentName, profile, replaceUnmanagedInstructions = false }) {
+  const instructionProfile = hermesInstructionProfileForHome(profile.agents[agentName], home)
+  const names = globalInstructionNames(agentName)
+  const desired = desiredNames(instructionProfile.policy, names)
+  return names.map(name => {
+    const source = globalInstructionSourcePath(repoRoot, agentName, instructionProfile.source)
+    const target = targetPath(home, agentName, 'instructions', name)
+    const current = inspectAgentTarget({ home, repoRoot, agentName, kind: 'instructions', name, profile })
+    const enabled = desired.has(name)
+
+    if (enabled && current.state === 'missing') return { name, action: 'create', source, target, status: 'pending' }
+    if (enabled && current.state === 'managed' && current.updateAvailable) return { name, action: 'update', source, target, status: 'pending' }
+    if (enabled && current.state === 'unmanaged' && replaceUnmanagedInstructions) return { name, action: 'replace', source, target, status: 'pending' }
+    if (!enabled && current.state === 'managed') return { name, action: 'remove', source, target, status: 'pending' }
+    if (current.state === 'unmanaged') return { name, action: 'preserve', source, target, status: 'unmanaged' }
+    return { name, action: 'none', source, target, status: enabled ? 'enabled' : 'disabled' }
+  })
+}
+
+function copyFileAtomically(source, target, hermesHome) {
+  assertNoSymlinkedAncestors(hermesHome, target)
+  const parent = path.dirname(target)
+  fs.mkdirSync(parent, { recursive: true })
+  const temporaryDirectory = fs.mkdtempSync(path.join(parent, '.go-beast-instructions-'))
+  const temporaryPath = path.join(temporaryDirectory, path.basename(target))
+  try {
+    fs.copyFileSync(source, temporaryPath)
+    fs.chmodSync(temporaryPath, fs.statSync(source).mode & 0o777)
+    assertNoSymlinkedAncestors(hermesHome, target)
+    fs.renameSync(temporaryPath, target)
+  } finally {
+    fs.rmSync(temporaryDirectory, { recursive: true, force: true })
+  }
+}
+
+function executeGlobalInstructionPlan(operations, dryRun, {
+  home = HOME,
+  repoRoot = REPO,
+  profile,
+  replaceUnmanagedInstructions = false,
+  installTransaction = null,
+} = {}) {
+  if (dryRun) {
+    return operations.map(operation => ({
+      ...operation,
+      status: operation.status === 'pending' ? operation.action : operation.status,
+    }))
+  }
+  const pending = operations.filter(operation => operation.status === 'pending')
+  if (pending.length === 0) return operations
+
+  const hermesHome = resolveHermesHome({ home })
+  fs.mkdirSync(hermesHome, { recursive: true })
+  let transaction = installTransaction
+  const ownsTransaction = !transaction
+  try {
+    if (!transaction) {
+      transaction = createInstallTransaction({
+        home,
+        targets: pending.map(operation => operation.target),
+        allowedRoots: [hermesHome],
+        metadata: { agent: 'hermes', kind: 'instructions' },
+      })
+    }
+    const records = ensureHermesInstructionRecords(profile.agents.hermes, home)
+    const results = operations.map(operation => {
+      if (operation.status !== 'pending') return operation
+      try {
+        const current = inspectGlobalInstruction({
+          home,
+          repoRoot,
+          agentName: 'hermes',
+          name: operation.name,
+          profile,
+        })
+        if (operation.action === 'create' && current.state !== 'missing') {
+          return { ...operation, status: 'unmanaged', note: 'target changed during sync; preserved' }
+        }
+        if (operation.action === 'update' && (current.state !== 'managed' || !current.updateAvailable)) {
+          return { ...operation, status: current.state === 'unmanaged' ? 'unmanaged' : 'enabled', note: 'target changed during sync; preserved' }
+        }
+        if (operation.action === 'remove' && current.state !== 'managed') {
+          return { ...operation, status: current.state === 'unmanaged' ? 'unmanaged' : 'disabled', note: 'target changed during sync; preserved' }
+        }
+        if (operation.action === 'replace' && !replaceUnmanagedInstructions) {
+          return { ...operation, status: 'unmanaged', note: 'unmanaged target preserved' }
+        }
+
+        if (operation.action === 'remove') {
+          fs.unlinkSync(operation.target)
+          delete records[operation.name]
+          return { ...operation, status: 'disabled' }
+        }
+        if (['create', 'update', 'replace'].includes(operation.action)) {
+          copyFileAtomically(operation.source, operation.target, hermesHome)
+          const sourceSha256 = sourceDigest(operation.source).sha256
+          const installedSha256 = sourceDigest(operation.target).sha256
+          if (installedSha256 !== sourceSha256) throw new Error(`installed instruction digest mismatch: ${operation.name}`)
+          records[operation.name] = { source_sha256: sourceSha256, installed_sha256: installedSha256 }
+          const note = operation.action === 'replace'
+            ? 'existing target replaced; prior contents are in the install transaction'
+            : undefined
+          return { ...operation, status: 'enabled', note, transactionId: transaction.id }
+        }
+        throw new Error(`unsupported Hermes instruction operation: ${operation.action}`)
+      } catch (error) {
+        return { ...operation, status: 'error', note: error.message }
+      }
+    })
+    const failures = results.filter(result => result.status === 'error')
+    if (failures.length) throw new Error(failures.map(result => result.note).join('; '))
+    if (ownsTransaction) transaction.commit({ asset_count: pending.length })
+    return results
+  } catch (error) {
+    if (ownsTransaction && transaction) {
+      try { transaction.rollback() } catch (rollbackError) {
+        return operations.map(operation => operation.status === 'pending'
+          ? { ...operation, status: 'error', note: `${error.message}; rollback failed: ${rollbackError.message}` }
+          : operation)
+      }
+    }
+    return operations.map(operation => operation.status === 'pending'
+      ? { ...operation, status: 'error', note: error.message }
+      : operation)
+  }
+}
+
 function configCommands(config, agentName) {
   const agent = hookAgent(agentName)
   const commands = new Set()
@@ -945,11 +1243,21 @@ function reconcileAgent({
   repoRoot = REPO,
   agentName,
   profile,
-  kinds = ['skill', 'hook'],
+  kinds = ['skill', 'hook', 'instructions'],
   dryRun = false,
+  replaceUnmanagedInstructions = false,
+  installTransaction = null,
 }) {
   const agentProfile = profile.agents[agentName]
-  const result = { agent: agentName, dryRun, skills: [], hooks: [], config: null }
+  const result = {
+    agent: agentName,
+    dryRun,
+    ...(agentName === 'hermes' ? { hermesHome: resolveHermesHome({ home }) } : {}),
+    skills: [],
+    hooks: [],
+    instructions: [],
+    config: null,
+  }
   const skillNamesForAgent = skillNames(repoRoot)
 
   if (kinds.includes('skill')) {
@@ -1000,10 +1308,28 @@ function reconcileAgent({
     }
   }
 
+  if (kinds.includes('instructions') && GLOBAL_INSTRUCTION_AGENTS[agentName]) {
+    const plan = planGlobalInstructions({
+      home,
+      repoRoot,
+      agentName,
+      profile,
+      replaceUnmanagedInstructions,
+    })
+    result.instructions = executeGlobalInstructionPlan(plan, dryRun, {
+      home,
+      repoRoot,
+      profile,
+      replaceUnmanagedInstructions,
+      installTransaction,
+    })
+  }
+
   result.changed = [
     ...result.skills,
     ...result.hooks,
-  ].some(item => ['create', 'update', 'remove', 'forget', 'new', 'replaced'].includes(item.action ?? item.status))
+    ...result.instructions,
+  ].some(item => ['create', 'update', 'replace', 'remove', 'forget', 'new', 'replaced'].includes(item.action ?? item.status))
     || Boolean(result.config?.changed || result.config?.add?.length || result.config?.remove?.length)
   return result
 }
@@ -1021,6 +1347,10 @@ function configureAgent({
   skillsMode = 'selected',
   hookNames: selectedHookNames,
   hooksMode = 'selected',
+  instructionsSource = null,
+  instructionsMode = 'all',
+  replaceUnmanagedInstructions = false,
+  installTransaction = null,
   dryRun = false,
 }) {
   const { profile, path: filePath } = loadProfile({ home })
@@ -1043,8 +1373,27 @@ function configureAgent({
     )
     kinds.push('hook')
   }
+  if (instructionsSource !== null) {
+    if (!GLOBAL_INSTRUCTION_AGENTS[agentName]) throw new Error(`Agent ${agentName} does not support global instructions`)
+    if (!['global', 'bootstrap'].includes(instructionsSource)) throw new Error('instructionsSource must be global or bootstrap')
+    const currentInstructions = hermesInstructionProfileForHome(agentProfile, home)
+    persistHermesInstructionProfile(agentProfile, home, {
+      policy: setPolicySelection(currentInstructions.policy, globalInstructionNames(agentName), instructionsMode),
+      source: instructionsSource,
+    })
+    kinds.push('instructions')
+  }
 
-  const result = reconcileAgent({ home, repoRoot, agentName, profile, kinds, dryRun })
+  const result = reconcileAgent({
+    home,
+    repoRoot,
+    agentName,
+    profile,
+    kinds,
+    dryRun,
+    replaceUnmanagedInstructions,
+    installTransaction,
+  })
   if (!dryRun) writeJsonAtomic(filePath, profile)
   return { ...result, profilePath: filePath }
 }
@@ -1107,18 +1456,23 @@ function mutate({
   agentName,
   kind,
   name,
+  bootstrap = false,
   dryRun = false,
   cascade = false,
 }) {
   if (!['enable', 'disable'].includes(command)) throw new Error(`Unsupported integration command: ${command}`)
-  if (!['skill', 'hook'].includes(kind)) throw new Error('--kind must be skill or hook')
+  if (!['skill', 'hook', 'instructions'].includes(kind)) throw new Error('--kind must be skill, hook, or instructions')
+  if (bootstrap && kind !== 'instructions') throw new Error('--bootstrap is only valid with --kind instructions')
   const { profile, path: filePath } = loadProfile({ home })
   const agentProfile = ensureAgentProfile({ profile, home, repoRoot, agentName })
   const names = allNames(repoRoot, agentName, kind)
   if (!names.includes(name)) throw new Error(`Unknown ${kind} for ${agentName}: ${name}`)
 
-  const field = kind === 'skill' ? 'skills' : 'hooks'
-  let policy = agentProfile[field]
+  const instructionProfile = kind === 'instructions'
+    ? hermesInstructionProfileForHome(agentProfile, home)
+    : null
+  const field = kind === 'skill' ? 'skills' : kind === 'hook' ? 'hooks' : null
+  let policy = instructionProfile?.policy ?? agentProfile[field]
   const warnings = mutationWarnings({
     home,
     repoRoot,
@@ -1205,8 +1559,15 @@ function mutate({
     }
   }
 
-  agentProfile[field] = policy
-  if (agentName === 'hermes' && kind === 'skill') persistHermesSkillPolicy(agentProfile, home)
+  if (kind === 'instructions') {
+    persistHermesInstructionProfile(agentProfile, home, {
+      policy,
+      source: bootstrap ? 'bootstrap' : instructionProfile.source,
+    })
+  } else {
+    agentProfile[field] = policy
+    if (agentName === 'hermes' && kind === 'skill') persistHermesSkillPolicy(agentProfile, home)
+  }
   const result = reconcileAgent({
     home,
     repoRoot,
@@ -1214,6 +1575,7 @@ function mutate({
     profile,
     kinds: [kind],
     dryRun,
+    replaceUnmanagedInstructions: kind === 'instructions' && command === 'enable',
   })
   if (!dryRun) writeJsonAtomic(filePath, profile)
 
@@ -1234,10 +1596,16 @@ function sync({
   home = HOME,
   repoRoot = REPO,
   agentName,
+  bootstrap = false,
   dryRun = false,
 }) {
   const { profile, path: filePath } = loadProfile({ home })
-  ensureAgentProfile({ profile, home, repoRoot, agentName })
+  const agentProfile = ensureAgentProfile({ profile, home, repoRoot, agentName })
+  if (bootstrap) {
+    if (!GLOBAL_INSTRUCTION_AGENTS[agentName]) throw new Error(`Agent ${agentName} does not support global instructions`)
+    const current = hermesInstructionProfileForHome(agentProfile, home)
+    persistHermesInstructionProfile(agentProfile, home, { ...current, source: 'bootstrap' })
+  }
   const result = reconcileAgent({
     home,
     repoRoot,
@@ -1250,7 +1618,9 @@ function sync({
 }
 
 function statusAsset({ home, repoRoot, agentName, kind, name, desired, desiredNames, availableNames, profile }) {
-  const source = sourcePath(repoRoot, kind, name)
+  const instructionProfile = kind === 'instructions'
+    ? hermesInstructionProfileForHome(profile.agents[agentName], home)
+    : null
   const target = targetPath(home, agentName, kind, name)
   const inspected = inspectAgentTarget({ home, repoRoot, agentName, kind, name, profile })
   const dependencies = desired
@@ -1265,6 +1635,8 @@ function statusAsset({ home, repoRoot, agentName, kind, name, desired, desiredNa
     : { satisfied: true, missing: [], conflicts: [], clauses: [] }
   const base = {
     name,
+    target,
+    ...(instructionProfile ? { source: instructionProfile.source } : {}),
     desired: desired ? 'enabled' : 'disabled',
     installed: inspected.installed,
     ownership: inspected.ownership,
@@ -1338,6 +1710,7 @@ function statusAgent({ home = HOME, repoRoot = REPO, agentName }) {
   const result = {
     agent: agentName,
     profilePath: filePath,
+    ...(agentName === 'hermes' ? { hermesHome: resolveHermesHome({ home }) } : {}),
     skills: skills.map(name => statusAsset({
       home,
       repoRoot,
@@ -1350,6 +1723,7 @@ function statusAgent({ home = HOME, repoRoot = REPO, agentName }) {
       profile,
     })),
     hooks: [],
+    instructions: [],
   }
 
   if (HOOK_AGENTS[agentName]) {
@@ -1376,7 +1750,48 @@ function statusAgent({ home = HOME, repoRoot = REPO, agentName }) {
       profile,
     }))
   }
+  if (GLOBAL_INSTRUCTION_AGENTS[agentName]) {
+    const instructionProfile = hermesInstructionProfileForHome(agentProfile, home)
+    const instructions = globalInstructionNames(agentName)
+    const desiredInstructions = desiredNames(instructionProfile.policy, instructions)
+    const availableInstructions = effectiveNames({
+      home,
+      repoRoot,
+      agentName,
+      kind: 'instructions',
+      names: instructions,
+      desired: desiredInstructions,
+      profile,
+    })
+    result.instructions = instructions.map(name => statusAsset({
+      home,
+      repoRoot,
+      agentName,
+      kind: 'instructions',
+      name,
+      desired: desiredInstructions.has(name),
+      desiredNames: desiredInstructions,
+      availableNames: availableInstructions,
+      profile,
+    }))
+  }
   return result
+}
+
+function validateHermesProfileSelection(options) {
+  if (options.hermesProfile === null) return
+  if (options.hermesProfile === undefined || options.hermesProfile === '') {
+    throw new Error('--hermes-profile requires a name or default')
+  }
+  if (options.agent !== 'hermes') throw new Error('--hermes-profile requires --agent hermes')
+  const hermesHome = resolveHermesProfileHome({ home: options.home, profile: options.hermesProfile })
+  if (options.hermesProfile !== 'default') {
+    const identityFiles = ['config.yaml', '.env', 'SOUL.md', 'profile.yaml', 'auth.json', 'state.db']
+    if (!identityFiles.some(name => fs.existsSync(path.join(hermesHome, name)))) {
+      throw new Error(`Hermes profile does not exist or is not initialized: ${options.hermesProfile}`)
+    }
+  }
+  process.env.HERMES_HOME = hermesHome
 }
 
 function parseArgs(argv) {
@@ -1398,6 +1813,8 @@ function parseArgs(argv) {
     format: 'text',
     home: HOME,
     repoRoot: REPO,
+    hermesProfile: null,
+    bootstrap: false,
     dryRun: false,
     cascade: false,
   }
@@ -1412,6 +1829,8 @@ function parseArgs(argv) {
     else if (arg === '--format') options.format = args[++index]
     else if (arg === '--home') options.home = args[++index]
     else if (arg === '--repo') options.repoRoot = args[++index]
+    else if (arg === '--hermes-profile') options.hermesProfile = args[++index]
+    else if (arg === '--bootstrap') options.bootstrap = true
     else if (arg === '--dry-run') options.dryRun = true
     else if (arg === '--cascade') options.cascade = true
     else if (arg === '--help' || arg === '-h') options.command = 'help'
@@ -1426,6 +1845,9 @@ function parseArgs(argv) {
   if (options.command === 'preset' && !['list', 'save', 'apply', 'delete'].includes(options.subcommand)) {
     throw new Error(`unsupported preset command: ${options.subcommand}`)
   }
+  if (options.bootstrap && !(options.command === 'sync' || (options.command === 'enable' && options.kind === 'instructions'))) {
+    throw new Error('--bootstrap is valid only with sync or enable --kind instructions')
+  }
   options.home = path.resolve(options.home)
   options.repoRoot = path.resolve(options.repoRoot)
   return options
@@ -1434,10 +1856,12 @@ function parseArgs(argv) {
 function textResult(result) {
   const lines = [`${result.command ?? 'status'}: ${result.agent ?? 'all'}`]
   if (result.profilePath) lines.push(`profile: ${result.profilePath}`)
-  for (const kind of ['skills', 'hooks']) {
+  if (result.hermesHome) lines.push(`Hermes home: ${result.hermesHome}`)
+  for (const kind of ['skills', 'hooks', 'instructions']) {
+    const label = kind === 'instructions' ? 'instruction' : kind.slice(0, -1)
     for (const item of result[kind] ?? []) {
       const state = item.status ?? item.state ?? item.action
-      if (state && state !== 'none') lines.push(`${kind.slice(0, -1)} ${item.name}: ${state}`)
+      if (state && state !== 'none') lines.push(`${label} ${item.name}: ${state}${item.source ? ` (${item.source})` : ''}`)
       if (result.agent === 'hermes' && item.note) lines.push(`  ${item.note}`)
     }
   }
@@ -1462,12 +1886,13 @@ function textResult(result) {
 function printResult(result, format) {
   const visible = result.command === 'import' && result.dryRun
     ? (() => {
-        const { skills, hooks, config, ...summary } = result
+        const { skills, hooks, instructions, config, ...summary } = result
         return {
           ...summary,
           preview: {
             skillChanges: (skills ?? []).filter(item => item.action !== 'none').length,
             hookChanges: (hooks ?? []).filter(item => item.action !== 'none').length,
+            instructionChanges: (instructions ?? []).filter(item => item.action !== 'none').length,
             configChanges: (config?.add?.length ?? 0) + (config?.remove?.length ?? 0),
           },
         }
@@ -1477,6 +1902,7 @@ function printResult(result, format) {
         ...result,
         skills: (result.skills ?? []).filter(item => item.action !== 'none'),
         hooks: (result.hooks ?? []).filter(item => item.action !== 'none'),
+        instructions: (result.instructions ?? []).filter(item => item.action !== 'none'),
       }
     : result
   process.stdout.write(format === 'json'
@@ -1491,8 +1917,10 @@ function usage() {
     '',
     'Options:',
     '  --agent <name>                 Agent profile to inspect or mutate',
-    '  --kind <skill|hook>            Asset kind for enable/disable',
+    '  --kind <skill|hook|instructions> Asset kind for enable/disable',
     '  --name <asset>                 Asset name for enable/disable',
+    '  --hermes-profile <name|default> Target a named Hermes profile or its default home',
+    '  --bootstrap                    Select AGENTS.bootstrap.md for Hermes instructions',
     '  --input <path>                 Profile JSON to import',
     '  --output <path>                Destination JSON for export',
     '  --format <text|json>            Output format',
@@ -1562,7 +1990,9 @@ function run(options) {
 
 function main(argv = process.argv.slice(2)) {
   try {
-    run(parseArgs(argv))
+    const options = parseArgs(argv)
+    validateHermesProfileSelection(options)
+    run(options)
   } catch (error) {
     console.error(`go-beast integration: ${error.message}`)
     process.exitCode = 1

@@ -24,6 +24,8 @@ hooks, workflows, and global instructions. For a non-interactive installation:
 ```bash
 node <repo-dir>/scripts/install.mjs --all
 node <repo-dir>/scripts/install.mjs --all --bootstrap
+node <repo-dir>/scripts/install.mjs --all --hermes-profile coder
+node <repo-dir>/scripts/install.mjs --all --bootstrap --hermes-profile researcher
 node <repo-dir>/scripts/install.mjs --uninstall
 
 # Inspect or simulate the installation before changing the home directory
@@ -35,16 +37,21 @@ node <repo-dir>/scripts/install.mjs --all --verify-integrity
 node <repo-dir>/scripts/install.mjs --rollback
 ```
 
-`--bootstrap` installs the stricter discovery-first instructions. `--uninstall`
-removes links that point back to the checkout and unchanged go-beast-owned
-Hermes skill copies. Modified Hermes skill copies are preserved.
+`--bootstrap` installs the stricter discovery-first instructions. For Hermes, the
+selected source is written to the target profile's `SOUL.md`; use
+`--hermes-profile default|<name>` to choose the profile explicitly. Without that
+flag, the installer continues to honor `HERMES_HOME` or the Hermes default home.
+`--uninstall` removes links that point back to the checkout and unchanged
+Go-Beast-owned Hermes skill copies. Modified skill copies are preserved.
 
-Hermes filesystem operations use bundled no-follow helpers for Windows, macOS,
+Hermes skill-copy operations use bundled no-follow helpers for Windows, macOS,
 and Linux on x64 and arm64; installing or using go-beast does not require Go.
 The helper permits a symlink at the Hermes-home root, rejects symlinked
-descendants, and fails closed if its platform binary is unavailable. Previous
-or partial copies are retained under `$HERMES_HOME/.go-beast-recovery/`; review
-the reported recovery location before removing those files manually.
+skill-copy descendants, and fails closed if its platform binary is unavailable.
+Previous or partial skill copies are retained under
+`$HERMES_HOME/.go-beast-recovery/`; review the reported recovery location before
+removing those files manually. SOUL replacements are captured in the regular
+install transaction so an explicit rollback can restore the prior file.
 
 `--permission-preview` reports the managed paths and required write locations
 without mutating them. `--dry-run` evaluates the same selection and mutation
@@ -61,7 +68,8 @@ resolved `HERMES_HOME` and skips transactions belonging to other Hermes homes.
 
 The installer records the selected integration policy in
 `~/.go-beast/config.json`. You can change individual skills and hooks later
-without reinstalling the pack:
+without reinstalling the pack; Hermes also exposes its per-profile instruction
+policy through the same CLI:
 
 ```bash
 go-beast integration status --agent codex --format text
@@ -74,6 +82,12 @@ go-beast integration import --agent codex --input ./codex-profile.json --dry-run
 go-beast integration preset save minimal --agent codex
 go-beast integration preset list --format text
 go-beast integration preset apply minimal --agent codex
+
+go-beast integration status --agent hermes --hermes-profile coder --format json
+go-beast integration enable --agent hermes --kind instructions --name global --hermes-profile coder
+go-beast integration enable --agent hermes --kind instructions --name global --hermes-profile researcher --bootstrap
+go-beast integration sync --agent hermes --hermes-profile researcher
+go-beast integration disable --agent hermes --kind instructions --name global --hermes-profile coder
 ```
 
 The `all` policy enables newly published assets by default and stores only
@@ -89,22 +103,40 @@ rules come from `go-beast.manifest.yaml`; hook dependencies are derived from
 the shared hook wiring contract. Disabling a dependency warns about affected
 dependents, while `--cascade` disables known dependent assets as well.
 
-Hermes Agent is supported for canonical skills only. Skills are copied into
-`$HERMES_HOME/skills/go-beast/`; set `HERMES_HOME` to target a named profile.
-The default home is `~/.hermes` on macOS/Linux and `%LOCALAPPDATA%\hermes` on
-native Windows. Hermes can edit installed skills, so sync preserves any copy
-whose contents changed since go-beast installed it. No Hermes hooks, plugins,
-workflows, global instructions, or settings are configured.
+Hermes receives canonical skill copies and an optional profile-level instruction
+asset sourced from `AGENTS.global.md` or `AGENTS.bootstrap.md`. Skills live at
+`$HERMES_HOME/skills/go-beast/`; the selected instruction source is copied into
+that profile's `SOUL.md`. The default home is `~/.hermes` on macOS/Linux and
+`%LOCALAPPDATA%\hermes` on native Windows. Without `--hermes-profile`, the CLI
+honors `HERMES_HOME`; pass `--hermes-profile default` or a named profile such as
+`coder` to target the corresponding Hermes home.
 
-`export` writes a validated, agent-specific JSON profile containing the desired
-skill and hook policies. `import` replaces that agent policy and supports
-`--dry-run`; invalid schema versions, unknown assets, and cross-agent documents
-fail before changing the installed state. Presets are named snapshots stored in
-the shared profile and are also bound to the agent that created them.
+The instruction source defaults to `AGENTS.global.md`; use `--bootstrap` with
+`integration enable` or `integration sync` to select `AGENTS.bootstrap.md` for
+that profile. Source choice, desired state, and ownership are isolated by the
+resolved Hermes home. Each Hermes profile has its own `SOUL.md`, the Hermes
+counterpart of that profile's `AGENTS.md`. Selecting one profile does not modify
+another. Instructions apply to Hermes runs using the selected profile. Use
+project context files for repository-only rules.
+
+Ordinary sync updates only an unchanged managed SOUL file and preserves
+unmanaged or user-edited files. Explicit installer selection or
+`integration enable` can replace an existing SOUL; the original is captured by
+an install transaction. `disable` removes only an unchanged managed SOUL.
+Hermes still gets no hooks, plugins, workflows, or `config.yaml` changes from
+go-beast.
+
+`export` writes a validated, agent-specific JSON profile containing desired
+skill policies and, for Hermes, instruction policy/source. `import` replaces
+that agent policy and supports `--dry-run`; invalid schema versions, unknown
+assets, and cross-agent documents fail before changing installed state. Presets
+are named snapshots stored in the shared profile and are also bound to the agent
+that created them.
 
 The reconciler removes only symlinks and generated hook commands owned by the
-current go-beast checkout. Real directories, external symlinks, and custom
-hook entries are reported as unmanaged and are not overwritten or deleted.
+current go-beast checkout. Real directories, external symlinks, custom hook
+entries, and unmanaged or edited SOUL files are reported as unmanaged and are
+not overwritten or deleted by ordinary sync.
 
 Use [go-mule](../skills/go-mule/SKILL.md) when hooks are unavailable, untrusted,
 or undesirable, or when you want an explicit planning-only bootstrap. Use the
@@ -123,6 +155,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/m
 # Non-interactive: latest release and every detected asset
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all --bootstrap
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all --bootstrap --hermes-profile researcher
 ```
 
 The `--interactive` wrapper lets you select the latest or a specific GitHub
@@ -139,8 +172,9 @@ swap fails.
 The installer writes only the selected agent integrations and preserves
 existing configuration. Claude Code uses `~/.claude/settings.json`; Codex uses
 `~/.codex/hooks.json` or inline `[hooks]` configuration; Copilot CLI uses JSON
-files under `~/.copilot/hooks/`. Hermes Agent receives managed skill copies
-only; it has no automatic lifecycle-hook or plugin wiring in go-beast.
+files under `~/.copilot/hooks/`. Hermes Agent receives managed skill copies and
+an optional standard or bootstrap contract in the selected profile's own
+`SOUL.md`; it has no automatic lifecycle-hook or plugin wiring in go-beast.
 
 The local install manifest is an integrity and recovery aid, not a signed
 release attestation. Trust the release archive and its published checksums when

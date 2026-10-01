@@ -41,6 +41,8 @@ Primary goal:
 Primary files:
 
 - `scripts/install.mjs`
+- `scripts/integration-profile.mjs`
+- `scripts/agent-paths.mjs`
 - `scripts/hook-wire.mjs`
 - `hooks/manifest.json`
 - `hooks/sync-go-beast-skills.sh`
@@ -106,6 +108,7 @@ Non-responsibilities:
 | Plugin adapter bundle | `plugins/go-beast/` | Optional packaging surface |
 | Default maintainer policy | `AGENTS.global.md` | Baseline repo-maintainer instructions |
 | Stricter bootstrap policy | `AGENTS.bootstrap.md` | Optional discovery-first overlay |
+| Hermes instruction target | `GLOBAL_INSTRUCTION_AGENTS` in `scripts/integration-profile.mjs` | Profile-scoped adapter writes the selected contract to `SOUL.md`; canonical contents remain in `AGENTS.global.md` and `AGENTS.bootstrap.md` |
 | Explicit initialization flow | `skills/go-mule/SKILL.md` | Alternative to sync-hook instrumentation |
 
 ## Known drift points

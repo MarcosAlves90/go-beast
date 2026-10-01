@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **hermes:** add profile-specific SOUL.md contracts sourced from the standard or bootstrap go-beast instructions
+
 ## [2.2.0] - 2026-09-30
 
 ### Added

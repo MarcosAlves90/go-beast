@@ -102,6 +102,11 @@ assert_contains \
   "archive bootstrap copies bootstrap global instructions"
 
 assert_contains \
+  "$TEST_HOME/.hermes/SOUL.md" \
+  'Bootstrap mode' \
+  "archive bootstrap copies bootstrap instructions into Hermes SOUL.md"
+
+assert_contains \
   "$TEST_HOME/.claude/skills/go-hawk/SKILL.md" \
   '^description: Conducts structured discovery interviews,' \
   "archive bootstrap leaves canonical skill content available through symlink"
