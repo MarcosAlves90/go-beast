@@ -706,6 +706,13 @@ function normalizeProfileDocument({ document, repoRoot, agentName }) {
   return normalized
 }
 
+function assertInstructionReconciliationSucceeded(result) {
+  const failures = (result.instructions ?? []).filter(item => item.status === 'error')
+  if (!failures.length) return
+  const detail = failures.map(item => `${item.name}: ${item.note ?? 'unknown error'}`).join('; ')
+  throw new Error(`Hermes instruction reconciliation failed: ${detail}`)
+}
+
 function reconcileImportedPolicy({
   home,
   repoRoot,
@@ -727,9 +734,37 @@ function reconcileImportedPolicy({
     persistHermesInstructionProfile(agentProfile, home, policy.instructions)
     kinds.push('instructions')
   }
-  const result = reconcileAgent({ home, repoRoot, agentName, profile, kinds, dryRun, replaceUnmanagedInstructions: true })
-  if (!dryRun) writeJsonAtomic(filePath, profile)
-  return { ...result, profilePath: filePath }
+
+  const installTransaction = !dryRun && agentName === 'hermes'
+    ? createHermesReconciliationTransaction({
+        home,
+        repoRoot,
+        profile,
+        kinds,
+        filePath,
+        replaceUnmanagedInstructions: true,
+        metadata: { agent: agentName, kind: 'profile-import' },
+      })
+    : null
+
+  try {
+    const result = reconcileAgent({
+      home,
+      repoRoot,
+      agentName,
+      profile,
+      kinds,
+      dryRun,
+      replaceUnmanagedInstructions: true,
+      installTransaction,
+    })
+    assertInstructionReconciliationSucceeded(result)
+    if (!dryRun) writeJsonAtomic(filePath, profile)
+    if (installTransaction) installTransaction.commit({ asset_count: installTransaction.snapshots.length - 1 })
+    return { ...result, profilePath: filePath }
+  } catch (error) {
+    rollbackTransactionAndRethrow(installTransaction, error, 'profile import')
+  }
 }
 
 function exportProfile({
@@ -1334,6 +1369,53 @@ function reconcileAgent({
   return result
 }
 
+function createHermesReconciliationTransaction({
+  home,
+  repoRoot,
+  profile,
+  kinds,
+  filePath,
+  replaceUnmanagedInstructions = false,
+  metadata,
+}) {
+  const plan = reconcileAgent({
+    home,
+    repoRoot,
+    agentName: 'hermes',
+    profile,
+    kinds,
+    dryRun: true,
+    replaceUnmanagedInstructions,
+  })
+  const assetTargets = []
+  for (const operation of [...(plan.skills ?? []), ...(plan.hooks ?? []), ...(plan.instructions ?? [])]) {
+    if (['create', 'update', 'replace', 'remove'].includes(operation.action) && operation.target) {
+      assetTargets.push(operation.target)
+    }
+  }
+  if (plan.config?.path && (plan.config.changed || plan.config.add?.length || plan.config.remove?.length)) {
+    assetTargets.push(plan.config.path)
+  }
+  if (!assetTargets.length) return null
+  return createInstallTransaction({
+    home,
+    targets: [...new Set([filePath, ...assetTargets])],
+    allowedRoots: [resolveHermesHome({ home })],
+    metadata,
+  })
+}
+
+function rollbackTransactionAndRethrow(transaction, error, label) {
+  if (transaction) {
+    try {
+      transaction.rollback()
+    } catch (rollbackError) {
+      throw new Error(`${error.message}; ${label} rollback failed: ${rollbackError.message}`)
+    }
+  }
+  throw error
+}
+
 function setPolicySelection(policy, names, mode) {
   if (mode === 'all') return { mode: 'all', disabled: [] }
   return { mode: 'selected', enabled: sortedNames(names) }
@@ -1384,18 +1466,37 @@ function configureAgent({
     kinds.push('instructions')
   }
 
-  const result = reconcileAgent({
-    home,
-    repoRoot,
-    agentName,
-    profile,
-    kinds,
-    dryRun,
-    replaceUnmanagedInstructions,
-    installTransaction,
-  })
-  if (!dryRun) writeJsonAtomic(filePath, profile)
-  return { ...result, profilePath: filePath }
+  const ownsTransaction = agentName === 'hermes' && !dryRun && !installTransaction
+  const transaction = installTransaction ?? (ownsTransaction
+    ? createHermesReconciliationTransaction({
+        home,
+        repoRoot,
+        profile,
+        kinds,
+        filePath,
+        replaceUnmanagedInstructions,
+        metadata: { agent: agentName, kind: 'configure-agent' },
+      })
+    : null)
+  try {
+    const result = reconcileAgent({
+      home,
+      repoRoot,
+      agentName,
+      profile,
+      kinds,
+      dryRun,
+      replaceUnmanagedInstructions,
+      installTransaction: transaction,
+    })
+    assertInstructionReconciliationSucceeded(result)
+    if (!dryRun) writeJsonAtomic(filePath, profile)
+    if (ownsTransaction && transaction) transaction.commit({ asset_count: transaction.snapshots.length - 1 })
+    return { ...result, profilePath: filePath }
+  } catch (error) {
+    if (ownsTransaction) rollbackTransactionAndRethrow(transaction, error, 'configureAgent')
+    throw error
+  }
 }
 
 function mutationWarnings({ home, repoRoot, agentName, kind, name, policy, names, enabled, profile }) {
@@ -1568,27 +1669,48 @@ function mutate({
     agentProfile[field] = policy
     if (agentName === 'hermes' && kind === 'skill') persistHermesSkillPolicy(agentProfile, home)
   }
-  const result = reconcileAgent({
-    home,
-    repoRoot,
-    agentName,
-    profile,
-    kinds: [kind],
-    dryRun,
-    replaceUnmanagedInstructions: kind === 'instructions' && command === 'enable',
-  })
-  if (!dryRun) writeJsonAtomic(filePath, profile)
+  const replaceUnmanagedInstructions = kind === 'instructions' && command === 'enable'
+  const ownsTransaction = agentName === 'hermes' && !dryRun
+  const transaction = ownsTransaction
+    ? createHermesReconciliationTransaction({
+        home,
+        repoRoot,
+        profile,
+        kinds: [kind],
+        filePath,
+        replaceUnmanagedInstructions,
+        metadata: { agent: agentName, kind: 'integration-mutation', name },
+      })
+    : null
+  try {
+    const result = reconcileAgent({
+      home,
+      repoRoot,
+      agentName,
+      profile,
+      kinds: [kind],
+      dryRun,
+      replaceUnmanagedInstructions,
+      installTransaction: transaction,
+    })
+    assertInstructionReconciliationSucceeded(result)
+    if (!dryRun) writeJsonAtomic(filePath, profile)
+    if (ownsTransaction && transaction) transaction.commit({ asset_count: transaction.snapshots.length - 1 })
 
-  return {
-    command,
-    agent: agentName,
-    kind,
-    name,
-    cascade,
-    cascadeDisabled: sortedNames([...new Set(cascadeDisabled)]),
-    warnings,
-    profilePath: filePath,
-    ...result,
+    return {
+      command,
+      agent: agentName,
+      kind,
+      name,
+      cascade,
+      cascadeDisabled: sortedNames([...new Set(cascadeDisabled)]),
+      warnings,
+      profilePath: filePath,
+      ...result,
+    }
+  } catch (error) {
+    if (ownsTransaction) rollbackTransactionAndRethrow(transaction, error, 'integration mutation')
+    throw error
   }
 }
 
@@ -1606,15 +1728,27 @@ function sync({
     const current = hermesInstructionProfileForHome(agentProfile, home)
     persistHermesInstructionProfile(agentProfile, home, { ...current, source: 'bootstrap' })
   }
-  const result = reconcileAgent({
-    home,
-    repoRoot,
-    agentName,
-    profile,
-    dryRun,
-  })
-  if (!dryRun) writeJsonAtomic(filePath, profile)
-  return { command: 'sync', profilePath: filePath, ...result }
+  const ownsTransaction = agentName === 'hermes' && !dryRun
+  const transaction = ownsTransaction
+    ? createHermesReconciliationTransaction({
+        home,
+        repoRoot,
+        profile,
+        kinds: ['skill', 'hook', 'instructions'],
+        filePath,
+        metadata: { agent: agentName, kind: 'integration-sync' },
+      })
+    : null
+  try {
+    const result = reconcileAgent({ home, repoRoot, agentName, profile, dryRun, installTransaction: transaction })
+    assertInstructionReconciliationSucceeded(result)
+    if (!dryRun) writeJsonAtomic(filePath, profile)
+    if (ownsTransaction && transaction) transaction.commit({ asset_count: transaction.snapshots.length - 1 })
+    return { command: 'sync', profilePath: filePath, ...result }
+  } catch (error) {
+    if (ownsTransaction) rollbackTransactionAndRethrow(transaction, error, 'integration sync')
+    throw error
+  }
 }
 
 function statusAsset({ home, repoRoot, agentName, kind, name, desired, desiredNames, availableNames, profile }) {
@@ -1870,9 +2004,12 @@ function textResult(result) {
   if (result.inputPath) lines.push(`input: ${result.inputPath}`)
   if (result.outputPath) lines.push(`output: ${result.outputPath}`)
   if (result.preview) {
+    const instructionChanges = result.preview.instructionChanges ?? 0
+    const instructionLabel = instructionChanges === 1 ? 'instruction change' : 'instruction changes'
     lines.push(
       `preview: ${result.preview.skillChanges} skill changes, `
       + `${result.preview.hookChanges} hook changes, `
+      + `${instructionChanges} ${instructionLabel}, `
       + `${result.preview.configChanges} config changes`,
     )
   }
@@ -1892,7 +2029,7 @@ function printResult(result, format) {
           preview: {
             skillChanges: (skills ?? []).filter(item => item.action !== 'none').length,
             hookChanges: (hooks ?? []).filter(item => item.action !== 'none').length,
-            instructionChanges: (instructions ?? []).filter(item => item.action !== 'none').length,
+            instructionChanges: (instructions ?? []).filter(item => ['create', 'update', 'replace', 'remove'].includes(item.action)).length,
             configChanges: (config?.add?.length ?? 0) + (config?.remove?.length ?? 0),
           },
         }
@@ -1908,6 +2045,7 @@ function printResult(result, format) {
   process.stdout.write(format === 'json'
     ? `${JSON.stringify(visible, null, 2)}\n`
     : `${textResult(visible)}\n`)
+  if ((visible.instructions ?? []).some(item => item.status === 'error')) process.exitCode = 1
 }
 
 function usage() {
