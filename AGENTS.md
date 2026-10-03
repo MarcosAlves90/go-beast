@@ -94,9 +94,11 @@ tables in `~/.codex/config.toml`. Copilot CLI loads `~/.copilot/hooks/*.json`
 and uses camelCase event names (`sessionStart`, `userPromptSubmitted`,
 `agentStop`, `preToolUse`, `postToolUse`) with a flat entry format; the
 hook-wire script writes `~/.copilot/hooks/go-beast.json` automatically.
-Hermes Agent is supported by the installer and integration CLI for managed
-skill copies only; it does not receive hooks, plugins, workflows, or global
-instructions.
+Hermes Agent receives managed canonical skill copies and can install the
+standard (`AGENTS.global.md`) or bootstrap (`AGENTS.bootstrap.md`) go-beast
+contract into the selected profile's own `SOUL.md`. The selected `HERMES_HOME`
+or named profile controls both surfaces. Hermes does not receive lifecycle
+hooks, plugins, workflows, or `config.yaml` changes from this integration.
 
 ## What this repo is
 
