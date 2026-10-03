@@ -11,6 +11,8 @@ UNINSTALL_HERMES_HOME="$TEST_ROOT/uninstall-hermes-data"
 PROFILE_HOME="$TEST_ROOT/profile-home"
 PROFILE_HERMES_A="$TEST_ROOT/profile-a"
 PROFILE_HERMES_B="$TEST_ROOT/profile-b"
+NAMED_PROFILE_HOME="$TEST_ROOT/named-profile-home"
+NAMED_PROFILE_HERMES="$TEST_ROOT/named-hermes-home"
 ERROR_HOME="$TEST_ROOT/error-home"
 ERROR_HERMES_HOME="$TEST_ROOT/error-hermes-data"
 RACE_REMOVE_HOME="$TEST_ROOT/race-remove-home"
@@ -40,14 +42,15 @@ trap cleanup EXIT
 
 mkdir -p "$TEST_HOME" "$HERMES_HOME/skills/go-beast/go-fox"
 printf '%s\n' 'user-owned Hermes skill' > "$HERMES_HOME/skills/go-beast/go-fox/USER.md"
+printf '%s\n' 'user-owned default identity' > "$HERMES_HOME/SOUL.md"
 
 HOME="$TEST_HOME" USERPROFILE="$TEST_HOME" HERMES_HOME="$HERMES_HOME" node "$REPO_ROOT/scripts/install.mjs" --all > "$TEST_ROOT/install.log"
 test -d "$HERMES_HOME/skills/go-beast/go-hawk"
 test ! -L "$HERMES_HOME/skills/go-beast/go-hawk"
 test -f "$HERMES_HOME/skills/go-beast/go-hawk/SKILL.md"
 test "$(<"$HERMES_HOME/skills/go-beast/go-fox/USER.md")" = 'user-owned Hermes skill'
+cmp "$REPO_ROOT/AGENTS.global.md" "$HERMES_HOME/SOUL.md"
 test ! -e "$HERMES_HOME/config.yaml"
-test ! -e "$HERMES_HOME/SOUL.md"
 test ! -e "$HERMES_HOME/plugins"
 
 node - "$TEST_HOME/.go-beast/config.json" "$TEST_HOME/.go-beast/install-manifest.json" "$TEST_HOME/.go-beast/install-transactions" "$HERMES_HOME" <<'NODE'
@@ -61,12 +64,17 @@ if (!Object.values(profile.agents.hermes.managedSkillCopiesByHome ?? {}).some(re
   throw new Error('installer did not scope Hermes copy ownership to a Hermes home')
 }
 if (profile.agents.hermes.managedSkillCopies['go-fox']) throw new Error('installer claimed a pre-existing unmanaged Hermes skill')
+if (profile.agents.hermes.instructionsByHome?.[path.resolve(hermesHome)]?.source !== 'global') throw new Error('installer did not scope standard instructions to the Hermes home')
 if (!manifest.assets.some(asset => asset.agent === 'hermes' && asset.kind === 'skill')) throw new Error('integrity manifest omitted Hermes skills')
+if (!manifest.assets.some(asset => asset.agent === 'hermes' && asset.kind === 'instructions' && asset.name === 'global')) throw new Error('integrity manifest omitted Hermes global instructions')
 const transactionPath = path.join(transactionsDir, fs.readdirSync(transactionsDir)[0], 'transaction.json')
 const transaction = JSON.parse(fs.readFileSync(transactionPath, 'utf8'))
 if (!transaction.allowed_roots.includes(hermesHome)) throw new Error('install transaction omitted the external Hermes home root')
 if (!transaction.snapshots.some(snapshot => snapshot.target === path.join(hermesHome, 'skills', 'go-beast', 'go-hawk'))) {
   throw new Error('install transaction omitted the Hermes skill copy target')
+}
+if (!transaction.snapshots.some(snapshot => snapshot.target === path.join(hermesHome, 'SOUL.md') && snapshot.state === 'file')) {
+  throw new Error('install transaction omitted the pre-existing Hermes SOUL.md')
 }
 NODE
 
@@ -78,7 +86,19 @@ if ! test -f "$HERMES_HOME/skills/go-beast/go-hawk/SKILL.md" \
   fail 'rollback must preserve and report a Hermes copy edited after installation'
 fi
 test "$(<"$HERMES_HOME/skills/go-beast/go-fox/USER.md")" = 'user-owned Hermes skill'
+test "$(<"$HERMES_HOME/SOUL.md")" = 'user-owned default identity'
 test ! -e "$TEST_HOME/.go-beast/config.json"
+
+mkdir -p "$NAMED_PROFILE_HOME" "$NAMED_PROFILE_HERMES/profiles/coder" "$NAMED_PROFILE_HERMES/profiles/research"
+printf '%s\n' '{}' > "$NAMED_PROFILE_HERMES/profiles/coder/config.yaml"
+printf '%s\n' '{}' > "$NAMED_PROFILE_HERMES/profiles/research/config.yaml"
+HOME="$NAMED_PROFILE_HOME" USERPROFILE="$NAMED_PROFILE_HOME" HERMES_HOME="$NAMED_PROFILE_HERMES" \
+  node "$REPO_ROOT/scripts/install.mjs" --all --hermes-profile coder > "$TEST_ROOT/named-coder-install.log"
+HOME="$NAMED_PROFILE_HOME" USERPROFILE="$NAMED_PROFILE_HOME" HERMES_HOME="$NAMED_PROFILE_HERMES" \
+  node "$REPO_ROOT/scripts/install.mjs" --all --hermes-profile research --bootstrap > "$TEST_ROOT/named-research-install.log"
+cmp "$REPO_ROOT/AGENTS.global.md" "$NAMED_PROFILE_HERMES/profiles/coder/SOUL.md"
+cmp "$REPO_ROOT/AGENTS.bootstrap.md" "$NAMED_PROFILE_HERMES/profiles/research/SOUL.md"
+test ! -e "$NAMED_PROFILE_HERMES/SOUL.md"
 
 mkdir -p "$PROFILE_HOME" "$PROFILE_HERMES_A" "$PROFILE_HERMES_B"
 run_profile() {
