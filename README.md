@@ -9,7 +9,7 @@ Each `go-<animal>` skill owns one phase, states its prerequisites, and produces
 concrete artifacts for the next phase. Skills are plain Markdown and work with
 Claude Code, Codex, Copilot, Cursor, Gemini, Hermes Agent, and other agents.
 
-**Version 2.2.0** · [Changelog](CHANGELOG.md)
+**Version 2.3.0** · [Changelog](CHANGELOG.md)
 
 ## Start here
 
