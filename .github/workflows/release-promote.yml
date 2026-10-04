@@ -1,0 +1,152 @@
+name: Promote Release
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - release
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'release' &&
+      github.event.pull_request.head.ref == 'chore/release-prepare' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      has_changes: ${{ steps.compare.outputs.has_changes }}
+      version: ${{ steps.metadata.outputs.version }}
+    steps:
+      - name: Check out merged release branch
+        uses: actions/checkout@v4
+        with:
+          ref: release
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.27.1
+
+      - name: Confirm triggering preparation merge is current
+        env:
+          PREPARE_MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          if ! [[ "$PREPARE_MERGE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The merged preparation commit SHA is missing or malformed." >&2
+            exit 1
+          fi
+          git merge-base --is-ancestor "$PREPARE_MERGE_SHA" origin/release || {
+            echo "The preparation merge is no longer on the release branch." >&2
+            exit 1
+          }
+
+      - name: Validate release surfaces and repository
+        run: |
+          npm run release:version:check
+          npm run verify
+
+      - name: Compare release with main
+        id: compare
+        run: |
+          if git diff --quiet origin/main...origin/release; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No release changes need promotion; no promotion PR was created." >> "$GITHUB_STEP_SUMMARY"
+          else
+            diff_status=$?
+            if [ "$diff_status" -ne 1 ]; then
+              exit "$diff_status"
+            fi
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Read release version
+        id: metadata
+        run: |
+          version="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  promote:
+    needs: validate
+    if: needs.validate.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPOSITORY: ${{ github.repository }}
+      RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+    steps:
+      - name: Create or update promotion PR
+        id: pull_request
+        run: |
+          pr_number="$(gh pr list --base main --head release --state open --json number --jq '.[0].number')"
+          body="This PR promotes the permanent \`release\` branch to \`main\` for v$RELEASE_VERSION. Review the complete diff and required checks before merging. Required Verify/title/branch-flow contexts come from the normal pull_request workflow; if GitHub holds that run for approval because this PR was created with GITHUB_TOKEN, approve it in the PR before merging. After merge, GitHub Actions verifies, tags, and publishes the release."
+          if [ -n "$pr_number" ]; then
+            gh pr edit "$pr_number" --title "chore(release): promote v$RELEASE_VERSION" --body "$body"
+          else
+            gh pr create --base main --head release --title "chore(release): promote v$RELEASE_VERSION" --body "$body"
+          fi
+          pr_number="$(gh pr list --base main --head release --state open --json number --jq '.[0].number')"
+          if [ -z "$pr_number" ]; then
+            echo "Could not resolve the release promotion PR after creation/update." >&2
+            exit 1
+          fi
+          echo "number=$pr_number" >> "$GITHUB_OUTPUT"
+
+      - name: Update promotion branch when main is ahead
+        env:
+          PR_NUMBER: ${{ steps.pull_request.outputs.number }}
+        run: |
+          comparison="$(gh api "repos/$REPOSITORY/compare/main...release" --jq '.status')"
+          case "$comparison" in
+            ahead|identical)
+              echo "release already includes the current main history ($comparison)."
+              ;;
+            behind|diverged)
+              if ! gh pr update-branch "$PR_NUMBER"; then
+                pr_url="$(gh pr view "$PR_NUMBER" --json url --jq '.url')"
+                echo "Protected release branch update was rejected; do not bypass rules. Open and merge a reviewed main-to-release sync PR, then rerun this promotion workflow." >&2
+                {
+                  echo "## Promotion requires a protected-branch sync"
+                  echo "Promotion PR: $pr_url"
+                  echo "Use a reviewed main-to-release sync PR, then rerun this promotion workflow. Do not bypass the ruleset."
+                } >> "$GITHUB_STEP_SUMMARY"
+                exit 1
+              fi
+              ;;
+            *)
+              echo "Unexpected main/release comparison state: $comparison" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Report promotion PR and required checks
+        env:
+          PR_NUMBER: ${{ steps.pull_request.outputs.number }}
+        run: |
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Could not resolve a numeric promotion PR number." >&2
+            exit 1
+          fi
+          pr_url="$(gh pr view "$PR_NUMBER" --json url --jq '.url')"
+          {
+            echo "## Release-promotion PR"
+            echo "Created or updated: $pr_url"
+            echo "Merge only after the normal pull_request Verify/title/branch-flow contexts pass. Approve any pending workflow run in GitHub; this workflow's success does not satisfy those required checks."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -86,9 +86,17 @@ function bumpVersion(version, bump) {
 
 function latestReleaseTag() {
   try {
-    return git(['describe', '--tags', '--match', 'v[0-9]*', '--abbrev=0'])
+    return git(['describe', '--tags', '--match', 'v[0-9]*', '--abbrev=0', 'origin/main'])
   } catch {
-    fail('Unable to find the latest release tag matching v<major>.<minor>.<patch>')
+    fail('Unable to find the latest release tag reachable from origin/main; fetch origin main --tags and retry')
+  }
+}
+
+function releaseBaseline(tag) {
+  try {
+    return git(['merge-base', `${tag}^{commit}`, 'HEAD'])
+  } catch {
+    fail(`Unable to find a shared commit baseline between ${tag} and HEAD`)
   }
 }
 
@@ -96,8 +104,8 @@ function packageVersion() {
   return JSON.parse(read(path.join(REPO, 'package.json'))).version
 }
 
-function commitsSince(tag) {
-  const raw = git(['log', `${tag}..HEAD`, '--format=%H%x1f%s%x1f%b%x1e'])
+function commitsSince(baseCommit) {
+  const raw = git(['log', `${baseCommit}..HEAD`, '--format=%H%x1f%s%x1f%b%x1e'])
   if (!raw) return []
 
   return raw.split('\x1e')
@@ -197,8 +205,12 @@ function main() {
   const args = parseArgs(process.argv.slice(2))
   const tag = latestReleaseTag()
   const currentVersion = packageVersion()
-  const commits = commitsSince(tag)
-  if (commits.length === 0) fail(`No Conventional Commit changes found since ${tag}`)
+  if (tag !== `v${currentVersion}`) {
+    fail(`Latest release tag ${tag} does not match package version ${currentVersion}; finish or repair the pending release before preparing another`)
+  }
+  const baseCommit = releaseBaseline(tag)
+  const commits = commitsSince(baseCommit)
+  if (commits.length === 0) fail(`No Conventional Commit changes found since the shared baseline for ${tag}`)
 
   const { body, highestBump } = buildChangelog(commits)
   const nextVersion = args.version || bumpVersion(currentVersion, highestBump)
@@ -218,6 +230,7 @@ function main() {
   process.stdout.write(JSON.stringify({
     ok: true,
     baseTag: tag,
+    baseCommit,
     currentVersion,
     nextVersion,
     bump: args.version ? 'manual' : highestBump,

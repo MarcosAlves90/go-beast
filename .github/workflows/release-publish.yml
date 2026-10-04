@@ -1,0 +1,74 @@
+name: Publish Release
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    # Title is only a predicate; event text is never interpolated into a command.
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'release' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.title, 'chore(release): promote v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Check out merged promotion commit
+        uses: actions/checkout@v4
+        with:
+          # GitHub-generated merge SHA, guarded by merged/base/head checks above.
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.27.1
+
+      - name: Confirm merged commit remains on main
+        env:
+          PROMOTION_MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PROMOTION_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if ! [[ "$PROMOTION_MERGE_SHA" =~ ^[0-9a-f]{40}$ ]] || ! [[ "$PROMOTION_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The promotion merge commit or PR head SHA is missing or malformed." >&2
+            exit 1
+          fi
+          test "$(git rev-parse HEAD)" = "$PROMOTION_MERGE_SHA"
+          git merge-base --is-ancestor "$PROMOTION_MERGE_SHA" origin/main || {
+            echo "The merged promotion commit is not on main." >&2
+            exit 1
+          }
+          git merge-base --is-ancestor "$PROMOTION_HEAD_SHA" "$PROMOTION_MERGE_SHA" || {
+            echo "The promotion must be merged with a merge commit that preserves the release head as an ancestor; do not squash or rebase it." >&2
+            exit 1
+          }
+
+      - name: Validate release surfaces and repository
+        run: |
+          npm run release:version:check
+          npm run verify
+
+      - name: Publish and finalize release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh auth setup-git
+          npm run release:version:publish

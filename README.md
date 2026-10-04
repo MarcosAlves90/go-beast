@@ -140,16 +140,13 @@ issues, pull requests, versioning, and the canonical validation flow.
 5. Repository content is written in English.
 
 Use the manual [release-train workflow](docs/RELEASES.md) to calculate the
-version, generate `CHANGELOG.md`, and open a release PR. After that PR is merged,
-publish the prepared release from a clean checkout:
-
-Release preparation first merges `chore/release-prepare` into the permanent `release`
-branch; the resulting `release` → `main` promotion PR is the release gate.
-
-```bash
-npm run release:version:check
-npm run release:version:publish
-```
+version and review the generated preparation PR. Merging it automatically
+opens or updates the `release` → `main` promotion PR; after that second human
+merge, GitHub Actions verifies and publishes the release, including its
+attestation. Required PR checks come from normal `pull_request` workflows;
+GitHub may require a user with write access to approve runs created by the
+release bot before they can complete. Routine releases do not require a local
+publish command.
 
 Maintainer-facing transversal rules are defined in
 [`go-beast.manifest.yaml`](go-beast.manifest.yaml). Generated instruction and

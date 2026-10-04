@@ -207,13 +207,19 @@ PR from Conventional Commits.
 
 Use **Actions → Prepare Release → Run workflow** on `release`. Leave the
 version input empty for automatic SemVer calculation or provide an explicit
-`x.y.z` override. Review and merge the generated `chore/release-prepare` → `release`
-PR, then review and merge the generated `release` → `main` promotion PR before
-publishing. The `release` branch is permanent and is never deleted after
-promotion.
+`x.y.z` override. Review the generated `chore/release-prepare` → `release` PR.
+Required Verify/title/branch-flow contexts come from the normal `pull_request`
+workflow; approve a pending run in GitHub if the bot-created PR requires it,
+then merge only after the required contexts pass. Its merge automatically
+creates or updates the `release` → `main` promotion PR. Review and merge that PR
+as the second human gate, approve pending PR workflows if required, and use a
+merge commit (not squash/rebase) to preserve the published-tag ancestry.
+Afterward, GitHub Actions validates, tags, and publishes the release. Neither
+PR is auto-merged, and routine publication does not require a local command.
+The `release` branch is permanent and is never deleted after promotion.
 
 See [docs/RELEASES.md](docs/RELEASES.md) for commit grouping, label overrides,
-idempotency, and the post-merge publication flow.
+the `origin/main` release baseline, idempotency, and recovery behavior.
 
 Update [CHANGELOG.md](CHANGELOG.md) manually only when maintaining historical
 documentation or the release automation itself; normal feature PRs should let

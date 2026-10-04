@@ -92,6 +92,23 @@ mark_published() {
 
 case "$1 $2 $3" in
   "release view "*)
+    if [[ "${4:-}" == "--json" && "${5:-}" == "tagName,isDraft,publishedAt,assets" ]]; then
+      tag="${3:-}"
+      release_dir="$STATE_DIR/releases/$tag"
+      if [[ -f "$release_dir/release-created" ]]; then
+        python3 - "$release_dir" "$tag" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+release = Path(sys.argv[1])
+published_at = (release / "publishedAt").read_text().strip() if (release / "publishedAt").exists() else None
+assets = [{"name": "release-certificate.sigstore.json"}] if (release / "release-certificate.sigstore.json").exists() else []
+print(json.dumps({"tagName": sys.argv[2], "isDraft": (release / "draft").exists(), "publishedAt": published_at, "assets": assets}))
+PY
+        exit 0
+      fi
+    fi
     tag="${3:-}"
     if [[ -f "$STATE_DIR/releases/$tag/release-created" ]]; then
       if [[ "${4:-}" == "--json" ]]; then
@@ -277,6 +294,31 @@ node scripts/release-version.mjs publish > /tmp/go-beast-release-publish-update.
 assert_contains /tmp/go-beast-release-publish-update.json '"status": "already-exists"' "release-version publish no-ops when the release already exists"
 assert_contains "$FAKE_GH_ROOT/gh.log" 'release create v1.3.0' "release-version publish used create on the first run"
 assert_contains "$FAKE_GH_ROOT/gh.log" 'workflow run release-finalize.yml' "release-version publish dispatches the finalize workflow"
+
+RELEASE_STATE="$FAKE_GH_ROOT/gh-state/releases/v1.3.0"
+touch "$RELEASE_STATE/draft"
+rm -f "$RELEASE_STATE/publishedAt" "$RELEASE_STATE/release-certificate.sigstore.json"
+node scripts/release-version.mjs publish > /tmp/go-beast-release-publish-retry.json
+assert_contains /tmp/go-beast-release-publish-retry.json '"status": "published"' "release-version retries finalization for an existing draft"
+python3 - "$FAKE_GH_ROOT/gh.log" <<'PY'
+from pathlib import Path
+import sys
+
+count = sum("workflow run release-finalize.yml" in line for line in Path(sys.argv[1]).read_text().splitlines())
+assert count == 2, f"expected two finalizer dispatches, got {count}"
+PY
+echo "[PASS] release-version retries finalization for an existing draft"
+
+rm -f "$RELEASE_STATE/release-certificate.sigstore.json"
+set +e
+node scripts/release-version.mjs publish > /tmp/go-beast-release-publish-missing-asset.json 2>&1
+PUBLISH_EXIT=$?
+set -e
+if [[ "$PUBLISH_EXIT" -eq 0 ]]; then
+  echo "[FAIL] release-version rejects a published release without its attestation asset"
+  exit 1
+fi
+assert_contains /tmp/go-beast-release-publish-missing-asset.json 'missing release-certificate.sigstore.json' "release-version fails closed when a public release lacks attestation"
 
 python3 - <<'PY'
 from pathlib import Path

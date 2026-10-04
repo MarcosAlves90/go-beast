@@ -2,6 +2,11 @@ name: Verify
 
 on:
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
   push:
     branches:
       - main
@@ -9,7 +14,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
 
 jobs:
   pr-title:
@@ -18,10 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
     steps:
-      - name: Check out repository
+      - name: Check out trusted validator
         uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -31,12 +37,15 @@ jobs:
       - name: Validate pull request title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: node scripts/validate-pr-title.mjs "$PR_TITLE"
+        run: |
+          node scripts/validate-pr-title.mjs "$PR_TITLE"
 
   branch-flow:
     name: Enforce branch flow
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Validate pull request base and head
         env:
@@ -65,13 +74,12 @@ jobs:
 
   verify:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

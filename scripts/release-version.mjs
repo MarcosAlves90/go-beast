@@ -125,6 +125,50 @@ async function waitForReleasePublication(tagName, { timeoutMs = 5 * 60 * 1000, i
   fail(`Timed out waiting for ${tagName} to be published`)
 }
 
+function hasReleaseAttestation(release) {
+  return Array.isArray(release.assets) && release.assets.some(asset => asset.name === 'release-certificate.sigstore.json')
+}
+
+function requirePublishedRelease(tagName) {
+  const release = JSON.parse(gh([
+    'release',
+    'view',
+    tagName,
+    '--json',
+    'tagName,isDraft,publishedAt,assets',
+  ]))
+  if (release.tagName !== tagName || release.isDraft !== false || !release.publishedAt) {
+    fail(`GitHub Release ${tagName} is not fully published`)
+  }
+  if (!hasReleaseAttestation(release)) {
+    fail(`Published GitHub Release ${tagName} is missing release-certificate.sigstore.json`)
+  }
+  return release
+}
+
+async function finalizeRelease(tagName) {
+  gh([
+    'workflow',
+    'run',
+    'release-finalize.yml',
+    '--ref',
+    'main',
+    '-f',
+    `tag_name=${tagName}`,
+  ])
+  await waitForReleasePublication(tagName)
+  return requirePublishedRelease(tagName)
+}
+
+function reportPublishResult(tagName, tagStatus, status) {
+  process.stdout.write(JSON.stringify({
+    ok: true,
+    tag: tagName,
+    tagStatus,
+    status,
+  }, null, 2) + '\n')
+}
+
 function parseSemver(version) {
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version)
   if (!match) fail(`Invalid SemVer version: ${version}`)
@@ -408,19 +452,35 @@ async function publish() {
     tagStatus = 'created'
   }
 
+  let tmpDir = ''
   try {
-    const releaseExists = ghMaybe(['release', 'view', tagName, '--json', 'tagName']) !== ''
-    if (releaseExists) {
-      process.stdout.write(JSON.stringify({
-        ok: true,
-        tag: tagName,
-        tagStatus,
-        status: 'already-exists',
-      }, null, 2) + '\n')
+    const existingReleaseJson = ghMaybe([
+      'release',
+      'view',
+      tagName,
+      '--json',
+      'tagName,isDraft,publishedAt,assets',
+    ])
+    if (existingReleaseJson) {
+      const existingRelease = JSON.parse(existingReleaseJson)
+      if (existingRelease.tagName !== tagName) {
+        fail(`GitHub Release tag mismatch for ${tagName}`)
+      }
+      if (existingRelease.isDraft === true) {
+        await finalizeRelease(tagName)
+        reportPublishResult(tagName, tagStatus, 'published')
+      } else if (existingRelease.isDraft === false && existingRelease.publishedAt) {
+        if (!hasReleaseAttestation(existingRelease)) {
+          fail(`Published GitHub Release ${tagName} is missing release-certificate.sigstore.json`)
+        }
+        reportPublishResult(tagName, tagStatus, 'already-exists')
+      } else {
+        fail(`GitHub Release ${tagName} is not fully published`)
+      }
       return
     }
 
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'go-beast-release-notes-'))
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'go-beast-release-notes-'))
     const notesPath = path.join(tmpDir, 'notes.md')
     const notes = changelogSectionForVersion(state.changelog, version)
     write(notesPath, `${notes}\n`)
@@ -429,28 +489,13 @@ async function publish() {
 
     gh(['release', 'create', tagName, '--draft', '--title', `go-beast ${version}`, '--notes-file', notesPath, '--verify-tag'])
 
-    gh([
-      'workflow',
-      'run',
-      'release-finalize.yml',
-      '--ref',
-      'main',
-      '-f',
-      `tag_name=${tagName}`,
-    ])
+    await finalizeRelease(tagName)
 
-    await waitForReleasePublication(tagName)
-
-    process.stdout.write(JSON.stringify({
-      ok: true,
-      tag: tagName,
-      tagStatus,
-      status: 'published',
-    }, null, 2) + '\n')
+    reportPublishResult(tagName, tagStatus, 'published')
   } catch (error) {
     fail(`publish requires GitHub CLI access via ${GH_BIN}: ${error.stderr?.toString?.() || error.message}`)
   } finally {
-    if (typeof tmpDir !== 'undefined') {
+    if (tmpDir) {
       fs.rmSync(tmpDir, { recursive: true, force: true })
     }
   }
