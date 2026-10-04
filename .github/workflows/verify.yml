@@ -86,6 +86,21 @@ jobs:
       - name: Run repository verification
         run: npm run verify
 
+  powershell-install:
+    name: PowerShell release-archive installer
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run PowerShell installer regression tests
+        run: node --test tests/unit/install-powershell-bootstrap.test.mjs
+
   safe-fs-native:
     name: Safe filesystem native tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

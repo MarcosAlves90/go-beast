@@ -23,11 +23,25 @@ node <repo-dir>/scripts/install.mjs
 # From a checkout (non-interactive, install everything detected)
 node <repo-dir>/scripts/install.mjs --all
 
-# Without cloning the repository (interactive)
+# Without cloning the repository (Bash only; interactive)
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --interactive
 
-# Without cloning the repository (non-interactive, install everything detected)
+# Without cloning the repository (Bash only; non-interactive)
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.sh)" -- --all
+```
+
+In Windows PowerShell, use the native bootstrap instead of the Bash/curl commands:
+
+```powershell
+$installer = Join-Path $env:TEMP ("go-beast-install-$([guid]::NewGuid().ToString('N')).ps1")
+Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.ps1' -OutFile $installer
+try {
+  & $installer --interactive
+  # For non-interactive installation, use --all instead:
+  # & $installer --all
+} finally {
+  Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue
+}
 ```
 
 Use `--bootstrap` with either installer to enable the stricter discovery-first

@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **installer:** add a PowerShell-native release-archive bootstrap for Windows interactive and non-interactive installs
+
 ## [2.3.0] - 2026-10-03
 
 ### Added

@@ -145,7 +145,27 @@ want ongoing refresh and drift correction.
 
 ### Release archive installation
 
-Use this path when you do not want a repository checkout:
+Use this path when you do not want a repository checkout.
+
+#### Windows PowerShell
+
+Do not paste the Bash commands into PowerShell: `-fsSL` is a curl option, not a PowerShell parameter. Download and run the PowerShell bootstrap instead:
+
+```powershell
+$installer = Join-Path $env:TEMP ("go-beast-install-$([guid]::NewGuid().ToString('N')).ps1")
+Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/MarcosAlves90/go-beast/main/scripts/install.ps1' -OutFile $installer
+try {
+  # Interactive release and asset selection:
+  & $installer --interactive
+  # For non-interactive installation, use this instead:
+  # & $installer --all
+  # Add --bootstrap or other supported options as needed.
+} finally {
+  Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue
+}
+```
+
+#### Bash (macOS, Linux, or Git Bash)
 
 ```bash
 # Interactive release and asset selection
